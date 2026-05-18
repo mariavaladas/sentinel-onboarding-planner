@@ -1,0 +1,5 @@
+{
+  "version": "1.0",
+  "universes": ["blade-runner"],
+  "max_per_universe": 15
+}

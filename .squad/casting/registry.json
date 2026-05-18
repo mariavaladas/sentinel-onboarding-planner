@@ -1,0 +1,42 @@
+[
+  {
+    "persistent_name": "Deckard",
+    "role": "Lead",
+    "universe": "blade-runner",
+    "created_at": "2026-05-18T15:34:04Z",
+    "legacy_named": false,
+    "status": "active"
+  },
+  {
+    "persistent_name": "K",
+    "role": "Frontend Dev",
+    "universe": "blade-runner",
+    "created_at": "2026-05-18T15:34:04Z",
+    "legacy_named": false,
+    "status": "active"
+  },
+  {
+    "persistent_name": "Sebastian",
+    "role": "Data Engineer",
+    "universe": "blade-runner",
+    "created_at": "2026-05-18T15:34:04Z",
+    "legacy_named": false,
+    "status": "active"
+  },
+  {
+    "persistent_name": "Luv",
+    "role": "Tester",
+    "universe": "blade-runner",
+    "created_at": "2026-05-18T15:34:04Z",
+    "legacy_named": false,
+    "status": "active"
+  },
+  {
+    "persistent_name": "Rachael",
+    "role": "Security Specialist",
+    "universe": "blade-runner",
+    "created_at": "2026-05-18T15:34:04Z",
+    "legacy_named": false,
+    "status": "active"
+  }
+]
