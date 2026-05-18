@@ -9,3 +9,9 @@
 ## Learnings
 
 (Session learnings will be appended here)
+
+## 2026-05-18 Scribe Update
+- Inbox decisions merged into decisions.md
+- All agent outcomes consolidated and cross-referenced
+- Decisions are now canonical; inbox cleared
+- See: decisions.md entries for 2026-05-18 (v2 Data Model, v1 Security, Architecture Gap)
