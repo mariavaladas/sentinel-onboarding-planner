@@ -69,3 +69,54 @@
 **Next:** K reviews modularization; Luv plans test structure; madesous confirms scoring weights; design review.
 
 ---
+
+### 2026-05-19: Deckard Architecture Review — APPROVED WITH CONDITIONS
+**By:** Deckard (Lead)
+**Status:** APPROVED WITH CONDITIONS (4 conditions)
+**Date:** 2026-05-19T090107
+**What:** Deckard reviewed the V2 architecture proposal and approved with conditions:
+1. **State invalidation documentation required** — Add comment block at top of planning.js documenting the mutable state object and re-render flow.
+2. **SheetJS version pin required** — Exact version + SRI hash in all CDN references (no floating versions).
+3. **scoring.js stub required** — Skeleton export for `calculateScore()` (actual formula TBD by product).
+4. **No React Flow** — Confirm no React/external framework in planner view; stay vanilla JS + DOM.
+**Outcome:** Deckard verified conditions satisfied in K's planning.js implementation (state invalidation documented, vanilla DOM throughout).
+
+---
+
+### 2026-05-19: K Planner View Implementation — COMPLETE
+**By:** K (Frontend Dev)
+**Date:** 2026-05-19
+**Status:** SUCCESS
+**What:** K replaced planning.js stub with full implementation:
+   - **Summary stats bar** — total solutions, total effort, phase breakdowns (uses existing `.stat-card` pattern).
+   - **Filter/sort controls** — sort dropdown (Priority Score default, Effort, Phase), phase filter buttons (All / Phase 1/2/3).
+   - **Collapsible task cards** — per-solution card showing name, phase badge (colour-coded), priority score, effort. Expandable to show description, setup tasks (ordered with hours), dependencies, common issues.
+   - **Empty states** — for no solutions and no matches.
+   - **CSS** — ~360 lines appended to style.css (`.planner-summary-bar`, `.planner-controls`, `.planner-badge`, `.planner-task-card`, responsive grid).
+**Security:** Used `document.createElement` + `textContent` throughout; no `innerHTML` with solution data (satisfies Rachael's audit).
+**Key decision:** Removed `renderTimeline` export (stub-specific, no calls from other modules); kept `calculateTotalEffort` for export.js.
+**Outcome:** Planning.js ready for production; no blocking issues identified.
+
+---
+
+### 2026-05-19: renderTimeline Export Removed from planning.js
+**By:** K (Frontend Dev)
+**Status:** FYI — no blocking impact
+**What:** The `renderTimeline` function was removed as part of planning.js full replacement. It was a stub placeholder with no real behaviour and no external callers.
+**Impact:** export.js unaffected (only uses `calculateTotalEffort`); wizard.js unaffected (only calls `initPlannerView`).
+**Action:** If Luv has test stubs referencing `renderTimeline`, delete those. Otherwise, no action needed.
+
+---
+
+### 2026-05-19: Data Schema Enrichment — COMPLETE
+**By:** Sebastian (Data Engineer)
+**Date:** 2026-05-19
+**Status:** COMPLETE
+**What:** solutions.json enrichment finalized with deterministic, category-aware metadata:
+   - `export_metadata.group` — derived from category buckets (Azure First Party, Microsoft XDR, Third Party).
+   - `export_metadata.phased_deployment` — derived from `value_scoring.setup_hours` using approved thresholds (Phase 1 ≤25h, Phase 2 26–50h, Phase 3 >50h).
+   - Dependency chains — CEF-heavy connectors depend on linux-syslog; Microsoft XDR depends on Entra ID, Microsoft 365, workload-specific Defender.
+   - `planner.documentation_url` — reuses existing `github_url` (no parallel field to maintain).
+**Outcome:** One source of truth for UI, scoring, planner, and Excel export. Deterministic phasing without lookup tables or UI-side scoring rules.
+
+---
