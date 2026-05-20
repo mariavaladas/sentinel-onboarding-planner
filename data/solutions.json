@@ -16,7 +16,77 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": true,
-          "tags": ["azure", "activity", "subscription", "resource", "management"]
+          "tags": [
+            "azure",
+            "activity",
+            "subscription",
+            "resource",
+            "management"
+          ],
+          "value_scoring": {
+            "complexity_level": 1,
+            "setup_hours": 1,
+            "data_volume_risk": "low",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "cloud",
+              "control-plane",
+              "governance"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Confirm subscription scope, tenant access, and Microsoft Sentinel permissions for Azure Activity ingestion.",
+                "effort_hours": 0.2,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Enable Azure Activity streaming for the target subscriptions and verify the correct workspace association.",
+                "effort_hours": 0.3,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 3,
+                "task": "Turn on the packaged analytics rules and workbook content that depend on Azure Activity events.",
+                "effort_hours": 0.2,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate ingestion by reviewing a recent resource change or service health event in Sentinel and confirming incident generation.",
+                "effort_hours": 0.3,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Azure Activity records appear in Sentinel within a few minutes of a subscription event.",
+              "Run a simple KQL query for recent administrative operations and confirm actor and resource fields are populated.",
+              "Use a recent resource change or service health event to confirm at least one packaged analytic can create an incident."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Azure%20Activity",
+            "owner_recommended": "Cloud Admin",
+            "common_issues": [
+              "Not all required subscriptions were connected to the Azure Activity pipeline.",
+              "The Sentinel workspace is in a different tenant or scope than the target subscriptions.",
+              "Validation fails because there has been no recent administrative activity to confirm ingestion."
+            ]
+          },
+          "export_metadata": {
+            "group": "Azure First Party",
+            "priority_score": 83,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "defender-for-cloud",
+              "azure-firewall",
+              "azure-network-security-group"
+            ],
+            "estimated_monthly_cost": "free"
+          }
         },
         {
           "id": "defender-for-cloud",
@@ -29,7 +99,83 @@
           "workbooks": 0,
           "playbooks": 0,
           "is1P": true,
-          "tags": ["azure", "defender", "cloud", "security", "alerts", "recommendations"]
+          "tags": [
+            "azure",
+            "defender",
+            "cloud",
+            "security",
+            "alerts",
+            "recommendations"
+          ],
+          "value_scoring": {
+            "complexity_level": 2,
+            "setup_hours": 3,
+            "data_volume_risk": "medium",
+            "business_impact": "critical",
+            "maturity": "ga",
+            "detection_areas": [
+              "cloud",
+              "workload",
+              "vulnerability",
+              "threat"
+            ],
+            "dependencies": [
+              "azure-activity"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Verify licensing, service settings, and delegated permissions required for Microsoft Defender for Cloud.",
+                "effort_hours": 0.6,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Connect Microsoft Defender for Cloud to Microsoft Sentinel and enable the required data types or incident sync options.",
+                "effort_hours": 1.0,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Microsoft Defender for Cloud, then tune noisy detections.",
+                "effort_hours": 0.6,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Microsoft Defender for Cloud using a recent recommendation or cloud security alert and confirm incidents or records appear in Sentinel.",
+                "effort_hours": 0.8,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Microsoft Defender for Cloud records appear in the expected Sentinel tables within 5 to 10 minutes.",
+              "Run a packaged workbook or KQL query to confirm entities, users, and device fields from Microsoft Defender for Cloud are normalized.",
+              "Use a recent recommendation or cloud security alert to confirm analytics or incident sync works end-to-end for Microsoft Defender for Cloud."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Defender%20for%20Cloud",
+            "owner_recommended": "Cloud Admin",
+            "common_issues": [
+              "Microsoft Defender for Cloud licensing or tenant settings do not include the signal types expected by the connector.",
+              "The service account or admin consent for Microsoft Defender for Cloud is incomplete, so data retrieval fails silently.",
+              "Duplicate or noisy incidents appear when default content for Microsoft Defender for Cloud is enabled without tuning."
+            ]
+          },
+          "export_metadata": {
+            "group": "Azure First Party",
+            "priority_score": 91,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "azure-activity",
+              "azure-firewall",
+              "azure-key-vault",
+              "aws",
+              "google-cloud"
+            ],
+            "estimated_monthly_cost": "low"
+          }
         },
         {
           "id": "azure-firewall",
@@ -42,7 +188,79 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": true,
-          "tags": ["azure", "firewall", "network", "traffic", "rules"]
+          "tags": [
+            "azure",
+            "firewall",
+            "network",
+            "traffic",
+            "rules"
+          ],
+          "value_scoring": {
+            "complexity_level": 2,
+            "setup_hours": 4,
+            "data_volume_risk": "high",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "network",
+              "perimeter",
+              "threat"
+            ],
+            "dependencies": [
+              "azure-activity"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Confirm RBAC and workspace permissions for Azure Firewall and the target Azure subscription.",
+                "effort_hours": 0.6,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Enable the Azure Firewall data connector and send the required diagnostic logs to the Sentinel workspace.",
+                "effort_hours": 1.6,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Azure Firewall, then tune severity and exclusions.",
+                "effort_hours": 0.8,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Azure Firewall telemetry using a test allow/deny connection or threat log and review the first records in Sentinel.",
+                "effort_hours": 1.0,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Azure Firewall data appears in the relevant Microsoft Sentinel table within 5 minutes.",
+              "Open the packaged workbook or run a KQL query to confirm key entities from Azure Firewall are parsed correctly.",
+              "Use a test allow/deny connection or threat log to confirm an analytic rule or incident can be generated end-to-end."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Azure%20Firewall",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Diagnostic settings for Azure Firewall were not pointed at the correct Log Analytics workspace.",
+              "The onboarding account lacks RBAC on the source resource or Sentinel workspace needed for Azure Firewall.",
+              "Low activity on Azure Firewall can make validation appear delayed even when the connector is healthy."
+            ]
+          },
+          "export_metadata": {
+            "group": "Azure First Party",
+            "priority_score": 78,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "azure-network-security-group",
+              "azure-waf",
+              "threat-intelligence"
+            ],
+            "estimated_monthly_cost": "high"
+          }
         },
         {
           "id": "azure-key-vault",
@@ -55,7 +273,79 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": true,
-          "tags": ["azure", "key vault", "secrets", "keys", "certificates"]
+          "tags": [
+            "azure",
+            "key vault",
+            "secrets",
+            "keys",
+            "certificates"
+          ],
+          "value_scoring": {
+            "complexity_level": 2,
+            "setup_hours": 2,
+            "data_volume_risk": "low",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "identity",
+              "data",
+              "secrets"
+            ],
+            "dependencies": [
+              "azure-activity"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Confirm RBAC and workspace permissions for Azure Key Vault and the target Azure subscription.",
+                "effort_hours": 0.3,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Enable the Azure Key Vault data connector and send the required diagnostic logs to the Sentinel workspace.",
+                "effort_hours": 0.8,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Azure Key Vault, then tune severity and exclusions.",
+                "effort_hours": 0.4,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Azure Key Vault telemetry using a secret read, list operation, or failed access attempt and review the first records in Sentinel.",
+                "effort_hours": 0.5,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Azure Key Vault data appears in the relevant Microsoft Sentinel table within 5 minutes.",
+              "Open the packaged workbook or run a KQL query to confirm key entities from Azure Key Vault are parsed correctly.",
+              "Use a secret read, list operation, or failed access attempt to confirm an analytic rule or incident can be generated end-to-end."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Azure%20Key%20Vault",
+            "owner_recommended": "Cloud Admin",
+            "common_issues": [
+              "Diagnostic settings for Azure Key Vault were not pointed at the correct Log Analytics workspace.",
+              "The onboarding account lacks RBAC on the source resource or Sentinel workspace needed for Azure Key Vault.",
+              "Low activity on Azure Key Vault can make validation appear delayed even when the connector is healthy."
+            ]
+          },
+          "export_metadata": {
+            "group": "Azure First Party",
+            "priority_score": 79,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "microsoft-entra-id",
+              "defender-for-cloud",
+              "cyberark"
+            ],
+            "estimated_monthly_cost": "low"
+          }
         },
         {
           "id": "azure-waf",
@@ -68,7 +358,79 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": true,
-          "tags": ["azure", "waf", "web application firewall", "web", "attacks"]
+          "tags": [
+            "azure",
+            "waf",
+            "web application firewall",
+            "web",
+            "attacks"
+          ],
+          "value_scoring": {
+            "complexity_level": 2,
+            "setup_hours": 4,
+            "data_volume_risk": "medium",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "web",
+              "application",
+              "network"
+            ],
+            "dependencies": [
+              "azure-activity"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Confirm RBAC and workspace permissions for Azure Web Application Firewall (WAF) and the target Azure subscription.",
+                "effort_hours": 0.6,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Enable the Azure Web Application Firewall (WAF) data connector and send the required diagnostic logs to the Sentinel workspace.",
+                "effort_hours": 1.6,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Azure Web Application Firewall (WAF), then tune severity and exclusions.",
+                "effort_hours": 0.8,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Azure Web Application Firewall (WAF) telemetry using a benign blocked request or WAF policy hit and review the first records in Sentinel.",
+                "effort_hours": 1.0,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Azure Web Application Firewall (WAF) data appears in the relevant Microsoft Sentinel table within 5 minutes.",
+              "Open the packaged workbook or run a KQL query to confirm key entities from Azure Web Application Firewall (WAF) are parsed correctly.",
+              "Use a benign blocked request or WAF policy hit to confirm an analytic rule or incident can be generated end-to-end."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Azure%20Web%20Application%20Firewall%20(WAF)",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Diagnostic settings for Azure Web Application Firewall (WAF) were not pointed at the correct Log Analytics workspace.",
+              "The onboarding account lacks RBAC on the source resource or Sentinel workspace needed for Azure Web Application Firewall (WAF).",
+              "Low activity on Azure Web Application Firewall (WAF) can make validation appear delayed even when the connector is healthy."
+            ]
+          },
+          "export_metadata": {
+            "group": "Azure First Party",
+            "priority_score": 78,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "azure-firewall",
+              "azure-ddos-protection",
+              "threat-intelligence"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "azure-network-security-group",
@@ -81,7 +443,79 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": true,
-          "tags": ["azure", "nsg", "network security group", "flow logs", "network"]
+          "tags": [
+            "azure",
+            "nsg",
+            "network security group",
+            "flow logs",
+            "network"
+          ],
+          "value_scoring": {
+            "complexity_level": 2,
+            "setup_hours": 5,
+            "data_volume_risk": "high",
+            "business_impact": "medium",
+            "maturity": "ga",
+            "detection_areas": [
+              "network",
+              "east-west",
+              "perimeter"
+            ],
+            "dependencies": [
+              "azure-activity"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Confirm RBAC and workspace permissions for Azure Network Security Group (NSG) and the target Azure subscription.",
+                "effort_hours": 0.8,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Enable the Azure Network Security Group (NSG) data connector and send the required diagnostic logs to the Sentinel workspace.",
+                "effort_hours": 2.0,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Azure Network Security Group (NSG), then tune severity and exclusions.",
+                "effort_hours": 1.0,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Azure Network Security Group (NSG) telemetry using a recent flow log from a protected subnet and review the first records in Sentinel.",
+                "effort_hours": 1.2,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Azure Network Security Group (NSG) data appears in the relevant Microsoft Sentinel table within 5 minutes.",
+              "Open the packaged workbook or run a KQL query to confirm key entities from Azure Network Security Group (NSG) are parsed correctly.",
+              "Use a recent flow log from a protected subnet to confirm an analytic rule or incident can be generated end-to-end."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Azure%20Network%20Security%20Groups",
+            "owner_recommended": "Cloud Admin",
+            "common_issues": [
+              "Diagnostic settings for Azure Network Security Group (NSG) were not pointed at the correct Log Analytics workspace.",
+              "The onboarding account lacks RBAC on the source resource or Sentinel workspace needed for Azure Network Security Group (NSG).",
+              "Low activity on Azure Network Security Group (NSG) can make validation appear delayed even when the connector is healthy."
+            ]
+          },
+          "export_metadata": {
+            "group": "Azure First Party",
+            "priority_score": 67,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "azure-firewall",
+              "azure-ddos-protection",
+              "threat-intelligence"
+            ],
+            "estimated_monthly_cost": "high"
+          }
         },
         {
           "id": "azure-ddos-protection",
@@ -94,7 +528,77 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": true,
-          "tags": ["azure", "ddos", "protection", "attacks"]
+          "tags": [
+            "azure",
+            "ddos",
+            "protection",
+            "attacks"
+          ],
+          "value_scoring": {
+            "complexity_level": 1,
+            "setup_hours": 2,
+            "data_volume_risk": "low",
+            "business_impact": "medium",
+            "maturity": "ga",
+            "detection_areas": [
+              "network",
+              "availability"
+            ],
+            "dependencies": [
+              "azure-activity"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Confirm RBAC and workspace permissions for Azure DDoS Protection and the target Azure subscription.",
+                "effort_hours": 0.3,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Enable the Azure DDoS Protection data connector and send the required diagnostic logs to the Sentinel workspace.",
+                "effort_hours": 0.8,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Azure DDoS Protection, then tune severity and exclusions.",
+                "effort_hours": 0.4,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Azure DDoS Protection telemetry using a recent mitigation metric or protection event and review the first records in Sentinel.",
+                "effort_hours": 0.5,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Azure DDoS Protection data appears in the relevant Microsoft Sentinel table within 5 minutes.",
+              "Open the packaged workbook or run a KQL query to confirm key entities from Azure DDoS Protection are parsed correctly.",
+              "Use a recent mitigation metric or protection event to confirm an analytic rule or incident can be generated end-to-end."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Azure%20DDoS%20Protection",
+            "owner_recommended": "Cloud Admin",
+            "common_issues": [
+              "Diagnostic settings for Azure DDoS Protection were not pointed at the correct Log Analytics workspace.",
+              "The onboarding account lacks RBAC on the source resource or Sentinel workspace needed for Azure DDoS Protection.",
+              "Low activity on Azure DDoS Protection can make validation appear delayed even when the connector is healthy."
+            ]
+          },
+          "export_metadata": {
+            "group": "Azure First Party",
+            "priority_score": 70,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "azure-waf",
+              "azure-firewall",
+              "azure-network-security-group"
+            ],
+            "estimated_monthly_cost": "low"
+          }
         }
       ]
     },
@@ -114,7 +618,83 @@
           "workbooks": 2,
           "playbooks": 7,
           "is1P": true,
-          "tags": ["entra", "azure ad", "identity", "sign-in", "audit", "authentication", "conditional access"]
+          "tags": [
+            "entra",
+            "azure ad",
+            "identity",
+            "sign-in",
+            "audit",
+            "authentication",
+            "conditional access"
+          ],
+          "value_scoring": {
+            "complexity_level": 2,
+            "setup_hours": 4,
+            "data_volume_risk": "medium",
+            "business_impact": "critical",
+            "maturity": "ga",
+            "detection_areas": [
+              "identity",
+              "authentication",
+              "governance",
+              "privileged-access"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Verify licensing, service settings, and delegated permissions required for Microsoft Entra ID (Azure AD).",
+                "effort_hours": 0.8,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Connect Microsoft Entra ID (Azure AD) to Microsoft Sentinel and enable the required data types or incident sync options.",
+                "effort_hours": 1.4,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Microsoft Entra ID (Azure AD), then tune noisy detections.",
+                "effort_hours": 0.8,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Microsoft Entra ID (Azure AD) using a test sign-in, risky sign-in, or audit activity and confirm incidents or records appear in Sentinel.",
+                "effort_hours": 1.0,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Microsoft Entra ID (Azure AD) records appear in the expected Sentinel tables within 5 to 10 minutes.",
+              "Run a packaged workbook or KQL query to confirm entities, users, and device fields from Microsoft Entra ID (Azure AD) are normalized.",
+              "Use a test sign-in, risky sign-in, or audit activity to confirm analytics or incident sync works end-to-end for Microsoft Entra ID (Azure AD)."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Entra%20ID",
+            "owner_recommended": "Identity Admin",
+            "common_issues": [
+              "Microsoft Entra ID (Azure AD) licensing or tenant settings do not include the signal types expected by the connector.",
+              "The service account or admin consent for Microsoft Entra ID (Azure AD) is incomplete, so data retrieval fails silently.",
+              "Duplicate or noisy incidents appear when default content for Microsoft Entra ID (Azure AD) is enabled without tuning."
+            ]
+          },
+          "export_metadata": {
+            "group": "Microsoft XDR",
+            "priority_score": 91,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "defender-for-identity",
+              "defender-for-cloud-apps",
+              "defender-for-office-365",
+              "okta",
+              "ping-identity",
+              "cyberark"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "microsoft-365",
@@ -127,7 +707,82 @@
           "workbooks": 3,
           "playbooks": 0,
           "is1P": true,
-          "tags": ["office 365", "exchange", "sharepoint", "teams", "onedrive", "email", "collaboration"]
+          "tags": [
+            "office 365",
+            "exchange",
+            "sharepoint",
+            "teams",
+            "onedrive",
+            "email",
+            "collaboration"
+          ],
+          "value_scoring": {
+            "complexity_level": 2,
+            "setup_hours": 4,
+            "data_volume_risk": "medium",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "email",
+              "collaboration",
+              "data"
+            ],
+            "dependencies": [
+              "microsoft-entra-id"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Verify licensing, service settings, and delegated permissions required for Microsoft 365.",
+                "effort_hours": 0.8,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Connect Microsoft 365 to Microsoft Sentinel and enable the required data types or incident sync options.",
+                "effort_hours": 1.4,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Microsoft 365, then tune noisy detections.",
+                "effort_hours": 0.8,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Microsoft 365 using recent Exchange, SharePoint, Teams, or OneDrive audit activity and confirm incidents or records appear in Sentinel.",
+                "effort_hours": 1.0,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Microsoft 365 records appear in the expected Sentinel tables within 5 to 10 minutes.",
+              "Run a packaged workbook or KQL query to confirm entities, users, and device fields from Microsoft 365 are normalized.",
+              "Use recent Exchange, SharePoint, Teams, or OneDrive audit activity to confirm analytics or incident sync works end-to-end for Microsoft 365."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20365",
+            "owner_recommended": "SOC Analyst",
+            "common_issues": [
+              "Microsoft 365 licensing or tenant settings do not include the signal types expected by the connector.",
+              "The service account or admin consent for Microsoft 365 is incomplete, so data retrieval fails silently.",
+              "Duplicate or noisy incidents appear when default content for Microsoft 365 is enabled without tuning."
+            ]
+          },
+          "export_metadata": {
+            "group": "Microsoft XDR",
+            "priority_score": 78,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "defender-for-office-365",
+              "defender-for-cloud-apps",
+              "microsoft-purview",
+              "proofpoint"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "defender-xdr",
@@ -140,7 +795,91 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": true,
-          "tags": ["defender", "xdr", "incidents", "alerts", "advanced hunting", "mde", "mdo", "mdi", "mda"]
+          "tags": [
+            "defender",
+            "xdr",
+            "incidents",
+            "alerts",
+            "advanced hunting",
+            "mde",
+            "mdo",
+            "mdi",
+            "mda"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 8,
+            "data_volume_risk": "medium",
+            "business_impact": "critical",
+            "maturity": "ga",
+            "detection_areas": [
+              "endpoint",
+              "identity",
+              "email",
+              "cloud",
+              "threat"
+            ],
+            "dependencies": [
+              "defender-for-endpoint",
+              "defender-for-office-365",
+              "defender-for-identity",
+              "defender-for-cloud-apps"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Confirm prerequisite Defender workloads and incident permissions are ready for Microsoft Defender XDR.",
+                "effort_hours": 1.6,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Connect Microsoft Defender XDR to Microsoft Sentinel and enable incident plus advanced hunting data where required.",
+                "effort_hours": 2.8,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable cross-product analytics, correlation content, and incident grouping settings for Microsoft Defender XDR.",
+                "effort_hours": 1.6,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate Microsoft Defender XDR with a correlated incident containing alerts from at least one Defender workload and verify entity correlation across multiple signal sources.",
+                "effort_hours": 2.0,
+                "skill_level": "advanced"
+              }
+            ],
+            "validation_steps": [
+              "Verify Microsoft Defender XDR incidents and hunting records appear in Sentinel within the expected service latency window.",
+              "Open a correlated incident and confirm entities from multiple Defender workloads are preserved in Sentinel.",
+              "Use a correlated incident containing alerts from at least one Defender workload to prove end-to-end correlation and incident deduplication are functioning."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Defender%20XDR",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Not all prerequisite Defender workloads are connected, so Microsoft Defender XDR correlation is incomplete.",
+              "Incident sync permissions for Microsoft Defender XDR are missing or were granted in the wrong tenant.",
+              "Correlation content for Microsoft Defender XDR generates duplicate incidents until grouping rules are tuned."
+            ]
+          },
+          "export_metadata": {
+            "group": "Microsoft XDR",
+            "priority_score": 87,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "microsoft-entra-id",
+              "microsoft-365",
+              "defender-for-endpoint",
+              "defender-for-office-365",
+              "defender-for-identity",
+              "defender-for-cloud-apps"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "defender-for-endpoint",
@@ -153,7 +892,82 @@
           "workbooks": 1,
           "playbooks": 4,
           "is1P": true,
-          "tags": ["defender", "endpoint", "mde", "alerts", "device", "vulnerability", "edr"]
+          "tags": [
+            "defender",
+            "endpoint",
+            "mde",
+            "alerts",
+            "device",
+            "vulnerability",
+            "edr"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 8,
+            "data_volume_risk": "medium",
+            "business_impact": "critical",
+            "maturity": "ga",
+            "detection_areas": [
+              "endpoint",
+              "malware",
+              "vulnerability",
+              "threat"
+            ],
+            "dependencies": [
+              "microsoft-entra-id"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Verify licensing, service settings, and delegated permissions required for Microsoft Defender for Endpoint.",
+                "effort_hours": 1.6,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Connect Microsoft Defender for Endpoint to Microsoft Sentinel and enable the required data types or incident sync options.",
+                "effort_hours": 2.8,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Microsoft Defender for Endpoint, then tune noisy detections.",
+                "effort_hours": 1.6,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Microsoft Defender for Endpoint using a device alert, device timeline event, or vulnerability record and confirm incidents or records appear in Sentinel.",
+                "effort_hours": 2.0,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Microsoft Defender for Endpoint records appear in the expected Sentinel tables within 5 to 10 minutes.",
+              "Run a packaged workbook or KQL query to confirm entities, users, and device fields from Microsoft Defender for Endpoint are normalized.",
+              "Use a device alert, device timeline event, or vulnerability record to confirm analytics or incident sync works end-to-end for Microsoft Defender for Endpoint."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Defender%20for%20Endpoint",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Microsoft Defender for Endpoint licensing or tenant settings do not include the signal types expected by the connector.",
+              "The service account or admin consent for Microsoft Defender for Endpoint is incomplete, so data retrieval fails silently.",
+              "Duplicate or noisy incidents appear when default content for Microsoft Defender for Endpoint is enabled without tuning."
+            ]
+          },
+          "export_metadata": {
+            "group": "Microsoft XDR",
+            "priority_score": 84,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "defender-xdr",
+              "windows-security-events",
+              "threat-intelligence"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "defender-for-office-365",
@@ -166,7 +980,81 @@
           "workbooks": 1,
           "playbooks": 2,
           "is1P": true,
-          "tags": ["defender", "office", "mdo", "email", "phishing", "safe links", "safe attachments"]
+          "tags": [
+            "defender",
+            "office",
+            "mdo",
+            "email",
+            "phishing",
+            "safe links",
+            "safe attachments"
+          ],
+          "value_scoring": {
+            "complexity_level": 2,
+            "setup_hours": 5,
+            "data_volume_risk": "medium",
+            "business_impact": "critical",
+            "maturity": "ga",
+            "detection_areas": [
+              "email",
+              "phishing",
+              "malware"
+            ],
+            "dependencies": [
+              "microsoft-365"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Verify licensing, service settings, and delegated permissions required for Microsoft Defender for Office 365.",
+                "effort_hours": 1.0,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Connect Microsoft Defender for Office 365 to Microsoft Sentinel and enable the required data types or incident sync options.",
+                "effort_hours": 1.8,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Microsoft Defender for Office 365, then tune noisy detections.",
+                "effort_hours": 1.0,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Microsoft Defender for Office 365 using a safe phishing simulation or malicious email event and confirm incidents or records appear in Sentinel.",
+                "effort_hours": 1.2,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Microsoft Defender for Office 365 records appear in the expected Sentinel tables within 5 to 10 minutes.",
+              "Run a packaged workbook or KQL query to confirm entities, users, and device fields from Microsoft Defender for Office 365 are normalized.",
+              "Use a safe phishing simulation or malicious email event to confirm analytics or incident sync works end-to-end for Microsoft Defender for Office 365."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Defender%20for%20Office%20365",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Microsoft Defender for Office 365 licensing or tenant settings do not include the signal types expected by the connector.",
+              "The service account or admin consent for Microsoft Defender for Office 365 is incomplete, so data retrieval fails silently.",
+              "Duplicate or noisy incidents appear when default content for Microsoft Defender for Office 365 is enabled without tuning."
+            ]
+          },
+          "export_metadata": {
+            "group": "Microsoft XDR",
+            "priority_score": 87,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "defender-xdr",
+              "microsoft-purview",
+              "proofpoint"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "defender-for-identity",
@@ -179,7 +1067,80 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": true,
-          "tags": ["defender", "identity", "mdi", "lateral movement", "credential", "active directory"]
+          "tags": [
+            "defender",
+            "identity",
+            "mdi",
+            "lateral movement",
+            "credential",
+            "active directory"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 7,
+            "data_volume_risk": "low",
+            "business_impact": "critical",
+            "maturity": "ga",
+            "detection_areas": [
+              "identity",
+              "privileged-access",
+              "lateral-movement"
+            ],
+            "dependencies": [
+              "microsoft-entra-id"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Verify licensing, service settings, and delegated permissions required for Microsoft Defender for Identity.",
+                "effort_hours": 1.4,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Connect Microsoft Defender for Identity to Microsoft Sentinel and enable the required data types or incident sync options.",
+                "effort_hours": 2.4,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Microsoft Defender for Identity, then tune noisy detections.",
+                "effort_hours": 1.4,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Microsoft Defender for Identity using a suspicious authentication, lateral movement alert, or directory reconnaissance event and confirm incidents or records appear in Sentinel.",
+                "effort_hours": 1.8,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Microsoft Defender for Identity records appear in the expected Sentinel tables within 5 to 10 minutes.",
+              "Run a packaged workbook or KQL query to confirm entities, users, and device fields from Microsoft Defender for Identity are normalized.",
+              "Use a suspicious authentication, lateral movement alert, or directory reconnaissance event to confirm analytics or incident sync works end-to-end for Microsoft Defender for Identity."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Defender%20for%20Identity",
+            "owner_recommended": "Identity Admin",
+            "common_issues": [
+              "Microsoft Defender for Identity licensing or tenant settings do not include the signal types expected by the connector.",
+              "The service account or admin consent for Microsoft Defender for Identity is incomplete, so data retrieval fails silently.",
+              "Duplicate or noisy incidents appear when default content for Microsoft Defender for Identity is enabled without tuning."
+            ]
+          },
+          "export_metadata": {
+            "group": "Microsoft XDR",
+            "priority_score": 82,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "defender-xdr",
+              "cyberark",
+              "windows-security-events"
+            ],
+            "estimated_monthly_cost": "low"
+          }
         },
         {
           "id": "defender-for-cloud-apps",
@@ -192,7 +1153,83 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": true,
-          "tags": ["defender", "cloud apps", "mda", "casb", "shadow it", "saas"]
+          "tags": [
+            "defender",
+            "cloud apps",
+            "mda",
+            "casb",
+            "shadow it",
+            "saas"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 6,
+            "data_volume_risk": "medium",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "saas",
+              "identity",
+              "data",
+              "threat"
+            ],
+            "dependencies": [
+              "microsoft-entra-id",
+              "microsoft-365"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Verify licensing, service settings, and delegated permissions required for Microsoft Defender for Cloud Apps.",
+                "effort_hours": 1.2,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Connect Microsoft Defender for Cloud Apps to Microsoft Sentinel and enable the required data types or incident sync options.",
+                "effort_hours": 2.1,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Microsoft Defender for Cloud Apps, then tune noisy detections.",
+                "effort_hours": 1.2,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Microsoft Defender for Cloud Apps using a cloud app alert or shadow IT discovery event and confirm incidents or records appear in Sentinel.",
+                "effort_hours": 1.5,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Microsoft Defender for Cloud Apps records appear in the expected Sentinel tables within 5 to 10 minutes.",
+              "Run a packaged workbook or KQL query to confirm entities, users, and device fields from Microsoft Defender for Cloud Apps are normalized.",
+              "Use a cloud app alert or shadow IT discovery event to confirm analytics or incident sync works end-to-end for Microsoft Defender for Cloud Apps."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Defender%20for%20Cloud%20Apps",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Microsoft Defender for Cloud Apps licensing or tenant settings do not include the signal types expected by the connector.",
+              "The service account or admin consent for Microsoft Defender for Cloud Apps is incomplete, so data retrieval fails silently.",
+              "Duplicate or noisy incidents appear when default content for Microsoft Defender for Cloud Apps is enabled without tuning."
+            ]
+          },
+          "export_metadata": {
+            "group": "Microsoft XDR",
+            "priority_score": 75,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "defender-xdr",
+              "microsoft-365",
+              "okta",
+              "zscaler"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "microsoft-purview",
@@ -205,7 +1242,80 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": true,
-          "tags": ["purview", "dlp", "data loss prevention", "insider risk", "compliance"]
+          "tags": [
+            "purview",
+            "dlp",
+            "data loss prevention",
+            "insider risk",
+            "compliance"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 6,
+            "data_volume_risk": "medium",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "data",
+              "compliance",
+              "insider-risk"
+            ],
+            "dependencies": [
+              "microsoft-365",
+              "microsoft-entra-id"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Verify licensing, service settings, and delegated permissions required for Microsoft Purview.",
+                "effort_hours": 1.2,
+                "skill_level": "beginner"
+              },
+              {
+                "order": 2,
+                "task": "Connect Microsoft Purview to Microsoft Sentinel and enable the required data types or incident sync options.",
+                "effort_hours": 2.1,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 3,
+                "task": "Deploy the packaged analytics rules and workbook content for Microsoft Purview, then tune noisy detections.",
+                "effort_hours": 1.2,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Microsoft Purview using a DLP alert, insider risk alert, or data classification event and confirm incidents or records appear in Sentinel.",
+                "effort_hours": 1.5,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Microsoft Purview records appear in the expected Sentinel tables within 5 to 10 minutes.",
+              "Run a packaged workbook or KQL query to confirm entities, users, and device fields from Microsoft Purview are normalized.",
+              "Use a DLP alert, insider risk alert, or data classification event to confirm analytics or incident sync works end-to-end for Microsoft Purview."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Microsoft%20Purview",
+            "owner_recommended": "SOC Analyst",
+            "common_issues": [
+              "Microsoft Purview licensing or tenant settings do not include the signal types expected by the connector.",
+              "The service account or admin consent for Microsoft Purview is incomplete, so data retrieval fails silently.",
+              "Duplicate or noisy incidents appear when default content for Microsoft Purview is enabled without tuning."
+            ]
+          },
+          "export_metadata": {
+            "group": "Microsoft XDR",
+            "priority_score": 72,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "defender-for-office-365",
+              "defender-for-cloud-apps",
+              "cyberark"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         }
       ]
     },
@@ -225,7 +1335,78 @@
           "workbooks": 1,
           "playbooks": 3,
           "is1P": false,
-          "tags": ["crowdstrike", "falcon", "endpoint", "edr", "alerts", "detections"]
+          "tags": [
+            "crowdstrike",
+            "falcon",
+            "endpoint",
+            "edr",
+            "alerts",
+            "detections"
+          ],
+          "value_scoring": {
+            "complexity_level": 4,
+            "setup_hours": 28,
+            "data_volume_risk": "medium",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "endpoint",
+              "malware",
+              "threat"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Create the API account, token, or application registration required to read CrowdStrike Falcon Endpoint Protection telemetry.",
+                "effort_hours": 7.0,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure the CrowdStrike Falcon Endpoint Protection connector in Microsoft Sentinel, including scopes, endpoint details, and polling filters.",
+                "effort_hours": 11.2,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged analytics/workbooks for CrowdStrike Falcon Endpoint Protection and align field mappings with the vendor schema.",
+                "effort_hours": 4.2,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate CrowdStrike Falcon Endpoint Protection using a Falcon detection, prevention event, or device telemetry record and confirm parsed records plus incidents appear as expected.",
+                "effort_hours": 5.6,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify CrowdStrike Falcon Endpoint Protection data is arriving on schedule and that pagination or polling windows are not dropping events.",
+              "Run a workbook or KQL query to confirm CrowdStrike Falcon Endpoint Protection entities are normalized and usable by analytics rules.",
+              "Use a Falcon detection, prevention event, or device telemetry record to validate end-to-end ingestion and alert creation for CrowdStrike Falcon Endpoint Protection."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/CrowdStrike%20Falcon%20Endpoint%20Protection",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "The API credential for CrowdStrike Falcon Endpoint Protection is missing a required scope or expired before first sync completed.",
+              "Rate limiting, proxy settings, or pagination errors in CrowdStrike Falcon Endpoint Protection cause partial ingestion.",
+              "Field mapping or timestamp normalization for CrowdStrike Falcon Endpoint Protection needs tuning before the built-in analytics are reliable."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 57,
+            "phased_deployment": 2,
+            "integrates_with": [
+              "windows-security-events",
+              "threat-intelligence",
+              "microsoft-entra-id"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "palo-alto-networks",
@@ -238,7 +1419,82 @@
           "workbooks": 2,
           "playbooks": 5,
           "is1P": false,
-          "tags": ["palo alto", "pan-os", "firewall", "network", "threat", "traffic", "url filtering"]
+          "tags": [
+            "palo alto",
+            "pan-os",
+            "firewall",
+            "network",
+            "threat",
+            "traffic",
+            "url filtering"
+          ],
+          "value_scoring": {
+            "complexity_level": 4,
+            "setup_hours": 26,
+            "data_volume_risk": "high",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "network",
+              "perimeter",
+              "web",
+              "threat"
+            ],
+            "dependencies": [
+              "linux-syslog"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Prepare the CEF/syslog collector and verify network reachability from Palo Alto Networks (Firewall) to the Sentinel ingestion path.",
+                "effort_hours": 5.2,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure Palo Alto Networks (Firewall) to forward the required firewall, threat, and traffic logs in CEF/syslog format.",
+                "effort_hours": 11.7,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged parser, analytics rules, and workbooks for Palo Alto Networks (Firewall), then tune filters to control noise.",
+                "effort_hours": 3.9,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate Palo Alto Networks (Firewall) with a test traffic, threat, or URL filtering event and confirm normalized events are searchable in Microsoft Sentinel.",
+                "effort_hours": 5.2,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Palo Alto Networks (Firewall) logs appear in the CommonSecurityLog or mapped table within a few minutes of generation.",
+              "Run a KQL query to confirm source IP, destination IP, action, and severity fields from Palo Alto Networks (Firewall) are parsed correctly.",
+              "Use a test traffic, threat, or URL filtering event to confirm at least one built-in analytic can create an incident from Palo Alto Networks (Firewall) telemetry."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/PaloAlto-PAN-OS",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Palo Alto Networks (Firewall) is sending syslog to the wrong port, hostname, or collector, so no data reaches Sentinel.",
+              "CEF formatting, time zone offsets, or hostname parsing for Palo Alto Networks (Firewall) break normalization and analytics coverage.",
+              "Overly broad log selection on Palo Alto Networks (Firewall) causes ingestion spikes before noise filters are applied."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 60,
+            "phased_deployment": 2,
+            "integrates_with": [
+              "threat-intelligence",
+              "azure-firewall",
+              "zscaler"
+            ],
+            "estimated_monthly_cost": "high"
+          }
         },
         {
           "id": "palo-alto-prisma-cloud",
@@ -251,7 +1507,77 @@
           "workbooks": 1,
           "playbooks": 2,
           "is1P": false,
-          "tags": ["palo alto", "prisma", "cloud", "cspm", "workload protection"]
+          "tags": [
+            "palo alto",
+            "prisma",
+            "cloud",
+            "cspm",
+            "workload protection"
+          ],
+          "value_scoring": {
+            "complexity_level": 4,
+            "setup_hours": 18,
+            "data_volume_risk": "medium",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "cloud",
+              "workload",
+              "vulnerability"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Create the cross-cloud role, export path, and permissions required to access Palo Alto Prisma Cloud telemetry.",
+                "effort_hours": 4.5,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 2,
+                "task": "Onboard pilot accounts or projects to the Palo Alto Prisma Cloud connector and enable audit plus threat data export.",
+                "effort_hours": 8.1,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged analytics/workbooks for Palo Alto Prisma Cloud and map account, project, or subscription context.",
+                "effort_hours": 1.8,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Palo Alto Prisma Cloud using a Prisma Cloud posture finding or workload alert from a pilot scope and confirm incidents or findings appear in Sentinel.",
+                "effort_hours": 3.6,
+                "skill_level": "advanced"
+              }
+            ],
+            "validation_steps": [
+              "Verify Palo Alto Prisma Cloud audit and threat records arrive from at least one pilot account or project.",
+              "Run a KQL query to confirm cloud account identifiers, regions, and severity fields from Palo Alto Prisma Cloud are mapped correctly.",
+              "Use a Prisma Cloud posture finding or workload alert to validate the ingestion path and analytics coverage before onboarding more scopes."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Palo%20Alto%20Prisma%20Cloud%20CSPM",
+            "owner_recommended": "Cloud Admin",
+            "common_issues": [
+              "The cross-cloud role or export service for Palo Alto Prisma Cloud is missing required permissions, causing empty datasets.",
+              "Only a subset of accounts or projects were onboarded to Palo Alto Prisma Cloud, leading to incomplete visibility.",
+              "Routing data from Palo Alto Prisma Cloud through storage or event services adds latency until export settings are tuned."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 61,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "defender-for-cloud",
+              "aws",
+              "google-cloud"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "fortinet",
@@ -264,7 +1590,79 @@
           "workbooks": 1,
           "playbooks": 3,
           "is1P": false,
-          "tags": ["fortinet", "fortigate", "firewall", "network", "utm", "cef"]
+          "tags": [
+            "fortinet",
+            "fortigate",
+            "firewall",
+            "network",
+            "utm",
+            "cef"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 18,
+            "data_volume_risk": "high",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "network",
+              "perimeter",
+              "web"
+            ],
+            "dependencies": [
+              "linux-syslog"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Prepare the CEF/syslog collector and verify network reachability from Fortinet FortiGate to the Sentinel ingestion path.",
+                "effort_hours": 3.6,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure Fortinet FortiGate to forward the required firewall, threat, and traffic logs in CEF/syslog format.",
+                "effort_hours": 8.1,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged parser, analytics rules, and workbooks for Fortinet FortiGate, then tune filters to control noise.",
+                "effort_hours": 2.7,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate Fortinet FortiGate with a FortiGate threat, UTM, or deny event and confirm normalized events are searchable in Microsoft Sentinel.",
+                "effort_hours": 3.6,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Fortinet FortiGate logs appear in the CommonSecurityLog or mapped table within a few minutes of generation.",
+              "Run a KQL query to confirm source IP, destination IP, action, and severity fields from Fortinet FortiGate are parsed correctly.",
+              "Use a FortiGate threat, UTM, or deny event to confirm at least one built-in analytic can create an incident from Fortinet FortiGate telemetry."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Fortinet%20FortiGate",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Fortinet FortiGate is sending syslog to the wrong port, hostname, or collector, so no data reaches Sentinel.",
+              "CEF formatting, time zone offsets, or hostname parsing for Fortinet FortiGate break normalization and analytics coverage.",
+              "Overly broad log selection on Fortinet FortiGate causes ingestion spikes before noise filters are applied."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 65,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "threat-intelligence",
+              "azure-firewall"
+            ],
+            "estimated_monthly_cost": "high"
+          }
         },
         {
           "id": "cisco-asa",
@@ -277,7 +1675,78 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": false,
-          "tags": ["cisco", "asa", "ftd", "firepower", "firewall", "network"]
+          "tags": [
+            "cisco",
+            "asa",
+            "ftd",
+            "firepower",
+            "firewall",
+            "network"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 16,
+            "data_volume_risk": "high",
+            "business_impact": "medium",
+            "maturity": "ga",
+            "detection_areas": [
+              "network",
+              "perimeter"
+            ],
+            "dependencies": [
+              "linux-syslog"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Prepare the CEF/syslog collector and verify network reachability from Cisco ASA/FTD to the Sentinel ingestion path.",
+                "effort_hours": 3.2,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure Cisco ASA/FTD to forward the required firewall, threat, and traffic logs in CEF/syslog format.",
+                "effort_hours": 7.2,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged parser, analytics rules, and workbooks for Cisco ASA/FTD, then tune filters to control noise.",
+                "effort_hours": 2.4,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate Cisco ASA/FTD with a Cisco ASA or FTD connection, intrusion, or deny event and confirm normalized events are searchable in Microsoft Sentinel.",
+                "effort_hours": 3.2,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Cisco ASA/FTD logs appear in the CommonSecurityLog or mapped table within a few minutes of generation.",
+              "Run a KQL query to confirm source IP, destination IP, action, and severity fields from Cisco ASA/FTD are parsed correctly.",
+              "Use a Cisco ASA or FTD connection, intrusion, or deny event to confirm at least one built-in analytic can create an incident from Cisco ASA/FTD telemetry."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Cisco%20ASA",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Cisco ASA/FTD is sending syslog to the wrong port, hostname, or collector, so no data reaches Sentinel.",
+              "CEF formatting, time zone offsets, or hostname parsing for Cisco ASA/FTD break normalization and analytics coverage.",
+              "Overly broad log selection on Cisco ASA/FTD causes ingestion spikes before noise filters are applied."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 53,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "threat-intelligence",
+              "azure-network-security-group"
+            ],
+            "estimated_monthly_cost": "high"
+          }
         },
         {
           "id": "zscaler",
@@ -290,7 +1759,79 @@
           "workbooks": 2,
           "playbooks": 3,
           "is1P": false,
-          "tags": ["zscaler", "zia", "web security", "proxy", "dns", "firewall"]
+          "tags": [
+            "zscaler",
+            "zia",
+            "web security",
+            "proxy",
+            "dns",
+            "firewall"
+          ],
+          "value_scoring": {
+            "complexity_level": 4,
+            "setup_hours": 26,
+            "data_volume_risk": "high",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "web",
+              "network",
+              "dns",
+              "saas"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Create the API account, token, or application registration required to read Zscaler Internet Access telemetry.",
+                "effort_hours": 6.5,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure the Zscaler Internet Access connector in Microsoft Sentinel, including scopes, endpoint details, and polling filters.",
+                "effort_hours": 10.4,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged analytics/workbooks for Zscaler Internet Access and align field mappings with the vendor schema.",
+                "effort_hours": 3.9,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate Zscaler Internet Access using a web block, DNS policy event, or cloud firewall event and confirm parsed records plus incidents appear as expected.",
+                "effort_hours": 5.2,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Zscaler Internet Access data is arriving on schedule and that pagination or polling windows are not dropping events.",
+              "Run a workbook or KQL query to confirm Zscaler Internet Access entities are normalized and usable by analytics rules.",
+              "Use a web block, DNS policy event, or cloud firewall event to validate end-to-end ingestion and alert creation for Zscaler Internet Access."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Zscaler%20Internet%20Access",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "The API credential for Zscaler Internet Access is missing a required scope or expired before first sync completed.",
+              "Rate limiting, proxy settings, or pagination errors in Zscaler Internet Access cause partial ingestion.",
+              "Field mapping or timestamp normalization for Zscaler Internet Access needs tuning before the built-in analytics are reliable."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 60,
+            "phased_deployment": 2,
+            "integrates_with": [
+              "microsoft-365",
+              "defender-for-cloud-apps",
+              "proofpoint"
+            ],
+            "estimated_monthly_cost": "high"
+          }
         },
         {
           "id": "okta",
@@ -303,7 +1844,77 @@
           "workbooks": 1,
           "playbooks": 4,
           "is1P": false,
-          "tags": ["okta", "sso", "identity", "authentication", "mfa"]
+          "tags": [
+            "okta",
+            "sso",
+            "identity",
+            "authentication",
+            "mfa"
+          ],
+          "value_scoring": {
+            "complexity_level": 4,
+            "setup_hours": 16,
+            "data_volume_risk": "medium",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "identity",
+              "authentication",
+              "privileged-access"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Create the API account, token, or application registration required to read Okta Single Sign-On telemetry.",
+                "effort_hours": 4.0,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure the Okta Single Sign-On connector in Microsoft Sentinel, including scopes, endpoint details, and polling filters.",
+                "effort_hours": 6.4,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged analytics/workbooks for Okta Single Sign-On and align field mappings with the vendor schema.",
+                "effort_hours": 2.4,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate Okta Single Sign-On using a test Okta sign-in, MFA challenge, or admin activity and confirm parsed records plus incidents appear as expected.",
+                "effort_hours": 3.2,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Okta Single Sign-On data is arriving on schedule and that pagination or polling windows are not dropping events.",
+              "Run a workbook or KQL query to confirm Okta Single Sign-On entities are normalized and usable by analytics rules.",
+              "Use a test Okta sign-in, MFA challenge, or admin activity to validate end-to-end ingestion and alert creation for Okta Single Sign-On."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Okta%20Single%20Sign-On",
+            "owner_recommended": "Identity Admin",
+            "common_issues": [
+              "The API credential for Okta Single Sign-On is missing a required scope or expired before first sync completed.",
+              "Rate limiting, proxy settings, or pagination errors in Okta Single Sign-On cause partial ingestion.",
+              "Field mapping or timestamp normalization for Okta Single Sign-On needs tuning before the built-in analytics are reliable."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 62,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "microsoft-entra-id",
+              "defender-for-cloud-apps",
+              "cyberark"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "aws",
@@ -316,7 +1927,79 @@
           "workbooks": 2,
           "playbooks": 0,
           "is1P": false,
-          "tags": ["aws", "amazon", "cloudtrail", "vpc", "guardduty", "multi-cloud"]
+          "tags": [
+            "aws",
+            "amazon",
+            "cloudtrail",
+            "vpc",
+            "guardduty",
+            "multi-cloud"
+          ],
+          "value_scoring": {
+            "complexity_level": 4,
+            "setup_hours": 30,
+            "data_volume_risk": "high",
+            "business_impact": "critical",
+            "maturity": "ga",
+            "detection_areas": [
+              "cloud",
+              "network",
+              "workload",
+              "threat"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Create the cross-cloud role, export path, and permissions required to access Amazon Web Services (AWS) telemetry.",
+                "effort_hours": 7.5,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 2,
+                "task": "Onboard pilot accounts or projects to the Amazon Web Services (AWS) connector and enable audit plus threat data export.",
+                "effort_hours": 13.5,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged analytics/workbooks for Amazon Web Services (AWS) and map account, project, or subscription context.",
+                "effort_hours": 3.0,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Amazon Web Services (AWS) using a CloudTrail event, GuardDuty finding, or VPC flow record from a pilot scope and confirm incidents or findings appear in Sentinel.",
+                "effort_hours": 6.0,
+                "skill_level": "advanced"
+              }
+            ],
+            "validation_steps": [
+              "Verify Amazon Web Services (AWS) audit and threat records arrive from at least one pilot account or project.",
+              "Run a KQL query to confirm cloud account identifiers, regions, and severity fields from Amazon Web Services (AWS) are mapped correctly.",
+              "Use a CloudTrail event, GuardDuty finding, or VPC flow record to validate the ingestion path and analytics coverage before onboarding more scopes."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Amazon%20Web%20Services",
+            "owner_recommended": "Cloud Admin",
+            "common_issues": [
+              "The cross-cloud role or export service for Amazon Web Services (AWS) is missing required permissions, causing empty datasets.",
+              "Only a subset of accounts or projects were onboarded to Amazon Web Services (AWS), leading to incomplete visibility.",
+              "Routing data from Amazon Web Services (AWS) through storage or event services adds latency until export settings are tuned."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 70,
+            "phased_deployment": 2,
+            "integrates_with": [
+              "defender-for-cloud",
+              "palo-alto-prisma-cloud",
+              "threat-intelligence"
+            ],
+            "estimated_monthly_cost": "high"
+          }
         },
         {
           "id": "google-cloud",
@@ -329,7 +2012,77 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": false,
-          "tags": ["gcp", "google", "cloud", "audit", "multi-cloud"]
+          "tags": [
+            "gcp",
+            "google",
+            "cloud",
+            "audit",
+            "multi-cloud"
+          ],
+          "value_scoring": {
+            "complexity_level": 4,
+            "setup_hours": 28,
+            "data_volume_risk": "medium",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "cloud",
+              "identity",
+              "threat"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Create the cross-cloud role, export path, and permissions required to access Google Cloud Platform (GCP) telemetry.",
+                "effort_hours": 7.0,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 2,
+                "task": "Onboard pilot accounts or projects to the Google Cloud Platform (GCP) connector and enable audit plus threat data export.",
+                "effort_hours": 12.6,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged analytics/workbooks for Google Cloud Platform (GCP) and map account, project, or subscription context.",
+                "effort_hours": 2.8,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Google Cloud Platform (GCP) using a GCP audit event or Security Command Center finding from a pilot scope and confirm incidents or findings appear in Sentinel.",
+                "effort_hours": 5.6,
+                "skill_level": "advanced"
+              }
+            ],
+            "validation_steps": [
+              "Verify Google Cloud Platform (GCP) audit and threat records arrive from at least one pilot account or project.",
+              "Run a KQL query to confirm cloud account identifiers, regions, and severity fields from Google Cloud Platform (GCP) are mapped correctly.",
+              "Use a GCP audit event or Security Command Center finding to validate the ingestion path and analytics coverage before onboarding more scopes."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Google%20Cloud%20Platform%20IAM",
+            "owner_recommended": "Cloud Admin",
+            "common_issues": [
+              "The cross-cloud role or export service for Google Cloud Platform (GCP) is missing required permissions, causing empty datasets.",
+              "Only a subset of accounts or projects were onboarded to Google Cloud Platform (GCP), leading to incomplete visibility.",
+              "Routing data from Google Cloud Platform (GCP) through storage or event services adds latency until export settings are tuned."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 57,
+            "phased_deployment": 2,
+            "integrates_with": [
+              "defender-for-cloud",
+              "palo-alto-prisma-cloud",
+              "threat-intelligence"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "checkpoint",
@@ -342,7 +2095,78 @@
           "workbooks": 1,
           "playbooks": 2,
           "is1P": false,
-          "tags": ["check point", "checkpoint", "firewall", "network", "cef"]
+          "tags": [
+            "check point",
+            "checkpoint",
+            "firewall",
+            "network",
+            "cef"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 18,
+            "data_volume_risk": "high",
+            "business_impact": "medium",
+            "maturity": "ga",
+            "detection_areas": [
+              "network",
+              "perimeter",
+              "threat"
+            ],
+            "dependencies": [
+              "linux-syslog"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Prepare the CEF/syslog collector and verify network reachability from Check Point to the Sentinel ingestion path.",
+                "effort_hours": 3.6,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure Check Point to forward the required firewall, threat, and traffic logs in CEF/syslog format.",
+                "effort_hours": 8.1,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged parser, analytics rules, and workbooks for Check Point, then tune filters to control noise.",
+                "effort_hours": 2.7,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate Check Point with a Check Point threat prevention or firewall event and confirm normalized events are searchable in Microsoft Sentinel.",
+                "effort_hours": 3.6,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Check Point logs appear in the CommonSecurityLog or mapped table within a few minutes of generation.",
+              "Run a KQL query to confirm source IP, destination IP, action, and severity fields from Check Point are parsed correctly.",
+              "Use a Check Point threat prevention or firewall event to confirm at least one built-in analytic can create an incident from Check Point telemetry."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Check%20Point",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Check Point is sending syslog to the wrong port, hostname, or collector, so no data reaches Sentinel.",
+              "CEF formatting, time zone offsets, or hostname parsing for Check Point break normalization and analytics coverage.",
+              "Overly broad log selection on Check Point causes ingestion spikes before noise filters are applied."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 55,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "threat-intelligence",
+              "azure-firewall"
+            ],
+            "estimated_monthly_cost": "high"
+          }
         },
         {
           "id": "proofpoint",
@@ -355,7 +2179,77 @@
           "workbooks": 1,
           "playbooks": 3,
           "is1P": false,
-          "tags": ["proofpoint", "tap", "email", "phishing", "targeted attack"]
+          "tags": [
+            "proofpoint",
+            "tap",
+            "email",
+            "phishing",
+            "targeted attack"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 14,
+            "data_volume_risk": "medium",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "email",
+              "phishing",
+              "threat"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Create the API account, token, or application registration required to read Proofpoint TAP telemetry.",
+                "effort_hours": 3.5,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure the Proofpoint TAP connector in Microsoft Sentinel, including scopes, endpoint details, and polling filters.",
+                "effort_hours": 5.6,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged analytics/workbooks for Proofpoint TAP and align field mappings with the vendor schema.",
+                "effort_hours": 2.1,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate Proofpoint TAP using a TAP phishing verdict, clicked URL event, or targeted attack alert and confirm parsed records plus incidents appear as expected.",
+                "effort_hours": 2.8,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Proofpoint TAP data is arriving on schedule and that pagination or polling windows are not dropping events.",
+              "Run a workbook or KQL query to confirm Proofpoint TAP entities are normalized and usable by analytics rules.",
+              "Use a TAP phishing verdict, clicked URL event, or targeted attack alert to validate end-to-end ingestion and alert creation for Proofpoint TAP."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Proofpoint%20TAP",
+            "owner_recommended": "SOC Analyst",
+            "common_issues": [
+              "The API credential for Proofpoint TAP is missing a required scope or expired before first sync completed.",
+              "Rate limiting, proxy settings, or pagination errors in Proofpoint TAP cause partial ingestion.",
+              "Field mapping or timestamp normalization for Proofpoint TAP needs tuning before the built-in analytics are reliable."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 68,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "microsoft-365",
+              "defender-for-office-365",
+              "threat-intelligence"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "sentinelone",
@@ -368,7 +2262,77 @@
           "workbooks": 1,
           "playbooks": 2,
           "is1P": false,
-          "tags": ["sentinelone", "endpoint", "edr", "alerts", "detections"]
+          "tags": [
+            "sentinelone",
+            "endpoint",
+            "edr",
+            "alerts",
+            "detections"
+          ],
+          "value_scoring": {
+            "complexity_level": 4,
+            "setup_hours": 24,
+            "data_volume_risk": "medium",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "endpoint",
+              "malware",
+              "threat"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Create the API account, token, or application registration required to read SentinelOne telemetry.",
+                "effort_hours": 6.0,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure the SentinelOne connector in Microsoft Sentinel, including scopes, endpoint details, and polling filters.",
+                "effort_hours": 9.6,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged analytics/workbooks for SentinelOne and align field mappings with the vendor schema.",
+                "effort_hours": 3.6,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate SentinelOne using a SentinelOne detection or storyline event and confirm parsed records plus incidents appear as expected.",
+                "effort_hours": 4.8,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify SentinelOne data is arriving on schedule and that pagination or polling windows are not dropping events.",
+              "Run a workbook or KQL query to confirm SentinelOne entities are normalized and usable by analytics rules.",
+              "Use a SentinelOne detection or storyline event to validate end-to-end ingestion and alert creation for SentinelOne."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/SentinelOne",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "The API credential for SentinelOne is missing a required scope or expired before first sync completed.",
+              "Rate limiting, proxy settings, or pagination errors in SentinelOne cause partial ingestion.",
+              "Field mapping or timestamp normalization for SentinelOne needs tuning before the built-in analytics are reliable."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 58,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "windows-security-events",
+              "threat-intelligence",
+              "microsoft-entra-id"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "sophos",
@@ -381,7 +2345,78 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": false,
-          "tags": ["sophos", "xg", "firewall", "network", "web"]
+          "tags": [
+            "sophos",
+            "xg",
+            "firewall",
+            "network",
+            "web"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 16,
+            "data_volume_risk": "high",
+            "business_impact": "medium",
+            "maturity": "ga",
+            "detection_areas": [
+              "network",
+              "web",
+              "perimeter"
+            ],
+            "dependencies": [
+              "linux-syslog"
+            ]
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Prepare the CEF/syslog collector and verify network reachability from Sophos XG Firewall to the Sentinel ingestion path.",
+                "effort_hours": 3.2,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure Sophos XG Firewall to forward the required firewall, threat, and traffic logs in CEF/syslog format.",
+                "effort_hours": 7.2,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged parser, analytics rules, and workbooks for Sophos XG Firewall, then tune filters to control noise.",
+                "effort_hours": 2.4,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate Sophos XG Firewall with a Sophos web, IPS, or firewall event and confirm normalized events are searchable in Microsoft Sentinel.",
+                "effort_hours": 3.2,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Sophos XG Firewall logs appear in the CommonSecurityLog or mapped table within a few minutes of generation.",
+              "Run a KQL query to confirm source IP, destination IP, action, and severity fields from Sophos XG Firewall are parsed correctly.",
+              "Use a Sophos web, IPS, or firewall event to confirm at least one built-in analytic can create an incident from Sophos XG Firewall telemetry."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Sophos%20XG%20Firewall",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Sophos XG Firewall is sending syslog to the wrong port, hostname, or collector, so no data reaches Sentinel.",
+              "CEF formatting, time zone offsets, or hostname parsing for Sophos XG Firewall break normalization and analytics coverage.",
+              "Overly broad log selection on Sophos XG Firewall causes ingestion spikes before noise filters are applied."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 56,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "threat-intelligence",
+              "azure-firewall"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "linux-syslog",
@@ -394,7 +2429,85 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": false,
-          "tags": ["syslog", "linux", "network", "devices", "cef"]
+          "tags": [
+            "syslog",
+            "linux",
+            "network",
+            "devices",
+            "cef"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 52,
+            "data_volume_risk": "high",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "infrastructure",
+              "network",
+              "endpoint"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Inventory pilot Linux hosts and network devices that will send data through Syslog (Linux/Network Devices).",
+                "effort_hours": 5.2,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Design and configure the syslog collector architecture, routing, and retention required for Syslog (Linux/Network Devices).",
+                "effort_hours": 18.2,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Configure forwarding on pilot devices and connect the collector to Microsoft Sentinel for Syslog (Linux/Network Devices).",
+                "effort_hours": 13.0,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Enable packaged analytics/workbooks, then tune facility, parser, and noise controls for Syslog (Linux/Network Devices).",
+                "effort_hours": 7.8,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 5,
+                "task": "Validate Syslog (Linux/Network Devices) using a syslog message from a pilot Linux host or network device from multiple pilot sources before broad rollout.",
+                "effort_hours": 7.8,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Syslog (Linux/Network Devices) data is arriving from all pilot devices with expected hostnames and facility values.",
+              "Run a KQL query to confirm parser coverage for both Linux hosts and network appliances routed through Syslog (Linux/Network Devices).",
+              "Use a syslog message from a pilot Linux host or network device from multiple devices to prove the collector design is stable before wider deployment."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Syslog",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Syslog forwarding for Syslog (Linux/Network Devices) is blocked by firewalls, NAT, or collector listener configuration.",
+              "Collector parsing for Syslog (Linux/Network Devices) needs tuning to separate Linux host logs from network device logs.",
+              "High-volume facilities routed through Syslog (Linux/Network Devices) can create unnecessary ingestion cost until filters are tuned."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 61,
+            "phased_deployment": 3,
+            "integrates_with": [
+              "palo-alto-networks",
+              "fortinet",
+              "cisco-asa",
+              "checkpoint",
+              "sophos"
+            ],
+            "estimated_monthly_cost": "high"
+          }
         },
         {
           "id": "windows-security-events",
@@ -407,7 +2520,85 @@
           "workbooks": 2,
           "playbooks": 0,
           "is1P": false,
-          "tags": ["windows", "security events", "logon", "process", "audit", "event log"]
+          "tags": [
+            "windows",
+            "security events",
+            "logon",
+            "process",
+            "audit",
+            "event log"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 56,
+            "data_volume_risk": "high",
+            "business_impact": "critical",
+            "maturity": "ga",
+            "detection_areas": [
+              "identity",
+              "endpoint",
+              "privileged-access",
+              "threat"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Inventory pilot Windows systems, event channels, and required Event IDs for the initial rollout.",
+                "effort_hours": 5.6,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Deploy Azure Monitor Agent and Data Collection Rules to the pilot scope for Windows Security Events.",
+                "effort_hours": 19.6,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Configure the Windows Security Events connector, filtering, and table mapping in Microsoft Sentinel.",
+                "effort_hours": 11.2,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Enable analytics/workbooks and tune event selection to control ingestion volume and alert quality.",
+                "effort_hours": 8.4,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 5,
+                "task": "Validate Windows Security Events using a pilot Windows logon or process creation event across pilot hosts before larger deployment.",
+                "effort_hours": 11.2,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify SecurityEvent records appear from every pilot Windows host within the expected latency window.",
+              "Run a KQL query to confirm logon, process creation, and privilege-use fields are mapped consistently.",
+              "Use a pilot Windows logon or process creation event to validate analytics coverage and confirm the selected Event IDs are sufficient."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Windows%20Security%20Events",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "Azure Monitor Agent or Data Collection Rules were not assigned to all pilot Windows systems.",
+              "Too many Event IDs were selected, causing ingestion cost spikes and noisy detections.",
+              "Windows Security Events timestamps or hostnames are inconsistent across domains until collection rules are standardized."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 74,
+            "phased_deployment": 3,
+            "integrates_with": [
+              "microsoft-entra-id",
+              "defender-for-endpoint",
+              "defender-for-identity"
+            ],
+            "estimated_monthly_cost": "high"
+          }
         },
         {
           "id": "threat-intelligence",
@@ -420,7 +2611,87 @@
           "workbooks": 1,
           "playbooks": 3,
           "is1P": false,
-          "tags": ["threat intelligence", "ti", "ioc", "indicators", "taxii", "stix"]
+          "tags": [
+            "threat intelligence",
+            "ti",
+            "ioc",
+            "indicators",
+            "taxii",
+            "stix"
+          ],
+          "value_scoring": {
+            "complexity_level": 3,
+            "setup_hours": 12,
+            "data_volume_risk": "low",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "threat",
+              "network",
+              "endpoint",
+              "email",
+              "identity"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Select the feed sources, TAXII servers, or TIP integrations that will populate Threat Intelligence.",
+                "effort_hours": 1.8,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure the Threat Intelligence connector, authentication, and indicator retention settings.",
+                "effort_hours": 4.2,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable matching analytics, workbooks, and any normalization steps required for Threat Intelligence.",
+                "effort_hours": 2.4,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 4,
+                "task": "Validate Threat Intelligence using a harmless test IOC or a newly imported indicator set and confirm indicator matches can drive incidents.",
+                "effort_hours": 3.6,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Threat Intelligence indicators are present with valid types, confidence, and expiration metadata.",
+              "Run a query or workbook to confirm indicators are matching against onboarded log sources.",
+              "Use a harmless test IOC or a newly imported indicator set to prove an indicator can be matched and surfaced through analytics or hunting."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Threat%20Intelligence",
+            "owner_recommended": "SOC Analyst",
+            "common_issues": [
+              "Authentication or TAXII polling for Threat Intelligence fails, leaving the indicator table empty.",
+              "Indicator expiration, deduplication, or confidence thresholds in Threat Intelligence are too aggressive for the use case.",
+              "The dependent log sources for Threat Intelligence matching are not onboarded yet, so no hits appear."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 75,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "azure-firewall",
+              "defender-for-endpoint",
+              "defender-for-office-365",
+              "palo-alto-networks",
+              "fortinet",
+              "cisco-asa",
+              "checkpoint",
+              "proofpoint",
+              "sentinelone",
+              "sophos"
+            ],
+            "estimated_monthly_cost": "low"
+          }
         },
         {
           "id": "trend-micro-vision-one",
@@ -433,7 +2704,80 @@
           "workbooks": 1,
           "playbooks": 2,
           "is1P": false,
-          "tags": ["trend micro", "trendmicro", "vision one", "xdr", "endpoint", "email", "network"]
+          "tags": [
+            "trend micro",
+            "trendmicro",
+            "vision one",
+            "xdr",
+            "endpoint",
+            "email",
+            "network"
+          ],
+          "value_scoring": {
+            "complexity_level": 4,
+            "setup_hours": 24,
+            "data_volume_risk": "medium",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "endpoint",
+              "email",
+              "network",
+              "threat"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Create the API account, token, or application registration required to read Trend Micro Vision One telemetry.",
+                "effort_hours": 6.0,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure the Trend Micro Vision One connector in Microsoft Sentinel, including scopes, endpoint details, and polling filters.",
+                "effort_hours": 9.6,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged analytics/workbooks for Trend Micro Vision One and align field mappings with the vendor schema.",
+                "effort_hours": 3.6,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate Trend Micro Vision One using a Vision One alert or workbench event and confirm parsed records plus incidents appear as expected.",
+                "effort_hours": 4.8,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Trend Micro Vision One data is arriving on schedule and that pagination or polling windows are not dropping events.",
+              "Run a workbook or KQL query to confirm Trend Micro Vision One entities are normalized and usable by analytics rules.",
+              "Use a Vision One alert or workbench event to validate end-to-end ingestion and alert creation for Trend Micro Vision One."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Trend%20Micro%20Vision%20One",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "The API credential for Trend Micro Vision One is missing a required scope or expired before first sync completed.",
+              "Rate limiting, proxy settings, or pagination errors in Trend Micro Vision One cause partial ingestion.",
+              "Field mapping or timestamp normalization for Trend Micro Vision One needs tuning before the built-in analytics are reliable."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 61,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "microsoft-entra-id",
+              "threat-intelligence",
+              "proofpoint"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "trend-micro-deep-security",
@@ -446,7 +2790,78 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": false,
-          "tags": ["trend micro", "trendmicro", "deep security", "server", "workload", "ips"]
+          "tags": [
+            "trend micro",
+            "trendmicro",
+            "deep security",
+            "server",
+            "workload",
+            "ips"
+          ],
+          "value_scoring": {
+            "complexity_level": 4,
+            "setup_hours": 20,
+            "data_volume_risk": "medium",
+            "business_impact": "medium",
+            "maturity": "ga",
+            "detection_areas": [
+              "workload",
+              "endpoint",
+              "network"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Create the API account, token, or application registration required to read Trend Micro Deep Security telemetry.",
+                "effort_hours": 5.0,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure the Trend Micro Deep Security connector in Microsoft Sentinel, including scopes, endpoint details, and polling filters.",
+                "effort_hours": 8.0,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged analytics/workbooks for Trend Micro Deep Security and align field mappings with the vendor schema.",
+                "effort_hours": 3.0,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate Trend Micro Deep Security using a server workload protection event or IPS alert and confirm parsed records plus incidents appear as expected.",
+                "effort_hours": 4.0,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Trend Micro Deep Security data is arriving on schedule and that pagination or polling windows are not dropping events.",
+              "Run a workbook or KQL query to confirm Trend Micro Deep Security entities are normalized and usable by analytics rules.",
+              "Use a server workload protection event or IPS alert to validate end-to-end ingestion and alert creation for Trend Micro Deep Security."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/TrendMicro",
+            "owner_recommended": "Security Engineer",
+            "common_issues": [
+              "The API credential for Trend Micro Deep Security is missing a required scope or expired before first sync completed.",
+              "Rate limiting, proxy settings, or pagination errors in Trend Micro Deep Security cause partial ingestion.",
+              "Field mapping or timestamp normalization for Trend Micro Deep Security needs tuning before the built-in analytics are reliable."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 50,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "defender-for-cloud",
+              "aws",
+              "google-cloud"
+            ],
+            "estimated_monthly_cost": "medium"
+          }
         },
         {
           "id": "ping-identity",
@@ -459,7 +2874,79 @@
           "workbooks": 1,
           "playbooks": 0,
           "is1P": false,
-          "tags": ["ping identity", "pingidentity", "pingfederate", "sso", "identity", "authentication", "federation"]
+          "tags": [
+            "ping identity",
+            "pingidentity",
+            "pingfederate",
+            "sso",
+            "identity",
+            "authentication",
+            "federation"
+          ],
+          "value_scoring": {
+            "complexity_level": 4,
+            "setup_hours": 14,
+            "data_volume_risk": "low",
+            "business_impact": "medium",
+            "maturity": "ga",
+            "detection_areas": [
+              "identity",
+              "authentication",
+              "federation"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Create the API account, token, or application registration required to read Ping Identity PingFederate telemetry.",
+                "effort_hours": 3.5,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure the Ping Identity PingFederate connector in Microsoft Sentinel, including scopes, endpoint details, and polling filters.",
+                "effort_hours": 5.6,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged analytics/workbooks for Ping Identity PingFederate and align field mappings with the vendor schema.",
+                "effort_hours": 2.1,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate Ping Identity PingFederate using a PingFederate authentication, admin, or token issuance event and confirm parsed records plus incidents appear as expected.",
+                "effort_hours": 2.8,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify Ping Identity PingFederate data is arriving on schedule and that pagination or polling windows are not dropping events.",
+              "Run a workbook or KQL query to confirm Ping Identity PingFederate entities are normalized and usable by analytics rules.",
+              "Use a PingFederate authentication, admin, or token issuance event to validate end-to-end ingestion and alert creation for Ping Identity PingFederate."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/Ping%20Federate",
+            "owner_recommended": "Identity Admin",
+            "common_issues": [
+              "The API credential for Ping Identity PingFederate is missing a required scope or expired before first sync completed.",
+              "Rate limiting, proxy settings, or pagination errors in Ping Identity PingFederate cause partial ingestion.",
+              "Field mapping or timestamp normalization for Ping Identity PingFederate needs tuning before the built-in analytics are reliable."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 54,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "microsoft-entra-id",
+              "defender-for-cloud-apps",
+              "cyberark"
+            ],
+            "estimated_monthly_cost": "low"
+          }
         },
         {
           "id": "cyberark",
@@ -472,7 +2959,79 @@
           "workbooks": 1,
           "playbooks": 2,
           "is1P": false,
-          "tags": ["cyberark", "pam", "privileged access", "vault", "credentials", "sessions"]
+          "tags": [
+            "cyberark",
+            "pam",
+            "privileged access",
+            "vault",
+            "credentials",
+            "sessions"
+          ],
+          "value_scoring": {
+            "complexity_level": 4,
+            "setup_hours": 20,
+            "data_volume_risk": "low",
+            "business_impact": "high",
+            "maturity": "ga",
+            "detection_areas": [
+              "privileged-access",
+              "identity",
+              "threat"
+            ],
+            "dependencies": []
+          },
+          "planner": {
+            "setup_tasks": [
+              {
+                "order": 1,
+                "task": "Create the API account, token, or application registration required to read CyberArk Privilege Access Manager telemetry.",
+                "effort_hours": 5.0,
+                "skill_level": "intermediate"
+              },
+              {
+                "order": 2,
+                "task": "Configure the CyberArk Privilege Access Manager connector in Microsoft Sentinel, including scopes, endpoint details, and polling filters.",
+                "effort_hours": 8.0,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 3,
+                "task": "Enable the packaged analytics/workbooks for CyberArk Privilege Access Manager and align field mappings with the vendor schema.",
+                "effort_hours": 3.0,
+                "skill_level": "advanced"
+              },
+              {
+                "order": 4,
+                "task": "Validate CyberArk Privilege Access Manager using a privileged session, vault retrieval, or policy violation event and confirm parsed records plus incidents appear as expected.",
+                "effort_hours": 4.0,
+                "skill_level": "intermediate"
+              }
+            ],
+            "validation_steps": [
+              "Verify CyberArk Privilege Access Manager data is arriving on schedule and that pagination or polling windows are not dropping events.",
+              "Run a workbook or KQL query to confirm CyberArk Privilege Access Manager entities are normalized and usable by analytics rules.",
+              "Use a privileged session, vault retrieval, or policy violation event to validate end-to-end ingestion and alert creation for CyberArk Privilege Access Manager."
+            ],
+            "documentation_url": "https://github.com/Azure/Azure-Sentinel/tree/master/Solutions/CyberArk",
+            "owner_recommended": "Identity Admin",
+            "common_issues": [
+              "The API credential for CyberArk Privilege Access Manager is missing a required scope or expired before first sync completed.",
+              "Rate limiting, proxy settings, or pagination errors in CyberArk Privilege Access Manager cause partial ingestion.",
+              "Field mapping or timestamp normalization for CyberArk Privilege Access Manager needs tuning before the built-in analytics are reliable."
+            ]
+          },
+          "export_metadata": {
+            "group": "Third Party",
+            "priority_score": 60,
+            "phased_deployment": 1,
+            "integrates_with": [
+              "microsoft-entra-id",
+              "defender-for-identity",
+              "microsoft-purview",
+              "ping-identity"
+            ],
+            "estimated_monthly_cost": "low"
+          }
         }
       ]
     }

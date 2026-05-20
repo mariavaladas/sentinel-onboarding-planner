@@ -28,6 +28,22 @@
 
 **Next:** Deckard to lock scoring criteria; Sebastian to populate value_scoring fields across all solutions.
 
+### 2026-05-18T16:01:48.223+02:00: Full solutions.json enrichment
+**Data model decisions:**
+- Added `value_scoring`, `planner`, and `export_metadata` to all 35 solutions while preserving the legacy catalog fields.
+- Used category-driven export groups and the existing `github_url` as `planner.documentation_url` to avoid introducing a second documentation lookup.
+- Applied phase buckets directly from `setup_hours`: Phase 1 `<=25`, Phase 2 `26-50`, Phase 3 `>50`.
+
+**Scoring calculations:**
+- Implemented deterministic `priority_score = round(0.40*business_impact + 0.20*complexity_inverse + 0.15*setup_time_inverse + 0.15*detection_coverage + 0.10*maturity)`.
+- Mapped `business_impact` to `100/75/50/25`, `maturity` to `100/50/10`, and capped detection coverage at five domains (`100`).
+- Validated every stored score against the formula after enrichment so recommendation ordering can be trusted by the scoring engine and Excel export.
+
+**Patterns discovered:**
+- Azure first-party solutions are mostly Phase 1 quick wins with low complexity and strong foundational value.
+- Microsoft XDR solutions cluster around high-value identity, endpoint, email, and SaaS coverage, with Entra/M365 dependencies driving sequencing.
+- Phase 3 effort is concentrated in estate-wide collection connectors such as Linux Syslog and Windows Security Events, while most API-based SaaS integrations stay in Phase 1 or Phase 2.
+
 ## 2026-05-18 Scribe Update
 - Inbox decisions merged into decisions.md
 - All agent outcomes consolidated and cross-referenced
