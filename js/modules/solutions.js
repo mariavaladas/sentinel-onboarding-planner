@@ -5,7 +5,6 @@ export const selectedCategories = new Set();
 export const selectedSolutions = new Set();
 export const selectedVendors = new Set(['azure', 'microsoft365']);
 
-const defaultCategories = ['azure_first_party', 'microsoft_logs', 'third_party'];
 const solutionDataUrls = [
     new URL('../../data/solutions.json', import.meta.url),
     '../../data/solutions.json',
@@ -81,10 +80,11 @@ function createResultLogo(src, altText, fallbackText) {
 function getPreselectedSolutionIds() {
     const preSelectedIds = new Set();
 
-    ['azure_first_party', 'microsoft_logs'].forEach((categoryKey) => {
-        const category = solutionsData?.categories?.[categoryKey];
+    Object.values(solutionsData?.categories || {}).forEach((category) => {
         (category?.solutions || []).forEach((solution) => {
-            preSelectedIds.add(solution.id);
+            if (solution.is1P) {
+                preSelectedIds.add(solution.id);
+            }
         });
     });
 
@@ -168,9 +168,35 @@ function createSolutionItem(solution) {
 
     const meta = document.createElement('div');
     meta.className = 'solution-item-meta';
+
+    const complexity = Number(solution?.value_scoring?.complexity_level) || 0;
+    const diffLabel = solution?.onboarding?.difficulty
+        || (complexity <= 1 ? 'Easy' : complexity <= 2 ? 'Moderate' : 'Hard');
+    const diffClass = diffLabel.toLowerCase();
+    const hours = Number(solution?.value_scoring?.setup_hours) || 0;
+    const hoursText = hours > 0 ? ` · ~${hours}h` : '';
+
     meta.textContent = `${solution.analytics} rules · ${solution.workbooks} workbooks · ${solution.playbooks} playbooks`;
 
-    info.append(name, meta);
+    const badges = document.createElement('div');
+    badges.className = 'solution-item-badges';
+
+    if (complexity > 0 || solution?.onboarding?.difficulty) {
+        const diffBadge = document.createElement('span');
+        diffBadge.className = `solution-difficulty-badge difficulty-${diffClass}`;
+        diffBadge.textContent = `${diffLabel}${hoursText}`;
+        badges.appendChild(diffBadge);
+    }
+
+    const ownerRec = solution?.planner?.owner_recommended;
+    if (ownerRec) {
+        const ownerBadge = document.createElement('span');
+        ownerBadge.className = 'solution-owner-badge';
+        ownerBadge.textContent = ownerRec;
+        badges.appendChild(ownerBadge);
+    }
+
+    info.append(name, meta, badges);
 
     const check = document.createElement('div');
     check.className = 'solution-item-check';
@@ -265,7 +291,7 @@ export function initStep3() {
 
     panelsContainer.replaceChildren();
     selectedCategories.clear();
-    defaultCategories.forEach((category) => selectedCategories.add(category));
+    Object.keys(solutionsData?.categories || {}).forEach((category) => selectedCategories.add(category));
 
     const preSelectedIds = getPreselectedSolutionIds();
     preSelectedIds.forEach((solutionId) => selectedSolutions.add(solutionId));

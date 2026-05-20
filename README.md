@@ -16,22 +16,21 @@ This tool helps customers:
 Overview of what Sentinel Value Pack delivers (Connect → Detect → Respond → Visualize).
 
 ### Step 2: Data Source Categories
-Choose from:
-- **Azure First Party** — Azure Activity, Firewall, Key Vault, NSG, DDoS, WAF
-- **Microsoft 365 & Security** — Entra ID, Office 365, Defender XDR, MDE, MDO, MDI, MDA, Purview
-- **Third Party** — CrowdStrike, Palo Alto, Fortinet, Cisco, Zscaler, Okta, AWS, GCP, and more
+Choose from a full Sentinel content hub catalog, including:
+- **Azure First Party** — Azure Activity, Firewall, Key Vault, Storage, AKS, Event Hubs, and more
+- **Microsoft Security & Productivity** — Microsoft XDR, Microsoft Entra, and Microsoft 365 workloads such as Defender, Purview, Intune, Teams, and Exchange
+- **Partner & Platform Categories** — Endpoint Protection, Network Security, Cloud Platforms, Identity & Access, Email Security, SIEM Migration, Threat Intelligence, and Infrastructure
 
 ### Step 3: Select Specific Logs
 - Browse connectors per category
-- Use **natural language input** for third-party (e.g., "crowdstrike alerts, palo alto logs")
+- Use **natural language input** for partner and custom solutions (e.g., "crowdstrike alerts, palo alto logs")
 - See at-a-glance metrics (analytics rules, workbooks, playbooks) per connector
 
-### Step 4: Your Value Pack
-- Visual summary of total content you'll deploy
-- Detailed cards for each selected connector showing:
-  - Number of connectors, analytics rules, workbooks, playbooks
-  - Direct link to GitHub source
-- **Export** a deployment plan as Markdown
+### Step 4: Planner View
+- Visual summary of selected solutions and packaged content
+- Interactive **Gantt chart** with Day / Week / Month views
+- Task cards for milestone, owner, dependency, and effort review
+- **Export** the onboarding plan to Excel in a DEX-style project plan format
 
 ## Running Locally
 
@@ -50,7 +49,7 @@ npx serve .
 
 ## Data Source
 
-Connector data is sourced from the [Azure Sentinel GitHub](https://github.com/Azure/Azure-Sentinel/tree/master/Solutions). The `data/solutions.json` file contains a curated catalog of common solutions with their content counts.
+Connector data is sourced from the [Azure Sentinel GitHub](https://github.com/Azure/Azure-Sentinel/tree/master/Solutions). The `data/solutions.json` file now contains a planning-ready content hub catalog of 485 Sentinel solutions with counts, scoring, onboarding, permissions, and export metadata.
 
 ## Project Structure
 
@@ -60,7 +59,9 @@ value-pack-setup/
 ├── css/
 │   └── style.css       # Dark theme styling
 ├── js/
-│   └── app.js          # Wizard logic & NLP matching
+│   ├── app.js          # Wizard orchestration
+│   ├── gantt-planner.js# Gantt planner transformation + rendering
+│   └── modules/        # Wizard, planner, export, scoring, search modules
 ├── data/
 │   └── solutions.json  # Connector catalog
 ├── img/                # (future) Local icons
@@ -70,7 +71,7 @@ value-pack-setup/
 ## Future Enhancements
 
 - [ ] Live GitHub API integration for real-time connector counts
-- [ ] Step 5: Threat Intelligence setup
-- [ ] Step 6: Playbook deployment automation
-- [ ] ARM/Bicep template generation
-- [ ] Integration with Sentinel API for one-click deployment
+- [ ] Named owner assignment and status updates inside the exported workbook
+- [ ] Customer-editable project baselines and saved plan re-import
+- [ ] Richer dependency rules for connector prerequisites and use case waves
+- [ ] Integration with Sentinel API for implementation readiness checks

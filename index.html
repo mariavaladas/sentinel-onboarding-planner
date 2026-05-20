@@ -4,13 +4,10 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Sentinel Value Pack Planner</title>
-    <script type="module" src="https://unpkg.com/@fluentui/web-components"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
-    <script src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
-    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
-    <script src="https://unpkg.com/reactflow@11/dist/umd/index.js"></script>
-    <link rel="stylesheet" href="https://unpkg.com/reactflow@11/dist/style.css">
+    <script type="module" src="https://cdn.jsdelivr.net/npm/@fluentui/web-components@2.6.1/dist/esm/index.js" integrity="sha384-piemDpsobToBznKfsq2ZM7BRjXzRmUquEijYah2m3PTsdICR/ku7Rgi/OLEvapMC" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@1.2.2/dist/frappe-gantt.umd.js" integrity="sha384-IDc4p6+i79ghSfjvAaNuErpikTLBxt5+HDmubQFyD2jwSFpfST/JeaX8fFaqCrgJ" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@1.2.2/dist/frappe-gantt.css" integrity="sha384-6Kr9I0SBSJBCaLDsBKf2b/P1Vt0Y/RPHiq8c6phK4Z6wZjw/l6bNLvXds4iXxq5R" crossorigin="anonymous">
     <link rel="stylesheet" href="css/style.css">
 </head>
 <body>
@@ -64,7 +61,7 @@
                         <article class="value-card">
                             <div class="value-icon">📊</div>
                             <h3>Prepare exports</h3>
-                            <p>Excel export is stubbed now so the v2 planner can later package the plan for customer use.</p>
+                            <p>Generate a DEX-style Gantt plan and export the onboarding schedule to Excel for customer handoff.</p>
                         </article>
                     </div>
 
@@ -204,11 +201,9 @@
             <section class="wizard-step" id="step4">
                 <div class="step-content">
                     <h2>Planner View</h2>
-                    <p class="step-description">This foundation release shows the selected solutions, estimated effort, and phased guidance while the full timeline builder is being developed.</p>
+                    <p class="step-description">Review the Gantt chart, switch to task cards for detail, and export the onboarding plan to Excel.</p>
 
                     <div id="plannerView"></div>
-                    <div class="summary-stats" id="summaryStats"></div>
-                    <div class="results-grid" id="resultsGrid"></div>
 
                     <div class="nav-buttons">
                         <fluent-button data-prev>← Back</fluent-button>

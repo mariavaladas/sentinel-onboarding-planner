@@ -15,6 +15,31 @@ function normalizeFivePointValue(value) {
     return clamp((numericValue / 5) * 100, 0, 100);
 }
 
+function normalizeBusinessImpact(value) {
+    if (typeof value === 'string') {
+        return {
+            critical: 100,
+            high: 75,
+            medium: 50,
+            low: 25
+        }[value.toLowerCase()] ?? 0;
+    }
+
+    return normalizeFivePointValue(value);
+}
+
+function normalizeMaturity(value) {
+    if (typeof value === 'string') {
+        return {
+            ga: 100,
+            preview: 50,
+            experimental: 10
+        }[value.toLowerCase()] ?? 0;
+    }
+
+    return normalizeFivePointValue(value);
+}
+
 export function getEstimatedSetupHours(solution = {}) {
     const directHours = Number(solution?.value_scoring?.setup_hours);
     if (Number.isFinite(directHours) && directHours >= 0) {
@@ -40,7 +65,7 @@ export function getEstimatedSetupHours(solution = {}) {
 function getBusinessImpact(solution) {
     const configuredValue = solution?.value_scoring?.business_impact;
     if (configuredValue !== undefined) {
-        return normalizeFivePointValue(configuredValue);
+        return normalizeBusinessImpact(configuredValue);
     }
 
     return clamp(((Number(solution?.analytics) || 0) * 4) + ((Number(solution?.connectors) || 0) * 15), 0, 100);
@@ -49,7 +74,12 @@ function getBusinessImpact(solution) {
 function getComplexityInverse(solution) {
     const configuredValue = solution?.value_scoring?.complexity_level;
     if (configuredValue !== undefined) {
-        return 100 - normalizeFivePointValue(configuredValue);
+        const numericValue = Number(configuredValue);
+        if (Number.isFinite(numericValue) && numericValue > 0 && numericValue <= 5) {
+            return clamp((6 - numericValue) * 20, 0, 100);
+        }
+
+        return clamp(100 - normalizeFivePointValue(configuredValue), 0, 100);
     }
 
     const estimatedComplexity = clamp(((Number(solution?.connectors) || 0) * 10) + ((Number(solution?.playbooks) || 0) * 5), 0, 100);
@@ -62,7 +92,7 @@ function getSetupTimeInverse(solution) {
         return 50;
     }
 
-    return clamp(100 - (Math.min(estimatedHours, 60) / 60) * 100, 0, 100);
+    return clamp(100 - (Math.min(estimatedHours, 25) / 25) * 100, 0, 100);
 }
 
 function getDetectionCoverage(solution) {
@@ -80,7 +110,7 @@ function getDetectionCoverage(solution) {
 function getMaturity(solution) {
     const configuredValue = solution?.value_scoring?.maturity;
     if (configuredValue !== undefined) {
-        return normalizeFivePointValue(configuredValue);
+        return normalizeMaturity(configuredValue);
     }
 
     return solution?.is1P ? 80 : 60;

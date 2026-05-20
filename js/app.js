@@ -1,13 +1,12 @@
 import { exportToExcel } from './modules/export.js';
-import { calculateTotalEffort, initPlannerView } from './modules/planning.js';
+import { initGanttPlanner } from './gantt-planner.js';
+import { calculateTotalEffort } from './modules/planning.js';
 import { sortByScore } from './modules/scoring.js';
 import { processNlpInput, handleNlpKeydown } from './modules/search.js';
 import {
     getSelectedSolutionsData,
     initStep3,
     loadSolutionData,
-    renderResultsGrid,
-    renderSummaryStats,
     selectedSolutions,
     toggleVendor
 } from './modules/solutions.js';
@@ -15,9 +14,7 @@ import { nextStep, prevStep, updateProgress } from './modules/wizard.js';
 
 const renderPlannerStep = () => {
     const selected = sortByScore(getSelectedSolutionsData());
-    renderSummaryStats(selected);
-    renderResultsGrid(selected);
-    initPlannerView(selected);
+    initGanttPlanner(selected);
 };
 
 document.addEventListener('DOMContentLoaded', async () => {

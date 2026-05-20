@@ -260,8 +260,10 @@ export function calculateTotalEffort(solutions = []) {
     return solutions.reduce((total, s) => total + getEstimatedSetupHours(s), 0);
 }
 
-export function initPlannerView(solutions = []) {
-    const container = document.getElementById('plannerView');
+export function initPlannerView(solutions = [], options = {}) {
+    const container = options.container instanceof Element
+        ? options.container
+        : document.getElementById('plannerView');
     if (!container) return;
 
     container.replaceChildren();

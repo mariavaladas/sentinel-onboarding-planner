@@ -44,6 +44,43 @@
 - Microsoft XDR solutions cluster around high-value identity, endpoint, email, and SaaS coverage, with Entra/M365 dependencies driving sequencing.
 - Phase 3 effort is concentrated in estate-wide collection connectors such as Linux Syslog and Windows Security Events, while most API-based SaaS integrations stay in Phase 1 or Phase 2.
 
+### 2026-05-20T10:56:54.127+02:00: Onboarding and permissions enrichment
+**What I assessed:**
+- Added append-only `onboarding` and `permissions` objects to all 35 solutions in `data/solutions.json` without disturbing the existing scoring, planner, or export metadata.
+- Classified connector setup effort across five repeatable patterns: Azure diagnostics, Microsoft native click-to-connect, Microsoft workload-dependent integrations, API-based third-party connectors, and infrastructure-backed CEF/agent rollouts.
+- Captured privilege expectations separately from effort so recommendation logic can later balance setup friction against business value.
+
+**Patterns discovered:**
+- Native Azure diagnostics stay low-friction and low-privilege when the operator already has scoped Contributor access on the emitting resource.
+- Microsoft SaaS and XDR connectors are usually easy to turn on in Sentinel, but the privilege bar rises quickly when tenant-wide workload consent or security admin ownership is involved.
+- The hardest onboarding paths remain infrastructure-backed collectors (CEF/syslog, AMA, Arc) and cross-cloud exports where design choices outside Sentinel dominate the timeline.
+
+**Schema decision:**
+- `onboarding` now stores `difficulty`, `difficulty_score`, `setup_summary`, `estimated_clicks`, `infrastructure_required`, and `notes`.
+- `permissions` now stores `azure_roles`, `m365_roles`, `resource_permissions`, `third_party_admin`, `consent_required`, `privilege_level`, and `notes`.
+
+### 2026-05-20T11:08:20.769+02:00: AMA connector reference documentation
+**What I created:**
+- Added `docs/connectors/ama-setup-guide.md` as the base reference for AMA + DCR + Log Analytics + Sentinel architecture.
+- Added `docs/connectors/syslog-forwarding-guide.md` for Linux forwarder patterns, direct-vs-forwarder decisioning, and Syslog / CEF onboarding.
+- Added `docs/connectors/azure-monitor-pipeline-guide.md` for high-volume, transformation-heavy, and resilience-focused architectures.
+
+**Architectural patterns documented:**
+- The default Sentinel ingestion path is `AMA -> DCR -> Log Analytics workspace -> Sentinel`, with the DCR as the collection control plane.
+- Syslog and appliance scenarios should branch to a dedicated Linux forwarder when the source cannot host AMA directly.
+- Azure Monitor Pipeline becomes the scale-out option when customers need centralized filtering, buffering, routing, or sustained volume beyond a single forwarder design point.
+
+### 2026-05-20T11:11:08.611+02:00: Full Sentinel connector catalog expansion
+**What I expanded:**
+- Rebuilt `data/solutions.json` from the Azure-Sentinel content hub metadata so the planner now carries **342 connector-bearing solutions** with complete scoring, planner, onboarding, export, and permissions blocks.
+- Restructured the catalog from 3 buckets into 12 planning categories: Azure First Party, Microsoft XDR, Microsoft 365, Identity & Access, Cloud Infrastructure, Network Security, Endpoint Security, SIEM & Logging, SaaS Applications, Threat Intelligence, Compliance & Governance, and Custom & Codeless.
+- Preserved the existing seeded IDs for the original 35 solutions, then layered in 307 new catalog entries with deterministic IDs, derived counts, and category-specific onboarding templates.
+
+**Patterns discovered:**
+- Connector-bearing content hub coverage is heavily concentrated in partner ecosystems: network security, SaaS/security apps, compliance platforms, and multi-cloud services dominate the long tail beyond Microsoft-native content.
+- Most API and codeless integrations remain Phase 1 quick wins, while the small set of Phase 2/3 items are driven by forwarders, agents, or cross-cloud architecture.
+- Accurate planning depends on archetype-level metadata: Azure native, Microsoft native, cloud export, API/codeless, forwarder-based CEF/Syslog, and custom ingestion each produce distinct effort, permission, and validation patterns.
+
 ## 2026-05-18 Scribe Update
 - Inbox decisions merged into decisions.md
 - All agent outcomes consolidated and cross-referenced

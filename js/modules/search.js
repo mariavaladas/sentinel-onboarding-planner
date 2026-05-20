@@ -16,12 +16,14 @@ function getTerms(input) {
 }
 
 export function findMatchingSolutions(input) {
-    const thirdPartySolutions = solutionsData?.categories?.third_party?.solutions || [];
+    const partnerSolutions = Object.values(solutionsData?.categories || {})
+        .flatMap((category) => category?.solutions || [])
+        .filter((solution) => !solution.is1P);
     const terms = getTerms(input);
     const matches = [];
 
     terms.forEach((term) => {
-        thirdPartySolutions.forEach((solution) => {
+        partnerSolutions.forEach((solution) => {
             const searchableText = [
                 solution.name,
                 solution.description,

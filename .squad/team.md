@@ -17,6 +17,7 @@
 | Sebastian | Data Engineer | .squad/agents/sebastian/charter.md | 📊 Active |
 | Luv | Tester | .squad/agents/luv/charter.md | 🧪 Active |
 | Rachael | Security Specialist | .squad/agents/rachael/charter.md | 🔒 Active |
+| Joi | Documentation Specialist | .squad/agents/joi/charter.md | 📝 Active |
 | Scribe | Session Logger | .squad/agents/scribe/charter.md | 📋 Active |
 | Ralph | Work Monitor | — | 🔄 Monitor |
 

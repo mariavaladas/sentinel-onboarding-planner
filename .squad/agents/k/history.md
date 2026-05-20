@@ -8,6 +8,28 @@
 
 ## Learnings
 
+### 2026-05-20T11:37:31.376+02:00 — Gantt planner view and Excel export
+
+**Architecture decisions:**
+- Added a dedicated `js/gantt-planner.js` module to own all Gantt-specific data shaping and rendering, while keeping `js/modules/planning.js` as the reusable task-card view.
+- Kept Step 4 as a combined planner surface: existing summary/result cards remain, and `#plannerView` now hosts tabs for the new Gantt chart and the existing task-card planner.
+- Reused the same transformation source for both the chart and Excel export by having `js/modules/export.js` consume `buildGanttPlanData()`.
+
+**Patterns used:**
+- Phase scheduling is deterministic: fixed overhead tasks first, then phase waves, then category lanes run in parallel while same-category tasks stay sequential.
+- Owner and resource type are derived from `permissions.privilege_level`; task duration is derived from `onboarding.difficulty`; phase assignment prefers `export_metadata.phased_deployment`.
+- All new planner UI is built with safe DOM APIs (`createElement`, `textContent`) and dark-theme CSS overrides for third-party components.
+
+**User preferences:**
+- Maria wants the planner output to mirror the DEX project-plan spreadsheet structure, not just show connector cards.
+- The planner must stay static-site friendly: CDN libraries only, no build step, responsive fallback list on smaller screens.
+
+**Key file paths:**
+- `index.html` — pinned CDN dependencies and updated planner copy.
+- `js/gantt-planner.js` — Gantt task generation, chart rendering, detail panel, and planner tabs.
+- `js/modules/export.js` — Excel workbook generation using the shared Gantt plan rows.
+- `css/style.css` — Gantt dark-theme overrides, responsive list view, and planner tab styling.
+
 ### 2026-05-19 — Real Planner View (planning.js full replacement)
 
 **What was built:**
