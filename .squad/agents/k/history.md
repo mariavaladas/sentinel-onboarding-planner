@@ -43,3 +43,32 @@
 - **Deckard:** Approved planning.js (state invalidation doc, SheetJS pin, scoring.js stub, no React Flow)
 - **Luv:** Rejected solutions.json; sebastian-2 fixed data (removed test-solution, added is_connector/category, marked deprecated)
 - **Sebastian:** Full catalog expansion, connector docs, RBAC model, task hierarchy
+
+### 2026-05-21T16:23:07.324+02:00 — Start week editing for the planner
+
+**Architecture decisions:**
+- Extended the existing Step 5 schedule editor so each editable task now stores both a proposed start week and a duration in one persisted override record.
+- Switched the planner’s default proposal from parallel category lanes to a single sequential flow inside each phase, which better matches the DEX project-plan template while still allowing manual overlap when a customer pins a custom start week.
+
+**Patterns used:**
+- Default start weeks are recalculated from task order and dependency end dates, then rounded up to the next whole project week before Frappe Gantt dates are derived.
+- Downstream rows only auto-shift when their own start week is still default; once a row has a direct start-week override, later upstream changes no longer move it.
+
+**User preferences:**
+- madesous wants the planner to propose a sensible schedule first, then let customers tune both when work starts and how long it lasts without fighting the chart.
+
+**Key file paths:**
+- `js/gantt-planner.js` — merged start-week overrides with duration overrides, updated default scheduling, detail-panel editing, task-table start column, and Gantt date shaping.
+- `css/style.css` — widened the split-pane grid for the new Start column and updated the schedule editor control layout.
+- `README.md` — Step 5 summary now reflects editable start weeks as well as durations.
+
+## Cross-Agent Context (2026-05-21)
+
+### Sebastian — RBAC Fingerprints and Windows Security Events Task Split COMPLETE
+Sebastian added RBAC `permissions.fingerprint` to all 484 connectors and flattened Windows Security Events into 6 concrete AMA onboarding tasks. The changes:
+- Fingerprint key: alphabetically sorted combined `azure_roles` and `m365_roles`, joined with `|`
+- Empty role sets emit `fingerprint: null` for planner deduplication skipping
+- Windows Security Events tasks now expose real AMA + DCR onboarding steps instead of summary rollups
+- All 484 connector permission blocks now have deterministic fingerprints for client-side deduplication
+
+**Impact on this session:** The sequential Start Week flow and localStorage persistence patterns now enable the planner UI to automatically detect and hide shared RBAC subtasks marked `status: "shared"`. Sebastian's flattened task structure integrates seamlessly with K's Gantt rendering.

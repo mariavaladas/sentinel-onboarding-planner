@@ -120,3 +120,28 @@
 **Outcome:** One source of truth for UI, scoring, planner, and Excel export. Deterministic phasing without lookup tables or UI-side scoring rules.
 
 ---
+
+### 2026-05-21: K Sequential default start-week proposal
+**By:** K (Frontend Dev)
+**Date:** 2026-05-21T16:23:07.324+02:00
+**What:** Step 5 now proposes a single sequential task flow inside each phase instead of the previous parallel category lanes. Customers can then pin custom start weeks per task, and only untouched downstream rows continue auto-shifting.
+**Why:** The approved UX target is the DEX-style project plan with editable Start week and Duration columns, where the app proposes a schedule first and the customer adjusts it.
+
+---
+
+### 2026-05-21: Sebastian — RBAC fingerprints and Windows Security Events planner update
+**By:** Sebastian (Data Engineer)
+**Date:** 2026-05-21T16:23:07.324+02:00
+**Status:** COMPLETE
+**Scope:** `data/solutions.json`
+**What:** 
+   - Adopted RBAC Approach B support in the catalog by adding `permissions.fingerprint` to each permissions block.
+   - The fingerprint is a readable deterministic key built from the alphabetically sorted combined `azure_roles` and `m365_roles`, joined with `|`.
+   - Empty role sets now emit `fingerprint: null` so the planner can skip deduplication when no shared RBAC exists.
+   - Flattened `windows-security-events` `planner.setup_tasks` into six concrete AMA onboarding tasks with explicit effort and category metadata for the current planner renderer.
+**Why:** 
+   - The planner can now detect duplicate RBAC requirements across selected connectors without maintaining a separate RBAC registry.
+   - Windows Security Events now exposes the real operational steps users need to plan, instead of summary rollups that hide the actionable AMA and DCR work.
+**Notes:** `ama_only: true` remains unchanged on `windows-security-events`. Validation steps, onboarding notes, and export metadata were preserved.
+
+---
