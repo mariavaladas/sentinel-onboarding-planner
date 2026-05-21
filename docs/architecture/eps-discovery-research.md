@@ -401,7 +401,7 @@ That is directionally very close to Maria's proposed bands, with two important r
 1. **Windows should be treated more conservatively than Linux Syslog forwarding** because the WEF/WEC path saturates earlier.
 2. **CEF-heavy firewalls should also be treated more conservatively** because parsing and burstiness make “headline EPS” more dangerous.
 
-## 3. Planner integration — how this should work in the Sentinel Value Pack Planner
+## 3. Planner integration — how this should work in the Sentinel Onboarding Planner
 
 ### Recommended product shape
 

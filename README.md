@@ -1,6 +1,6 @@
-# Sentinel Value Pack Setup
+# Sentinel Onboarding Planner
 
-An interactive web application that guides new or immature customers through onboarding to Microsoft Sentinel — helping them see value in one day.
+An interactive web application that guides new or immature customers through onboarding to Microsoft Sentinel — helping them scope onboarding, visualize topology, and sequence delivery.
 
 ## Purpose
 
@@ -13,23 +13,25 @@ This tool helps customers:
 ## How It Works
 
 ### Step 1: Welcome
-Overview of what Sentinel Value Pack delivers (Connect → Detect → Respond → Visualize).
+Quick overview of the onboarding workflow and expected outcomes.
 
-### Step 2: Data Source Categories
-Choose from a full Sentinel content hub catalog, including:
-- **Azure First Party** — Azure Activity, Firewall, Key Vault, Storage, AKS, Event Hubs, and more
-- **Microsoft Security & Productivity** — Microsoft XDR, Microsoft Entra, and Microsoft 365 workloads such as Defender, Purview, Intune, Teams, and Exchange
-- **Partner & Platform Categories** — Endpoint Protection, Network Security, Cloud Platforms, Identity & Access, Email Security, SIEM Migration, Threat Intelligence, and Infrastructure
+### Step 2: Environment
+Choose the platforms and vendors you expect to bring into Microsoft Sentinel.
 
-### Step 3: Select Specific Logs
-- Browse connectors per category
-- Use **natural language input** for partner and custom solutions (e.g., "crowdstrike alerts, palo alto logs")
-- See at-a-glance metrics (analytics rules, workbooks, playbooks) per connector
+### Step 3: Solutions
+- Review recommended solution packages
+- Use **natural language input** for partner and custom solutions (for example: "crowdstrike alerts, palo alto logs")
+- Build the final shortlist for planning
 
-### Step 4: Planner View
-- Visual summary of selected solutions and packaged content
-- Interactive **Gantt chart** with Day / Week / Month views
-- Task cards for milestone, owner, dependency, and effort review
+### Step 4: Topology
+- Visualize how selected data sources flow into Microsoft Sentinel
+- Review likely collection methods and ingestion paths
+- Prepare for stakeholder conversations before implementation
+
+### Step 5: Planner
+- Review the interactive **Gantt chart** with Day / Week / Month views
+- Click a task row or bar to edit start week and duration, auto-shift untouched tasks, and reset custom overrides
+- Switch to task cards for milestone, owner, dependency, and effort detail
 - **Export** the onboarding plan to Excel in a DEX-style project plan format
 
 ## Running Locally
@@ -54,14 +56,14 @@ Connector data is sourced from the [Azure Sentinel GitHub](https://github.com/Az
 ## Project Structure
 
 ```
-value-pack-setup/
+sentinel-onboarding-planner/
 ├── index.html          # Main application
 ├── css/
 │   └── style.css       # Dark theme styling
 ├── js/
 │   ├── app.js          # Wizard orchestration
 │   ├── gantt-planner.js# Gantt planner transformation + rendering
-│   └── modules/        # Wizard, planner, export, scoring, search modules
+│   └── modules/        # Wizard, topology, planner, export, scoring, search modules
 ├── data/
 │   └── solutions.json  # Connector catalog
 ├── img/                # (future) Local icons

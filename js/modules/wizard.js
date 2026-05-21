@@ -1,5 +1,5 @@
 let currentStep = 1;
-const totalSteps = 4;
+const totalSteps = 5;
 
 function setStepState(step, isActive) {
     const element = document.getElementById(`step${step}`);

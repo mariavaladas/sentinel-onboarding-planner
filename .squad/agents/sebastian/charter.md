@@ -19,7 +19,7 @@
 - Owns algorithm implementation and data model decisions
 
 ## Key Context
-- Project: Sentinel Value Pack Planner v2 — interactive web wizard for Sentinel onboarding
+- Project: Sentinel Onboarding Planner v2 — interactive web wizard for Sentinel onboarding
 - Stack: Static HTML/CSS/JS, solutions.json as primary data source
 - Key file: data/solutions.json — connector catalog with content counts
 - Recommendation engine needs to rank by "value" — criteria TBD

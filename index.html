@@ -3,10 +3,13 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Sentinel Value Pack Planner</title>
-    <script type="module" src="https://cdn.jsdelivr.net/npm/@fluentui/web-components@2.6.1/dist/esm/index.js" integrity="sha384-piemDpsobToBznKfsq2ZM7BRjXzRmUquEijYah2m3PTsdICR/ku7Rgi/OLEvapMC" crossorigin="anonymous"></script>
+    <title>Sentinel Onboarding Planner</title>
+    <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin="anonymous"></script>
+    <script src="https://unpkg.com/reactflow@11/dist/umd/index.js" crossorigin="anonymous"></script>
+    <link rel="stylesheet" href="https://unpkg.com/reactflow@11/dist/style.css">
     <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@1.2.2/dist/frappe-gantt.umd.js" integrity="sha384-IDc4p6+i79ghSfjvAaNuErpikTLBxt5+HDmubQFyD2jwSFpfST/JeaX8fFaqCrgJ" crossorigin="anonymous"></script>
-    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js" integrity="sha384-vtjasyidUo0kW94K5MXDXntzOJpQgBKXmE7e2Ga4LG0skTTLeBi97eFAXsqewJjw" crossorigin="anonymous"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js" integrity="sha512-dlPw+ytv/6JyepmelABrgeYgHI0O+frEwgfnPdXDTOIZz+eDgfW07QXG02/O8COfivBdGNINy+Vex+lYmJ5rxw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@1.2.2/dist/frappe-gantt.css" integrity="sha384-6Kr9I0SBSJBCaLDsBKf2b/P1Vt0Y/RPHiq8c6phK4Z6wZjw/l6bNLvXds4iXxq5R" crossorigin="anonymous">
     <link rel="stylesheet" href="css/style.css">
 </head>
@@ -16,8 +19,8 @@
             <div class="header-brand">
                 <div class="category-icon">🛡️</div>
                 <div>
-                    <h1>Sentinel Value Pack Planner</h1>
-                    <p class="header-subtitle">Plan onboarding value, effort, and sequencing before implementation starts.</p>
+                    <h1>Sentinel Onboarding Planner</h1>
+                    <p class="header-subtitle">Plan Sentinel onboarding scope, sequencing, and handoff before implementation starts.</p>
                 </div>
             </div>
         </header>
@@ -30,7 +33,8 @@
                 <div class="step active"><span class="step-dot"></span><span>Welcome</span></div>
                 <div class="step"><span class="step-dot"></span><span>Environment</span></div>
                 <div class="step"><span class="step-dot"></span><span>Solutions</span></div>
-                <div class="step"><span class="step-dot"></span><span>Planner View</span></div>
+                <div class="step"><span class="step-dot"></span><span>Topology</span></div>
+                <div class="step"><span class="step-dot"></span><span>Planner</span></div>
             </div>
         </div>
 
@@ -38,35 +42,68 @@
             <section class="wizard-step active" id="step1">
                 <div class="step-content">
                     <div class="welcome-hero">
-                        <h2>Plan your Sentinel value pack</h2>
-                        <p class="lead">Use this guided flow to identify likely data sources, review recommended solutions, and prepare for the richer planner experience coming in v2.</p>
+                        <h2>Welcome to the Sentinel Onboarding Planner</h2>
+                        <p class="lead">Plan your Microsoft Sentinel onboarding for maximum security value. In just a few steps, we'll help you:</p>
                     </div>
 
                     <div class="value-cards">
                         <article class="value-card">
-                            <div class="value-icon">🎯</div>
-                            <h3>Prioritize value</h3>
-                            <p>Start with solutions that add immediate coverage and are practical to onboard.</p>
+                            <div class="value-icon">📋</div>
+                            <h3>Select</h3>
+                            <p>Choose the data sources that match your environment</p>
                         </article>
                         <article class="value-card">
-                            <div class="value-icon">🧭</div>
-                            <h3>Sequence phases</h3>
-                            <p>Group fast wins, moderate effort items, and deeper integrations into a workable plan.</p>
+                            <div class="value-icon">🛡️</div>
+                            <h3>Visualize</h3>
+                            <p>See your ingestion topology and MITRE coverage at a glance</p>
                         </article>
                         <article class="value-card">
-                            <div class="value-icon">🤝</div>
-                            <h3>Align teams</h3>
-                            <p>Use the planner view to prepare handoff conversations with engineering, operations, and security stakeholders.</p>
-                        </article>
-                        <article class="value-card">
-                            <div class="value-icon">📊</div>
-                            <h3>Prepare exports</h3>
-                            <p>Generate a DEX-style Gantt plan and export the onboarding schedule to Excel for customer handoff.</p>
+                            <div class="value-icon">📅</div>
+                            <h3>Plan</h3>
+                            <p>Get a phased onboarding plan with timelines and owners</p>
                         </article>
                     </div>
 
+                    <div class="workspace-connect-section" id="workspaceSection">
+                        <div class="workspace-connect-divider"><span>Optional</span></div>
+                        <div class="workspace-connect-card" id="workspaceCard">
+                            <h3>🔗 Connect to an existing workspace</h3>
+                            <p>Import your existing connectors so new sources are shown alongside what's already deployed.</p>
+                            <div class="token-instructions" id="tokenInstructions">
+                                <p class="token-help">Run this in your terminal to get an access token:</p>
+                                <code class="token-cmd" onclick="copyTokenCmd()">az account get-access-token --resource https://management.azure.com --query accessToken -o tsv</code>
+                                <p class="token-help-small">Then paste the token below:</p>
+                                <textarea id="tokenInput" placeholder="Paste your access token here..." rows="3"></textarea>
+                                <button type="button" class="app-button app-button--accent" onclick="connectWithToken()" id="connectBtn">
+                                    Connect
+                                </button>
+                            </div>
+                            <div class="workspace-picker" id="workspacePicker" style="display:none;">
+                                <div>
+                                    <label>Subscription</label>
+                                    <select id="subscriptionSelect" onchange="onSubscriptionChange()" disabled>
+                                        <option value="">Loading...</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Resource Group</label>
+                                    <select id="rgSelect" onchange="onRgChange()" disabled>
+                                        <option value="">Select subscription first</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label>Sentinel Workspace</label>
+                                    <select id="workspaceSelect" onchange="onWorkspaceChange()" disabled>
+                                        <option value="">Select resource group first</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div class="workspace-status" id="workspaceStatus"></div>
+                        </div>
+                    </div>
+
                     <div class="cta-section">
-                        <fluent-button appearance="accent" data-next>Start planning →</fluent-button>
+                        <button type="button" class="app-button app-button--accent" data-next>Start planning →</button>
                     </div>
                 </div>
             </section>
@@ -74,7 +111,7 @@
             <section class="wizard-step" id="step2">
                 <div class="step-content">
                     <h2>What does the environment look like?</h2>
-                    <p class="step-description">Choose the platforms and vendors you expect to bring into Sentinel. These choices pre-select likely solutions in the next step.</p>
+                    <p class="step-description">Choose the platforms and vendors you expect to bring into Sentinel. These choices highlight likely solutions in the next step.</p>
 
                     <div class="category-grid vendor-grid">
                         <div class="category-card vendor-card selected" data-vendor="azure">
@@ -157,13 +194,78 @@
                             <h3>Ping Identity</h3>
                             <div class="category-check">✓</div>
                         </div>
+                        <div class="category-card vendor-card" data-vendor="alibabacloud">
+                            <div class="category-icon">☁️</div>
+                            <h3>Alibaba Cloud</h3>
+                            <div class="category-check">✓</div>
+                        </div>
+                        <div class="category-card vendor-card" data-vendor="atlassian">
+                            <div class="category-icon">🔧</div>
+                            <h3>Atlassian</h3>
+                            <div class="category-check">✓</div>
+                        </div>
+                        <div class="category-card vendor-card" data-vendor="barracuda">
+                            <div class="category-icon">🔒</div>
+                            <h3>Barracuda</h3>
+                            <div class="category-check">✓</div>
+                        </div>
+                        <div class="category-card vendor-card" data-vendor="citrix">
+                            <div class="category-icon">💻</div>
+                            <h3>Citrix</h3>
+                            <div class="category-check">✓</div>
+                        </div>
+                        <div class="category-card vendor-card" data-vendor="cloudflare">
+                            <div class="category-icon">☁️</div>
+                            <h3>Cloudflare</h3>
+                            <div class="category-check">✓</div>
+                        </div>
+                        <div class="category-card vendor-card" data-vendor="cyfirma">
+                            <div class="category-icon">🔍</div>
+                            <h3>cyFIRMA</h3>
+                            <div class="category-check">✓</div>
+                        </div>
+                        <div class="category-card vendor-card" data-vendor="extrahop">
+                            <div class="category-icon">📡</div>
+                            <h3>ExtraHop</h3>
+                            <div class="category-check">✓</div>
+                        </div>
+                        <div class="category-card vendor-card" data-vendor="f5">
+                            <div class="category-icon">🔥</div>
+                            <h3>F5</h3>
+                            <div class="category-check">✓</div>
+                        </div>
+                        <div class="category-card vendor-card" data-vendor="forcepoint">
+                            <div class="category-icon">🛡️</div>
+                            <h3>Forcepoint</h3>
+                            <div class="category-check">✓</div>
+                        </div>
+                        <div class="category-card vendor-card" data-vendor="github">
+                            <div class="category-icon">🐙</div>
+                            <h3>GitHub</h3>
+                            <div class="category-check">✓</div>
+                        </div>
+                        <div class="category-card vendor-card" data-vendor="infoblox">
+                            <div class="category-icon">🌐</div>
+                            <h3>Infoblox</h3>
+                            <div class="category-check">✓</div>
+                        </div>
+                        <div class="category-card vendor-card" data-vendor="nxlog">
+                            <div class="category-icon">📋</div>
+                            <h3>NXLog</h3>
+                            <div class="category-check">✓</div>
+                        </div>
+                        <div class="category-card vendor-card" data-vendor="symantec">
+                            <div class="category-icon">🛡️</div>
+                            <h3>Symantec</h3>
+                            <div class="category-check">✓</div>
+                        </div>
                     </div>
 
                     <p class="helper-text">You can still search for additional third-party solutions in the next step.</p>
 
                     <div class="nav-buttons">
-                        <fluent-button data-prev>← Back</fluent-button>
-                        <fluent-button appearance="accent" data-next id="step2Next">Continue to solutions →</fluent-button>
+                        <button type="button" class="app-button" data-prev>← Back</button>
+                        <button type="button" class="app-button app-button--accent" data-next id="step2Next">Continue to solutions →</button>
                     </div>
                 </div>
             </section>
@@ -175,15 +277,15 @@
 
                     <div class="preselected-notice" id="preselectionBanner" hidden>
                         <span class="notice-icon">ℹ️</span>
-                        <span>Recommended solutions are pre-selected from your environment choices. Review them before moving on.</span>
+                        <span>Recommended solutions are highlighted from your environment choices, and any workspace-connected packages stay checked while you build the plan.</span>
                     </div>
 
                     <div class="nlp-input-section" id="nlpSection" hidden>
                         <div class="nlp-container">
                             <label for="nlpInput">Search third-party solutions by keyword</label>
                             <div class="nlp-input-wrapper">
-                                <fluent-text-field id="nlpInput" placeholder="e.g., firewall, endpoint, email security, aws, identity"></fluent-text-field>
-                                <fluent-button appearance="accent" id="nlpSearchButton">Find matches</fluent-button>
+                                <input type="text" id="nlpInput" placeholder="e.g., firewall, endpoint, email security, aws, identity">
+                                <button type="button" class="app-button app-button--accent" id="nlpSearchButton">Find matches</button>
                             </div>
                             <div class="nlp-suggestions" id="nlpSuggestions"></div>
                         </div>
@@ -192,22 +294,47 @@
                     <div id="solutionPanels"></div>
 
                     <div class="nav-buttons">
-                        <fluent-button data-prev>← Back</fluent-button>
-                        <fluent-button appearance="accent" data-next id="step3Next" disabled>Open planner view →</fluent-button>
+                        <button type="button" class="app-button" data-prev>← Back</button>
+                        <button type="button" class="app-button app-button--accent" data-next id="step3Next" disabled>View SIEM Topology →</button>
                     </div>
                 </div>
             </section>
 
             <section class="wizard-step" id="step4">
                 <div class="step-content">
+                    <h2>🔍 SIEM Topology</h2>
+                    <p class="step-description">Based on your solution selection, this is your SIEM topology — how your selected data sources will flow into Microsoft Sentinel through various collection methods.</p>
+
+                    <div class="topo-export-bar">
+                        <button type="button" class="app-button app-button--accent" id="exportTopoPDF">📄 Export as PDF</button>
+                        <button type="button" class="app-button" id="exportTopoPNG">🖼️ Export as PNG</button>
+                    </div>
+
+                    <div id="architectureDiagram" class="ingestion-topology"></div>
+
+                    <!-- MITRE ATT&CK coverage -->
+                    <div id="mitreCoverage" class="mitre-coverage-section"></div>
+
+                    <div class="nav-buttons">
+                        <button type="button" class="app-button" data-prev>← Back to solutions</button>
+                        <button type="button" class="app-button app-button--accent" data-next>Continue to Planner →</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="wizard-step" id="step5">
+                <div class="step-content">
                     <h2>Planner View</h2>
                     <p class="step-description">Review the Gantt chart, switch to task cards for detail, and export the onboarding plan to Excel.</p>
+
+                    <div class="planner-action-bar">
+                        <button type="button" class="app-button app-button--accent" id="exportExcelButton">Export to Excel</button>
+                    </div>
 
                     <div id="plannerView"></div>
 
                     <div class="nav-buttons">
-                        <fluent-button data-prev>← Back</fluent-button>
-                        <fluent-button appearance="accent" id="exportExcelButton">Export to Excel</fluent-button>
+                        <button type="button" class="app-button" data-prev>← Back</button>
                     </div>
                 </div>
             </section>

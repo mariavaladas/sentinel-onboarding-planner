@@ -2,7 +2,7 @@
 
 - **Prepared by:** Deckard
 - **Prepared:** 2026-05-20T11:40:21.320+02:00
-- **Scope:** Product brainstorm for evolving Sentinel Value Pack Planner v2 from a planning tool into a practical onboarding accelerator for day-1, migration, expansion, and enterprise customers.
+- **Scope:** Product brainstorm for evolving Sentinel Onboarding Planner v2 from a planning tool into a practical onboarding accelerator for day-1, migration, expansion, and enterprise customers.
 
 ## Framing
 

@@ -30,7 +30,7 @@
 - Target audience: IT admins and SOC engineers setting up Sentinel
 
 ## Key Context
-- Project: Sentinel Value Pack Planner v2 — interactive web wizard for Sentinel onboarding
+- Project: Sentinel Onboarding Planner v2 — interactive web wizard for Sentinel onboarding
 - Stack: Static HTML/CSS/JS, solutions.json data catalog
 - Docs location: docs/ directory at project root
 - User: madesous

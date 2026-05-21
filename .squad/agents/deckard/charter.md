@@ -19,7 +19,7 @@
 - Final say on architecture; defers to Rachael on security
 
 ## Key Context
-- Project: Sentinel Value Pack Planner v2 — interactive web wizard for Sentinel onboarding
+- Project: Sentinel Onboarding Planner v2 — interactive web wizard for Sentinel onboarding
 - Stack: Static HTML/CSS/JS, Fluent UI web components
 - Base: Forked from value-pack-setup v1 (deployment-focused); v2 is planning-focused
 - User: madesous

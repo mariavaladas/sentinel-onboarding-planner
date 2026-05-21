@@ -1,6 +1,6 @@
 # Squad Team
 
-> Sentinel Value Pack Planner v2
+> Sentinel Onboarding Planner v2
 
 ## Coordinator
 
@@ -24,7 +24,7 @@
 ## Project Context
 
 - **User:** madesous
-- **Project:** Sentinel Value Pack Planner v2
+- **Project:** Sentinel Onboarding Planner v2
 - **Description:** Interactive web app that guides customers through Microsoft Sentinel onboarding — select data sources/connectors, get value-based recommendations, then generate a project plan (tasks, time estimates) exportable to Excel. Evolved from v1 which focused on deployment; v2 focuses on planning and smart recommendations.
 - **Stack:** HTML/CSS/JavaScript (static web app), Fluent UI web components, solutions.json data catalog
 - **Base:** Forked from value-pack-setup v1

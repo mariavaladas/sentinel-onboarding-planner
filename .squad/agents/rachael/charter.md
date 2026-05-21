@@ -24,7 +24,7 @@
 - Security rejections are non-negotiable — must be resolved before merge
 
 ## Key Context
-- Project: Sentinel Value Pack Planner v2 — interactive web wizard for Sentinel onboarding
+- Project: Sentinel Onboarding Planner v2 — interactive web wizard for Sentinel onboarding
 - Stack: Static HTML/CSS/JS, CDN-loaded dependencies (Fluent UI, React Flow, html2canvas, jsPDF)
 - Attack surface: Client-side only (no backend), but uses CDN scripts and generates exports
 - Concerns: Supply chain (CDN integrity), XSS in user inputs, data in exports

@@ -16,14 +16,13 @@ function getTerms(input) {
 }
 
 export function findMatchingSolutions(input) {
-    const partnerSolutions = Object.values(solutionsData?.categories || {})
-        .flatMap((category) => category?.solutions || [])
-        .filter((solution) => !solution.is1P);
+    const allSolutions = Object.values(solutionsData?.categories || {})
+        .flatMap((category) => category?.solutions || []);
     const terms = getTerms(input);
     const matches = [];
 
     terms.forEach((term) => {
-        partnerSolutions.forEach((solution) => {
+        allSolutions.forEach((solution) => {
             const searchableText = [
                 solution.name,
                 solution.description,
@@ -58,7 +57,7 @@ function createSuggestionTag(solution) {
     return tag;
 }
 
-export function processNlpInput() {
+function renderSuggestions() {
     const input = document.getElementById('nlpInput');
     const suggestionsContainer = document.getElementById('nlpSuggestions');
     if (!input || !suggestionsContainer) {
@@ -66,11 +65,12 @@ export function processNlpInput() {
     }
 
     const userText = `${input.value || ''}`.trim();
+    suggestionsContainer.replaceChildren();
+
     if (!userText) {
         return;
     }
 
-    suggestionsContainer.replaceChildren();
     const matches = findMatchingSolutions(userText);
 
     if (matches.length === 0) {
@@ -80,8 +80,14 @@ export function processNlpInput() {
             suggestionsContainer.appendChild(createSuggestionTag(solution));
         });
     }
+}
 
-    input.value = '';
+export function handleNlpInput() {
+    renderSuggestions();
+}
+
+export function processNlpInput() {
+    renderSuggestions();
 }
 
 export function handleNlpKeydown(event) {
