@@ -1,66 +1,45 @@
 # History — K
 
 ## Project Context
-- **Project:** Sentinel Value Pack Planner v2
-- **Stack:** HTML/CSS/JS, Fluent UI web components, solutions.json data catalog
+- **Project:** Sentinel Onboarding Planner v2
+- **Stack:** HTML/CSS/JS, Frappe Gantt, ExcelJS, Fluent UI web components, solutions.json data catalog
 - **User:** madesous
 - **Created:** 2026-05-18
 
-## Learnings
+## Recent Focus (2026-05-21)
 
-### 2026-05-20T11:37:31.376+02:00 — Gantt planner view and Excel export
+### 2026-05-21T14:07:44.312+02:00 — Editable task durations with persisted overrides
+- Duration editing in Step 5 detail panel; localStorage persistence keyed by row ID
+- Summary rows read-only; child edits recalculate parent spans
+- Normalized hours/days/weeks via business-hour conversions; dependency-driven downstream tasks shift coherently
+- **Files:** `js/gantt-planner.js` (storage, recalculation, editor, indicators), `css/style.css` (badges, styling)
 
-**Architecture decisions:**
-- Added a dedicated `js/gantt-planner.js` module to own all Gantt-specific data shaping and rendering, while keeping `js/modules/planning.js` as the reusable task-card view.
-- Kept Step 4 as a combined planner surface: existing summary/result cards remain, and `#plannerView` now hosts tabs for the new Gantt chart and the existing task-card planner.
-- Reused the same transformation source for both the chart and Excel export by having `js/modules/export.js` consume `buildGanttPlanData()`.
+### 2026-05-21T13:25:43.387+02:00 — Gantt subtask hierarchy rendering
+- Flattened `planner.setup_tasks[].subtasks[]` into Frappe Gantt task array as parent summary bars + subtasks
+- Collapse/expand via filtered re-render from `buildGanttPlanData()` (not internal mutation)
+- Subtasks: indented labels, lighter phase fills, reduced bar height for dark-theme readability
+- **Files:** `js/gantt-planner.js` (hierarchy, scheduling, collapse), `css/style.css` (bar styling)
 
-**Patterns used:**
-- Phase scheduling is deterministic: fixed overhead tasks first, then phase waves, then category lanes run in parallel while same-category tasks stay sequential.
-- Owner and resource type are derived from `permissions.privilege_level`; task duration is derived from `onboarding.difficulty`; phase assignment prefers `export_metadata.phased_deployment`.
-- All new planner UI is built with safe DOM APIs (`createElement`, `textContent`) and dark-theme CSS overrides for third-party components.
+### 2026-05-21T12:00:42.157+02:00 — ExcelJS Gantt export & dark-mode refresh
+- Replaced planner export with ExcelJS single-sheet timeline (visual Gantt, not flat list)
+- Freezes A:F (metadata), renders timeline columns G+ with daily→weekly auto-switch for 6+ month plans
+- Gantt dark-mode: CSS overrides for `.grid-header`, `.current-highlight`, `.popup-wrapper` against Frappe defaults
+- **Files:** `js/modules/export.js` (workbook generation), `js/gantt-planner.js` (state capture), `css/style.css` (theme)
 
-**User preferences:**
-- Maria wants the planner output to mirror the DEX project-plan spreadsheet structure, not just show connector cards.
-- The planner must stay static-site friendly: CDN libraries only, no build step, responsive fallback list on smaller screens.
+### 2026-05-21T14:01:17.964+02:00 — Split-pane Gantt task grid
+- Left task grid + right Frappe Gantt timeline from same visible row set
+- Rows aligned via SVG `.grid-row` metrics (not hardcoded height) for accurate sync
+- Table controller syncs scroll, hover, active state with chart `.gantt-container` + `.bar-wrapper`
+- **Files:** `js/gantt-planner.js` (split-pane shell, table, alignment), `css/style.css` (layout, sticky header)
 
-**Key file paths:**
-- `index.html` — pinned CDN dependencies and updated planner copy.
-- `js/gantt-planner.js` — Gantt task generation, chart rendering, detail panel, and planner tabs.
-- `js/modules/export.js` — Excel workbook generation using the shared Gantt plan rows.
-- `css/style.css` — Gantt dark-theme overrides, responsive list view, and planner tab styling.
+## Prior Learnings
+- Gantt render recovery (single phase token for Frappe v1.2.2 classList.add behavior)
+- Wizard button affordance fix (native buttons + shared `.app-button` classes)
+- Real Planner View (planning.js card + stats + sort/filter)
+- Step 3 solution card reference refresh (featured tag, checkbox, v1 visual language)
+- *See: `history-archive.md` for full log (archived 2026-05-21)*
 
-### 2026-05-19 — Real Planner View (planning.js full replacement)
-
-**What was built:**
-- Replaced the planner stub entirely with a production-quality planner view in `js/modules/planning.js`.
-- **Summary stats bar** — total solutions, total effort hours, and per-phase counts rendered using the existing `.stat-card` pattern.
-- **Filter/sort controls** — sort dropdown (Priority Score default, Effort low→high, Phase) and phase filter buttons (All / Phase 1 / Phase 2 / Phase 3). Both are stateful and refresh the cards grid without re-rendering the full view.
-- **Task cards** — one per selected solution, collapsible. Header shows solution name, colour-coded phase badge (green/yellow/purple), priority score badge, and effort badge. Expanding reveals: description, setup tasks (ordered list with per-task hours), dependencies from `value_scoring.dependencies`, and common issues from `planner.common_issues`.
-- **Empty state** — shown when `solutions.length === 0` (user hasn't selected anything).
-- **Empty cards state** — shown when phase filter yields no results.
-- CSS appended to `style.css`: `.planner-summary-bar`, `.planner-controls`, `.planner-filter-btn`, `.planner-badge`, `.planner-task-card`, `.planner-task-card-body` (collapsible via `max-height` transition), responsive overrides.
-
-**Patterns used:**
-- `document.createElement` + `textContent` throughout — no `innerHTML` with solution data (satisfies Rachael's security audit decision).
-- Shared mutable `state` object `{ sort, filter }` passed by reference to filter/sort handlers for clean re-render without full view teardown.
-- `max-height: 0 → 2000px` CSS transition for smooth collapse/expand on task cards.
-- Phase badge colours applied via inline `style.cssText` (not new CSS vars) to keep one source of truth for the three phase colours.
-- Responsive grid: `repeat(auto-fill, minmax(320px, 1fr))` as specified by Deckard's architecture.
-
-**Key decisions made:**
-- Removed `renderTimeline` export (stub-specific, no longer needed). `calculateTotalEffort` retained as public export for use by `export.js`.
-- `value_scoring.dependencies` used as the dependency source (actual JSON field). `planner.setup_tasks[].depends_on` not present in current data schema — used `task.task` string instead.
-- Summary stats bar reuses existing `.stat-card` / `.stat-number` / `.stat-label` classes instead of introducing a new pattern.
-- State invalidation documented as comment block at top of file per Deckard's architecture requirement.
-
-## 2026-05-18 Scribe Update
-- Inbox decisions merged into decisions.md
-- All agent outcomes consolidated and cross-referenced
-- Decisions are now canonical; inbox cleared
-- See: decisions.md entries for 2026-05-18 (v2 Data Model, v1 Security, Architecture Gap)
-
-## 2026-05-19 Scribe Cross-Agent Update
-- **Deckard Review Complete:** Approved planning.js with 4 conditions (state invalidation doc, SheetJS pin, scoring.js stub, no React Flow).
-- **All conditions verified satisfied in K's implementation.**
-- **Next:** K proceeds with export.js (SheetJS Excel export); Deckard defines scoring weights; Luv removes test stubs referencing `renderTimeline`.
+## Cross-Agent Context
+- **Deckard:** Approved planning.js (state invalidation doc, SheetJS pin, scoring.js stub, no React Flow)
+- **Luv:** Rejected solutions.json; sebastian-2 fixed data (removed test-solution, added is_connector/category, marked deprecated)
+- **Sebastian:** Full catalog expansion, connector docs, RBAC model, task hierarchy

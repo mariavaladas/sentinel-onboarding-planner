@@ -1,6 +1,6 @@
 # Decisions
 
-> Canonical decision ledger for the Sentinel Value Pack Planner v2.
+> Canonical decision ledger for the Sentinel Onboarding Planner v2.
 
 ---
 
