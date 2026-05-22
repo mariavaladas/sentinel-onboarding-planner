@@ -145,3 +145,22 @@
 **Notes:** `ama_only: true` remains unchanged on `windows-security-events`. Validation steps, onboarding notes, and export metadata were preserved.
 
 ---
+
+### 2026-05-22: K — Inline table editing and business-day gantt flow
+**By:** K (Frontend Dev)
+**Date:** 2026-05-22T10:29:10.474+02:00
+**Status:** COMPLETE
+**What:** Step 5 now uses the left task table as the default edit surface for day-to-day planning changes: duration, status, start date, due date, and impact are edited inline in-place. Gantt scheduling maps task timing to business days so dependency chains continue on the next working day without weekend gaps. Subtask numbering stays attached to parent rows using letter suffixes.
+**Why:** Detail panel flow is too slow for plan tuning; subtask bars are unreadable when they only show duration text; whole-week start rounding makes short tasks look artificially separated.
+**Impact:**
+   - Subtask bars keep task-name visibility even when bar is too short to hold the text internally.
+   - Sequential plans now flow in business-day order instead of showing empty weekend dead space between dependent rows.
+   - Table behaves more like a spreadsheet for quick PM edits while detail panel remains available for deeper schedule review.
+**Files:** `js/gantt-planner.js`, `css/style.css`
+**Fixes Applied:**
+   1. Subtask bar labels with external text labels
+   2. Numbering convention with letter suffixes (A, B, C)
+   3. Weekend gap removal in dependency chains
+   4. Inline editing for table cells (duration, dates, status)
+
+---
