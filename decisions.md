@@ -1192,3 +1192,116 @@ All parent and child effort values use clean numbers only (`1`, `2`, `3`, `4`, `
 
 
 
+
+## copilot-directive-20260521T195100
+
+### 2026-05-21T19:51:00Z: User directive
+**By:** madesous (via Copilot)
+**What:** 3rd-party connectors (e.g., AWS S3) have their own permission requirements outside Azure RBAC. These will be detailed separately in documentation — don't try to normalize them into Azure roles.
+**Why:** User request — captured for team memory
+
+---
+
+
+## copilot-directive-20260521T211739
+
+### 2026-05-21T21:17:39Z: User directive
+**By:** madesous (via Copilot)
+**What:** Remove permissions entirely from solutions that have multiple connectors (connectors > 1). Keep permissions on single-connector solutions, including 3rd-party ones.
+**Why:** User request — multi-connector solutions have complex per-connector permissions that are better handled in docs, not in the planner UI.
+
+---
+
+
+## deckard-environment-sizing
+
+# Environment Sizing Step — Planner Requirement
+**Date:** 2026-05-22T09:58:20.662+02:00  
+**Author:** Deckard (Lead)  
+**Status:** PROPOSAL  
+**Impact:** Step 2 (Environment) UX, Step 5 (Planner) duration scaling, connector task metadata  
+
+---
+
+## WhatThe Sentinel Onboarding Planner v2 shall add a **new Environment Sizing feature** that captures infrastructure characteristics before generating the onboarding plan. This enables:
+1. **Task visibility control:** Conditional task inclusion based on environment (e.g., skip Azure Arc onboarding if all machines are native Azure).
+2. **Duration scaling:** Smart baseline durations per connector category (Small/Medium/Large environment).
+3. **User override:** All synthesized durations remain editable in the planner; sizing provides defaults only.
+
+---
+
+## k-dead-code-cleanup
+
+### 2026-05-22T08:58:52.187+02:00: K — Dead code cleanup
+**Decision:** Remove only dead UI code paths that have no live references, but preserve shared styling primitives even when they sit beside dead blocks.
+**Why:** \js/modules/planning.js\ still uses \.stat-card\, \.stat-number\, and \.stat-label\, while the older Step 4 result renderers, placeholder planner selectors, and legacy \.btn-*\ system are no longer part of the runtime.
+**Impact:** Future cleanup passes should treat shared style primitives separately from adjacent dead sections and continue verifying runtime reachability with repo-wide searches before deletion.
+
+---
+
+
+## k-gantt-bar-fix
+
+### 2026-05-21T18:48:33.616+02:00: K — Gantt bar visibility fix
+**By:** K (Frontend Dev)
+**Scope:** \js/gantt-planner.js\, \css/style.css\
+**Decision:** On Step 5, auto-position the timeline to the first actual task bar after Frappe finishes laying out the SVG, and keep the left task table single-line by moving meta/description detail into the row tooltip instead of rendering stacked secondary copy.
+**Why:** The redesigned daily timeline started before the first scheduled task, so the chart could open on an empty date range even though bars existed further right.
+
+---
+
+
+## k-gantt-bars-fix
+
+### 2026-05-22T08:49:22.034+02:00: K — Gantt labels and inline duration editing
+**By:** K (Frontend Dev)
+**Scope:** \js/gantt-planner.js\, \css/style.css\, \README.md\
+**Decision:** Keep the left planner grid as the fast-edit surface for duration changes, while the existing detail panel remains the richer editor for start week and full task context.
+**Impact:** Future Step 5 UX work should keep quick timing edits in the grid when possible, and reserve the detail panel for richer task metadata or multi-field schedule changes.
+
+---
+
+
+## k-gantt-reference-dark-layout
+
+### 2026-05-21T18:19:29.109+02:00: K — Gantt reference dark layout
+**By:** K (Frontend Dev)
+**Scope:** Step 5 Gantt planner
+**Decision:** Keep the planner inside the approved dark application shell, but restyle the Step 5 Gantt into a denser PM-grid pattern instead of a light-themed island.
+**Impact:** Future Step 5 UI work should treat the Gantt as a dark "project management grid" pattern, not as a generic neon chart or a separate light-themed surface.
+
+---
+
+
+## k-solutions-permissions-fix
+
+### 2026-05-21T18:38:14.725+02:00: K — Solutions permissions fix
+**By:** K
+**Scope:** \js/modules/solutions.js\, \css/style.css\, \data/solutions.json\, \js/gantt-planner.js\
+**Decision:** Use actual connector role data in the Step 3 solution cards instead of the previous owner-style badge, and normalize the catalog so Azure-native connectors, agent/forwarder connectors, and Microsoft 365 connectors expose recognizable minimum roles.
+**Impact:** Showing role chips directly from \permissions\ keeps the UI aligned with planner/export data and avoids a second, inconsistent permission vocabulary.
+
+---
+
+
+## luv-qa-pass2
+
+### 2026-05-21T17:00:59.261+02:00: Luv QA Pass 2
+**Verdict:** REJECT
+**Date:** 2026-05-21T17:00:59.261+02:00
+**Summary:** Validation pass covering Gantt chart structure, localStorage persistence, and solutions.json catalog. Identified 3 high-severity issues: (1) Start-week-only edits collapse duration to 0.5h, (2) Planner includes non-connectors, (3) RBAC fingerprint deduplication not implemented.
+
+---
+
+
+## sebastian-permissions-multi-connector
+
+### 2026-05-21T21:17:39Z: Sebastian — multi-connector permissions normalization
+**By:** Sebastian
+**Scope:** \data/solutions.json\
+**Decision:** Use the integer \connectors\ field as the sole rule for permissions retention: \connectors > 1\ → set \permissions\ to empty object \{}\; \connectors <= 1\ → preserve existing permissions unchanged.
+**Why:** Multi-connector solutions represent bundled content where solution-level permissions are misleadingly specific.
+**Impact:** Applied with \scripts/clear_permissions_for_multi_connector_solutions.py\.
+
+---
+

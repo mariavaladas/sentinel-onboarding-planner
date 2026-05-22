@@ -72,3 +72,79 @@ Sebastian added RBAC `permissions.fingerprint` to all 484 connectors and flatten
 - All 484 connector permission blocks now have deterministic fingerprints for client-side deduplication
 
 **Impact on this session:** The sequential Start Week flow and localStorage persistence patterns now enable the planner UI to automatically detect and hide shared RBAC subtasks marked `status: "shared"`. Sebastian's flattened task structure integrates seamlessly with K's Gantt rendering.
+
+## Learnings
+
+### 2026-05-21T18:19:29.109+02:00 — Gantt reference-layout refresh
+- **Architecture decisions:** Step 5 keeps the dark-shell experience, but the Gantt itself now behaves like a project-management grid with a numbered left table, fixed status/date/impact columns, a day-based timeline header (`W xx` + weekday initials), and a keyboard-accessible resizable split pane.
+- **Patterns used:** Derive display-only planner fields after scheduling (`status`, `impact`, `startDate`, `dueDate`) so exports, detail panels, the left grid, and the SVG bars all read from the same enriched row model; use a custom Frappe view mode with 1-day columns to get week headers, daily grid lines, and the today marker without replacing the library.
+- **User preferences:** madesous wanted the Gantt to stay dark-themed while matching the denser PM-tool structure from the reference screenshot instead of switching Step 5 to a light island.
+- **Key file paths:** `js/gantt-planner.js` — row enrichment, custom timeline mode, split-pane resize, and left-grid rebuild; `css/style.css` — dark PM-grid restyle for the table, divider, timeline header, bars, and indicators.
+
+### 2026-05-21T18:38:14.725+02:00 — Solutions card cleanup and permission normalization
+- **Architecture decisions:** Step 3 solution cards no longer render descriptive highlight bullets; they now surface actual required-role chips derived directly from `permissions.azure_roles` and `permissions.m365_roles`, while the planner fallback avoids the old `Cloud Admin` label.
+- **Patterns used:** Normalize connector RBAC by onboarding pattern in `data/solutions.json` (for example Azure-native connectors → `Reader` + `Microsoft Sentinel Contributor`, forwarder/agent connectors → `Log Analytics Contributor` + `Virtual Machine Contributor` + `Microsoft Sentinel Contributor`), and keep `permissions.fingerprint` in sync after every role rewrite.
+- **User preferences:** madesous wants the solutions step to stay concise and to show real, recognizable permission names instead of vague owner labels or duplicate descriptive bullets.
+- **Key file paths:** `js/modules/solutions.js` — removed highlight rendering and added required-role chips; `css/style.css` — replaced highlight styling with role-chip styling; `data/solutions.json` — cleared per-solution setup summaries from the card dataset, normalized role sets, and replaced `Cloud Admin` owner labels; `js/gantt-planner.js` — swapped the fallback owner wording to `Azure Platform Admin` / `IT Admin`.
+
+### 2026-05-21T18:48:33.616+02:00 — Gantt bar visibility and left-grid cleanup
+- **Architecture decisions:** Keep the split-pane Gantt anchored to the first real task bar on initial render so the timeline opens on actual work instead of a blank pre-start gap; collapse row meta/description into a tooltip-only secondary detail so the PM-style table stays single-line and readable.
+- **Patterns used:** Use SVG bar attribute fallbacks when `getBBox()` reports zero-sized bars during early render cycles, then apply one-time horizontal scroll positioning from the first visible task bar rather than hardcoding a week offset.
+- **User preferences:** madesous liked the denser left table and wanted the redesign preserved, but without hidden bars or overlapping ghost copy behind task names.
+- **Key file paths:** `js/gantt-planner.js` — fixed bar diagnostics/initial timeline scroll and removed duplicate row secondary text rendering; `css/style.css` — tightened the title row layout so single-line task names remain crisp in the compact grid.
+
+### 2026-05-22T08:49:22.034+02:00 — Gantt labels restored and inline duration editing
+- **Architecture decisions:** Keep full schedule editing in the existing detail panel, but move duration tweaks into the left split-pane table so the primary planner workflow stays in-context while start-week edits still use the richer task dialog.
+- **Patterns used:** Re-apply phase classes directly onto rendered Frappe bar wrappers during post-render stabilization so bar colouring survives library class drift, and treat the duration cell as a lightweight inline editor that saves on Enter/blur without opening the detail panel.
+- **User preferences:** madesous wants task names visible inside the bars again and prefers quick duration adjustments from the grid instead of drilling into a modal for every small timing change.
+- **Key file paths:** `js/gantt-planner.js` — restored task-label sync on bars, enforced phase classes, added inline duration cell editing, and updated planner guidance copy; `css/style.css` — made SVG bar labels visible again, added duration-column/editor styling, and widened the grid for the new editable column; `README.md` — Step 5 interaction copy now reflects inline duration editing.
+
+### 2026-05-22T08:49:22.034+02:00 — Dead-code audit hotspots
+- **Architecture decisions:** Current planner runtime flows through `js/app.js` → `js/gantt-planner.js` → `js/modules/planning.js`; older Step 4 summary/results rendering in `js/modules/solutions.js` is no longer on the active path.
+- **Patterns used:** High-confidence dead code now clusters in three places: orphaned Step 4 result helpers in `js/modules/solutions.js`, pre-Gantt placeholder/result CSS in `css/style.css`, and unused export payload fields inside `js/gantt-planner.js`.
+- **User preferences:** madesous wants reporting first, no deletions, and especially wants Gantt/planner remnants called out before cleanup.
+- **Key file paths:** `js/modules/solutions.js` — `hydrateConnectedSolutionIds`, `renderSummaryStats`, `renderResultsGrid`; `js/gantt-planner.js` — unused `exportRows` payload and related metadata fields; `css/style.css` — old `.summary-stats` / `.results-grid` / `.planner-view-*` / `.btn-*` blocks; `index.html` — orphaned IDs such as `step2Next`, `workspaceSection`, and `workspaceCard`.
+
+### 2026-05-22T08:58:52.187+02:00 — Dead-code cleanup completed
+- **Architecture decisions:** The active wizard relies on `[data-next]` navigation and workspace card classes, so legacy `step2Next`, `workspaceSection`, and `workspaceCard` IDs can be removed without affecting behavior; shared `.stat-card` styling stays because `planning.js` still uses it.
+- **Patterns used:** Before deleting dead UI code, verify runtime reachability with repo-wide reference searches, then preserve any shared sub-blocks (like shared stat-card styles) while removing only the orphaned selectors and helpers.
+- **User preferences:** madesous wants rollback safety first, so cleanup work should start with a pre-change git tag and stay tightly scoped to verified dead paths.
+- **Key file paths:** `js/modules/solutions.js` — removed unused Step 4 render/export helpers and stale connected-state hydrator; `css/style.css` — removed obsolete results/planner-placeholder/button selectors while preserving shared stat-card rules; `index.html` — dropped unreferenced IDs and kept class/data-hook navigation intact.
+
+## 2026-05-22T07:58:20Z: Cross-agent sync — Gantt subtasks and Environment Sizing
+
+**From Sebastian:**
+- Windows Security Events task structure expanded to 6 tasks + 5 subtasks with setup_hours = 60 (clean values)
+- Your subtask rendering is now consuming the full hierarchy in Step 5
+- RBAC fingerprinting ready; await Deckard's environment sizing schema before multi-connector dedup
+
+**From Deckard:**
+- Environment Sizing Step finalizes duration scaling logic by infrastructure category
+- Task visibility rules: Arc tasks skip for all-Azure; conditional task inclusion available in \solutions.json\
+- Schema extension backward-compatible; your planner reads \nvironment_scaling\ if available
+
+**QA failures** (luv-qa-pass2, REJECT verdict — blocking):
+1. **Start-week-only edits collapse duration to 0.5h** (HIGH)
+   - Root: \uildDurationState()\ sanitizes missing overrideDuration to 0.5h
+   - Fix needed: Distinguish between start-week-only and full override records in localStorage
+   - Files: \js/gantt-planner.js\ (persistence, override logic)
+
+2. **Planner includes non-connectors** (HIGH)
+   - Root: No \is_connector\ filtering in planner input
+   - Fix needed: Pre-filter solutions where \is_connector === true\ before Gantt rendering
+   - Files: \js/gantt-planner.js\ (input validation)
+
+3. **RBAC fingerprint deduplication not implemented** (MEDIUM-HIGH)
+   - Root: Planner never reads \permissions.fingerprint\ or shared state
+   - Fix needed: Consume fingerprint in planner, mark shared RBAC work, output shared state
+   - Files: \js/gantt-planner.js\ (dedup logic), \js/modules/solutions.js\ (selection handling)
+
+**Approved visual work** ✓:
+- Monday.com-style indent guides working
+- Parent row collapse/expand functional
+- Fade/slide transitions smooth
+- Dark PM-grid layout confirmed
+
+**Next steps:**
+- Fix three QA blockers before merge
+- Test with multiselectSolutions including multi-connector bundles

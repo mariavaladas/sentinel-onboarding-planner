@@ -93,6 +93,20 @@
 - The user wanted readable permission fingerprints, the exact AMA/DCR task breakdown, and team memory updates tied to `data/solutions.json`.
 - Key files: `data/solutions.json`, `.squad/agents/sebastian/history.md`, `.squad/decisions/inbox/sebastian-rbac-wse.md`.
 
+### 2026-05-21T21:17:39Z: Multi-connector permissions normalization
+**Architecture decisions:**
+- Used `connectors` as the only discriminator for permissions cleanup across all catalog categories.
+- Normalized multi-connector solutions to `permissions: {}` instead of deleting the key so the current UI and export readers keep a stable object shape.
+- Left single-connector and zero-connector solutions unchanged, including third-party entries.
+
+**Patterns discovered:**
+- 62 of 484 catalog entries are multi-connector bundles and all now resolve to empty permissions objects.
+- The current planner and solution card code already rely on optional chaining and empty-array fallbacks, so empty permission blocks are safe for rendering.
+
+**User preferences and key files:**
+- The user prefers scripted bulk edits for large catalog changes and explicitly wanted single-connector third-party permissions preserved.
+- Key files: `data/solutions.json`, `scripts/clear_permissions_for_multi_connector_solutions.py`, `.squad/agents/sebastian/history.md`, `.squad/decisions/inbox/sebastian-permissions-multi-connector.md`.
+
 ## Cross-Agent Context (2026-05-21)
 
 ### K — Start Week Editing COMPLETE
@@ -103,3 +117,27 @@ K successfully implemented Start Week editing in the planner, enabling editable 
 - Persists all overrides to localStorage
 
 **Impact on this session:** K's sequential proposal and Gantt persistence patterns align perfectly with the RBAC fingerprint deduplication and flattened Windows Security Events tasks. The planner now has a complete foundation for rendering shared RBAC subtasks via the existing start-week machinery.
+
+## 2026-05-22T07:58:20Z: Cross-agent sync — Gantt subtasks and Environment Sizing
+
+**From K:**
+- Gantt subtask rendering complete with Monday.com-style indent guides, click-to-toggle parent rows, fade/slide transitions
+- Your 6-task + 5-subtask structure for Windows Security Events is now live in Step 5 (see js/gantt-planner.js)
+- Rollback tag created: -pre-monday-subtask-style
+
+**From Deckard:**
+- Environment Sizing Step proposal finalized; enables duration scaling by infrastructure category
+- Thresholds: Small (< 20, all Azure, ~2d), Medium (20–100, 1–50% mixed, ~9d), Large (100+, 50%+ on-prem, ~4w)
+- Architecture decisions support your RBAC + permissions normalization work
+
+**Action items for Sebastian:**
+- Implement multi-connector permissions deduplication (per sebastian-permissions-multi-connector decision)
+- Populate \nvironment_scaling\ metadata in solutions.json for Windows Security Events and similar complex connectors
+- Verify with data team that setup_hours = 60 aligns with backend production data
+
+**QA feedback** (from luv-qa-pass2, REJECT verdict):
+- Start-week-only edits collapse duration to 0.5h (HIGH, K owns)
+- Planner includes non-connectors (HIGH, K owns)
+- RBAC fingerprint dedup not implemented (MEDIUM-HIGH, K owns)
+- Your data work validated ✓: 484 records, no duplicates, Windows Security Events structure correct
+
