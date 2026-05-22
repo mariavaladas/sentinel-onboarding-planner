@@ -59,6 +59,12 @@
 - User-added rows need hard delete plus override cleanup, while template rows should be skipped with a status override so numbering, dependencies, and export visibility stay intact.
 - Full Gantt/table rerenders are compatible with CRUD if the controller can reopen the intended inline field by `{ taskId, fieldKey }` immediately after a new task is injected.
 
+### 2026-05-22T17:22:50.5966240+02:00 — Solution-group start offsets and selection-safe toggles
+- Per-solution group state fits best inside the planner's existing versioned localStorage payload; keeping `solutionGroups` beside task overrides makes reload and reset behavior predictable.
+- Connector groups should stay collapsed by default and only persist `collapsed: false` when expanded, which avoids noisy state while keeping the default UX stable for newly selected solutions.
+- Gantt/table row clicks need to stay selection-only for toolbar reliability; collapse/expand should live on dedicated chevrons or bar labels so `+ Add task` enables consistently from solution summary rows.
+- Custom timeline headers can branch cleanly by zoom mode (Weeks / Months / Quarters) after Frappe renders, which keeps the dropdown swap low-risk in a static frontend.
+
 ## Archive
 
 Previous detailed sessions archived to **history-archive.md**:
