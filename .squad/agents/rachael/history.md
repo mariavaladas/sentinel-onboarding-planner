@@ -19,3 +19,11 @@
 - All agent outcomes consolidated and cross-referenced
 - Decisions are now canonical; inbox cleared
 - See: decisions.md entries for 2026-05-18 (v2 Data Model, v1 Security, Architecture Gap)
+
+
+## 2026-05-22T11:05 — K's Table UX Fixes
+- Agent K completed table numbering reform (flat sequential with nested subtasks)
+- Inline editing enabled for all task fields
+- Cascade updates implemented for timing changes
+- Frontend: js/gantt-planner.js, css/style.css modified
+- Status: Ready for QA

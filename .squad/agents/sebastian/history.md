@@ -141,3 +141,11 @@ K successfully implemented Start Week editing in the planner, enabling editable 
 - RBAC fingerprint dedup not implemented (MEDIUM-HIGH, K owns)
 - Your data work validated ✓: 484 records, no duplicates, Windows Security Events structure correct
 
+
+
+## 2026-05-22T11:05 — K's Table UX Fixes
+- Agent K completed table numbering reform (flat sequential with nested subtasks)
+- Inline editing enabled for all task fields
+- Cascade updates implemented for timing changes
+- Frontend: js/gantt-planner.js, css/style.css modified
+- Status: Ready for QA

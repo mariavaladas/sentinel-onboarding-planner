@@ -19,3 +19,11 @@
 - **2026-05-20T11:27:22.544+02:00 — WEF sizing guidance:** Microsoft guidance for larger WEF environments is to scale out, not up: plan roughly 2,000-4,000 clients per collector, start around 4 CPU and 16 GiB RAM for an average production WEC, use fast disks, and treat about 5,000 EPS as the safer single WEC/AMA planning point.
 - **2026-05-20T11:27:22.544+02:00 — WEF Sentinel content note:** The Windows Forwarded Events solution writes to `WindowsEvent` and currently packages the Windows Forwarded Events connector with analytics such as Caramel Tsunami IOC and Chia Crypto Mining IOC, but Content Hub versions can change so docs should tell customers to verify the exact rule set in their tenant.
 
+
+
+## 2026-05-22T11:05 — K's Table UX Fixes
+- Agent K completed table numbering reform (flat sequential with nested subtasks)
+- Inline editing enabled for all task fields
+- Cascade updates implemented for timing changes
+- Frontend: js/gantt-planner.js, css/style.css modified
+- Status: Ready for QA

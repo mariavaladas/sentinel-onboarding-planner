@@ -1305,3 +1305,25 @@ All parent and child effort values use clean numbers only (`1`, `2`, `3`, `4`, `
 
 ---
 
+
+
+
+# K — Flat numbering and cell-first Gantt edits
+
+- **Date:** 2026-05-22T11:03:38.974+02:00
+- **By:** K
+- **Scope:** `js/gantt-planner.js`, `css/style.css`
+
+## Decision
+Use one flat sequential counter for every top-level task in the Gantt table across all phases. Only subtasks keep the parent-letter suffix pattern (`4a`, `4b`, etc.).
+
+Treat the left table as a true click-to-edit surface: clicking any editable status, start date, due date, duration, or impact cell should open the inline editor directly, with duration accepting shorthand values like `4h`, `1d`, `1w`, and `2.5d`.
+
+## Why
+The previous compound numbering (`0.1`, `1.4`, `4.2`) did not match the expected project-plan reading order, and the first inline-edit pass was too subtle to behave like a spreadsheet-style planning surface.
+
+## Impact
+- Parent task numbering now matches the visual order users expect.
+- Inline editing is discoverable from the table itself without needing a separate edit action.
+- Schedule edits continue to rebuild dependent task timing through the existing dependency-based recalculation flow.
+

@@ -27,8 +27,23 @@
 - **Business days:** Task dates map to business-day scheduling (no weekend gaps)
 - **Subtask labels:** Parent number + letter suffixes; text outside narrow bars
 
+## Learnings
+
+### 2026-05-22T11:03:38.974+02:00 — Flat numbering and cell-first editing
+- Top-level Gantt task numbers need one flat counter across setup, phase, and closeout rows; only subtasks should inherit the parent number with a letter suffix.
+- Inline table editing needs a clear cell-level affordance in addition to nested triggers so users can click anywhere in the value cell and immediately edit.
+- Duration parsing should accept shorthand entries (`4h`, `1d`, `1w`, `2.5d`), and date edits should accept `DD/MM/YYYY` text while still snapping to business days.
+
 ## Archive
 
 Previous detailed sessions archived to **history-archive.md**:
 - 2026-05-21 six sessions (editable durations, subtask hierarchy, ExcelJS export, split-pane, start-week editing, Gantt reference-layout refresh, solutions cleanup, bar visibility, labels/inline-editing, dead-code audit, cleanup completed)
 - 2026-05-22 earlier (labels restored, dead-code cleanup)
+
+
+## 2026-05-22T11:05 — K's Table UX Fixes
+- Agent K completed table numbering reform (flat sequential with nested subtasks)
+- Inline editing enabled for all task fields
+- Cascade updates implemented for timing changes
+- Frontend: js/gantt-planner.js, css/style.css modified
+- Status: Ready for QA

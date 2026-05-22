@@ -195,3 +195,11 @@ value_score = (coverage * 0.4) + (detection_quality * 25) + (setup_ease * 20)
 - ✓ Excel export shows sizing summary
 - ✓ No breaking schema changes
 
+
+
+## 2026-05-22T11:05 — K's Table UX Fixes
+- Agent K completed table numbering reform (flat sequential with nested subtasks)
+- Inline editing enabled for all task fields
+- Cascade updates implemented for timing changes
+- Frontend: js/gantt-planner.js, css/style.css modified
+- Status: Ready for QA
