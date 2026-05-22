@@ -1,4 +1,4 @@
-# History — Sebastian
+﻿# History — Sebastian
 
 ## Project Context
 - **Project:** Sentinel Onboarding Planner v2
@@ -149,3 +149,18 @@ K successfully implemented Start Week editing in the planner, enabling editable 
 - Cascade updates implemented for timing changes
 - Frontend: js/gantt-planner.js, css/style.css modified
 - Status: Ready for QA
+
+### 2026-05-22T14:58:07.474+02:00: Solutions page vendor-aware recommendations and value badges
+**What I changed:**
+- Tightened Step 3 recommendation matching so specific vendor identities (for example Palo Alto and Trend Micro) take precedence over broad platform tags like Azure; hybrid third-party records no longer inherit a Microsoft/Azure "Recommended" badge unless that actual vendor was selected in Step 2.
+- Normalized content-count reads in `solutions.js` so recommendation/value checks can use either the current `connectors`/`analytics` fields or count-style aliases such as `connectorCount` and `analyticRuleCount`.
+- Gated the value indicators to solutions that have at least one connector and at least one analytic rule; connector-only entries no longer get the star/valuable marker.
+
+**Key decision:**
+- Reused existing `category`, `tags`, `connectors`, and `analytics` catalog metadata instead of adding a new vendor field to `solutions.json`, because the current schema is enough once vendor precedence is handled correctly in the UI logic.
+
+---
+
+## 2026-05-22T13:09:00Z — Session gantt-fixes-and-solutions
+
+**Team Update:** Both K and Sebastian completed assigned work. Decisions merged and logged.

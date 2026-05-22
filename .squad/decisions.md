@@ -1,4 +1,4 @@
-# Decisions
+﻿# Decisions
 
 > Canonical decision ledger for the Sentinel Onboarding Planner v2.
 
@@ -162,5 +162,69 @@
    2. Numbering convention with letter suffixes (A, B, C)
    3. Weekend gap removal in dependency chains
    4. Inline editing for table cells (duration, dates, status)
+
+---
+
+### 2026-05-22: K — Inline editor flicker fix
+**By:** K (Frontend Developer)
+**Date:** 2026-05-22T14:58:07.474+02:00
+**Scope:** js/gantt-planner.js, wizard persistence surface
+**Status:** COMPLETE
+
+**Decision**
+Defer Gantt table layout rebuilds while an inline editor is active. updateLayout() now stores the latest pending row metrics instead of rebuilding immediately, and closeInlineEditor() replays that deferred update after editing ends. When switching directly from one inline editor to another, the close call suppresses the pending flush so the newly targeted cell is not rebuilt out from under the user.
+
+**Why**
+stabilizeGanttRender() can emit a follow-up onLayoutChange even when the table has not materially changed. That rebuild path closed the active editor and replaced the table DOM, which caused the duration/date/status pill editor to flash and disappear.
+
+**Impact**
+- Inline duration, date, and status editing stays open during chart stabilization.
+- The working mouseup + click trigger pattern and 300ms blur delay remain unchanged.
+- Planner reset should clear all sentinelPlanner.* keys together so saved wizard context stays consistent across vendors, server sizing, step restore, solution picks, and duration overrides.
+
+---
+
+### 2026-05-22: K — Solutions page recommendation semantics
+**By:** K (Frontend Developer)
+**Date:** 2026-05-22T11:26:46.145+02:00
+**Scope:** Step 2 vendor selection, Step 3 solution cards
+**Status:** COMPLETE
+
+**Decision**
+- Remove Azure and Microsoft 365 as default-selected vendors in Step 2 so Step 3 "Recommended" labels only reflect explicit customer selections.
+- Reinterpret the Step 3 corner star as a value signal for solutions with at least one connector and at least one analytic rule.
+- Surface known infrastructure prerequisites directly on Step 3 cards with a new "Required infrastructure" section.
+
+**Why**
+- Default vendor selections were causing false-positive recommendations.
+- Users need to distinguish vendor-fit from content richness.
+- Infrastructure dependencies affect delivery planning and should be visible before the planning/export steps.
+
+**Files Modified**
+- index.html
+- js/modules/solutions.js
+- css/style.css
+
+---
+
+### 2026-05-22: Sebastian — Solutions page display logic
+**By:** Sebastian (Data Engineer)
+**Date:** 2026-05-22T14:58:07.474+02:00
+**Scope:** js/modules/solutions.js
+**Status:** COMPLETE
+
+**Decision**
+- Step 3 recommendation badges should resolve a solution's vendor identity with **specific-vendor precedence**.
+- If a solution matches a named third-party vendor (for example Palo Alto or Trend Micro), it should only be marked **Recommended** when that vendor was selected in Step 2, even if the same solution also mentions Azure or Microsoft platform terms.
+- Value indicators should use content counts and require **at least one connector plus at least one analytic rule**.
+
+**Why**
+- Hybrid solutions such as Azure-branded third-party packages were inheriting Microsoft/Azure recommendations from broad tag matching.
+- Connector-only packages collect data but do not provide packaged detections, so they should not be marked as valuable.
+
+**Impact**
+- Azure/Microsoft category matching still works for genuine first-party records.
+- Third-party solutions no longer get cross-vendor recommendation badges from platform keywords alone.
+- Existing category, tags, connectors, and analytics fields remain sufficient; no catalog schema change is required.
 
 ---

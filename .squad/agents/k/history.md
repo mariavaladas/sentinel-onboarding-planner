@@ -1,4 +1,4 @@
-# History — K
+﻿# History — K
 
 ## Project Context
 - **Project:** Sentinel Onboarding Planner v2
@@ -38,6 +38,16 @@
 - Gantt table inline editing is more reliable when cell activation is delegated from the table surface in capture phase instead of relying only on per-cell click listeners.
 - Editable date and duration cells also need their own hover highlight so users can see the click target even when rows are rebuilt during layout updates.
 
+### 2026-05-22T11:26:46.145+02:00 — Solutions step recommendation semantics
+- Step 2 vendor defaults must stay empty when recommendations are meant to reflect explicit customer choices; visual defaults in the vendor grid create false "Recommended" badges downstream.
+- The solutions card star now needs its own meaning separate from recommendation status so users can distinguish content-rich solutions from vendor-matched ones at a glance.
+- Infrastructure prerequisites are best surfaced inline on the solution card beside required roles so planning assumptions are visible before export.
+
+### 2026-05-22T14:58:07.474+02:00 — Deferred layout refresh and wizard restore
+- Deferred Gantt table `updateLayout()` work while an inline editor is active, then replayed the most recent pending layout after `closeInlineEditor()` finishes so Frappe stabilization no longer destroys the active field.
+- Preserved the dual `mouseup` + `click` trigger activation and the 300ms blur delay, while removing the temporary global click diagnostic and stray debug logging.
+- Added Step 2 persistence for vendor picks, optional Azure/on-prem server counts, current wizard step, and a reset control that clears the planner's `sentinelPlanner.*` saved state.
+
 ## Archive
 
 Previous detailed sessions archived to **history-archive.md**:
@@ -58,3 +68,9 @@ Previous detailed sessions archived to **history-archive.md**:
 - Row-level handler checks event.target to skip clicks from editable cells.
 - Both K's cell openers and Coordinator's direct handlers ensure reliable cell editing without row interference.
 
+
+---
+
+## 2026-05-22T13:09:00Z — Session gantt-fixes-and-solutions
+
+**Team Update:** Both K and Sebastian completed assigned work. Decisions merged and logged.
