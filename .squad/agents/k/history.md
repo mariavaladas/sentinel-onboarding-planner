@@ -118,3 +118,8 @@ Previous detailed sessions archived to **history-archive.md**:
 - `k-side-panel-descriptions.md`
 
 **Impact:** Gantt planner is now stable for production use with consistent color semantics and reliable inline editing.
+
+## 2026-05-22T15:12Z — Cross-agent alignment (UX batch)
+- K-21 completed: collapsible groups, per-solution start dates, timeline dropdown, add-task fix
+- Upstream: Luv flagged RBAC metadata gaps; Sebastian queued Windows AMA companion records
+- Next: await QA acceptance on inline editing flicker fix and group UI state persistence

@@ -1,4 +1,4 @@
-﻿# Decisions
+# Decisions
 
 > Canonical decision ledger for the Sentinel Onboarding Planner v2.
 
@@ -346,3 +346,140 @@ stabilizeGanttRender() can emit a follow-up onLayoutChange even when the table h
 - Server split setting moves to Step 5 or is conditionally shown when Windows solutions are selected.
 
 ---
+
+---
+
+### 2026-05-22T16:26:15Z: UX Decision — Collapsible solution groups
+**By:** madesous (via Copilot)
+**What:** Gantt planner should use a two-level tree hierarchy:
+- Shared phases (Stakeholder Kickoff, Define Workspace Topology, Training & Handover, Go Live & Monitoring) stay as flat top-level rows
+- Each solution/connector becomes a collapsible group header with chevron toggle
+- Collapsed by default so stakeholders see the big picture
+- Group header bar spans the full duration of its child tasks (aggregate bar)
+- Expanding shows individual subtasks indented beneath
+**Why:** Scalability — as more connectors are added (currently 5+), the flat task list becomes overwhelming. This keeps the view manageable.
+
+---
+
+### 2026-05-22T16:29:31Z: Feature scope — Firewall connectors with EPS-based VM sizing
+**By:** madesous (via Copilot)
+**What:** Firewall connectors (Palo Alto, Fortinet, Check Point, etc.) should be added as solutions. Two categories:
+1. **VM-based (CEF/Syslog)** — require a log forwarder VM. For these, the wizard asks the user how many EPS (events per second) they expect, then suggests a number of VMs based on documented maximum EPS for CEF and Syslog AMA collectors.
+2. **Cloud API connectors** — some firewalls have direct API-to-cloud ingestion (no VM needed).
+Requires thorough research into Microsoft's documented EPS limits per VM size for CEF/Syslog data collection.
+**Why:** Realistic infrastructure planning — VM sizing is the #1 question SOC teams have for firewall log ingestion. Automating this makes the planner highly valuable.
+
+---
+
+### 2026-05-22T16:44:33Z: User directive
+**By:** madesous (via Copilot)
+**What:** Each solution group should have a modifiable start date. Changing a solution's start date shifts only the tasks/subtasks within that solution — not other solutions. This enables parallel solution setup where some solutions start later than others at the customer's discretion.
+**Why:** User request — captured for team memory
+
+---
+
+### 20260522-171143: User directives - future exploration items
+**By:** Maria de Sousa-Valadas Castano (via Copilot)
+**What:**
+1. Queue exploration of auto-mapping from colleague's MCP discovery agent (Splunk/QRadar) to solutions catalog - so customers don't need to manually select connectors
+2. Queue exploration of customers using Cribl as a data pipeline/routing layer - work on this next week
+
+**Why:** User request - future feature exploration items captured for team memory
+
+---
+
+# K — Collapsible solution groups with persisted start offsets
+
+- **Date:** 2026-05-22T17:22:50.5966240+02:00
+- **Scope:** `js/gantt-planner.js`, `css/style.css`
+
+## Decision
+Model each selected solution as a top-level Gantt "solution group" row inside the existing Step 5 planner pipeline instead of adding a separate grouping layer or new browser store.
+
+- Persist group UI state in the existing `sentinelPlanner.taskDurationOverrides.v1` payload under `solutionGroups`.
+- Keep solution groups collapsed by default; only persist `collapsed: false` when a user expands a group.
+- Make the solution-group row the only place where a connector-wide start date is edited; child task start overrides remain relative to that group offset.
+- Reserve row/bar clicks for selection and toolbar enablement, while chevrons and Gantt labels handle collapse/expand toggles.
+
+## Why
+- The planner already rebuilds table rows, Gantt bars, mobile list, and export output from one normalized row model, so grouping belongs in that same pipeline.
+- Storing group offsets beside task overrides keeps reset, reload, and derived scheduling behavior deterministic.
+- Separating toggle affordances from selection fixes the disabled `+ Add task` flow on solution summary rows without losing collapse controls.
+
+## Notes
+- Timeline controls now use a Weeks / Months / Quarters dropdown.
+- Custom timeline headers are rebuilt per zoom mode so labels stay readable without forking Frappe Gantt.
+
+---
+
+# K — Gantt task CRUD via override-backed custom tasks
+
+- **Date:** 2026-05-22T16:42:32.7641933+02:00
+- **Scope:** `js/gantt-planner.js`, `css/style.css`
+
+## Decision
+Store Step 5 task CRUD in the existing browser persistence surface instead of introducing a new store: the `sentinelPlanner.taskDurationOverrides.v1` payload now carries a versioned `{ overrides, customTasks }` shape.
+
+- Built-in/template planner rows stay immutable and are changed through field overrides (`step`, `description`, `owner`, `status`, `impact`, schedule fields).
+- User-created tasks and subtasks are stored as `customTasks` entries keyed by ID, attached by `solutionId` and optional `parentRowId`.
+- Template tasks are never deleted; they can be marked `Skipped` via status override.
+- User-added rows can be hard-deleted, and their related override entries are removed at the same time.
+
+## Why
+- The planner already depends on one localStorage-backed override model, so extending that state keeps persistence predictable and easy to reset.
+- Rebuilding table rows, Gantt bars, detail panel, and export rows from one normalized plan pipeline prevents CRUD-only drift between surfaces.
+- Skipping template rows preserves numbering, dependency chains, and exported plan visibility better than physically removing catalog tasks.
+
+## Notes
+- New tasks reopen directly into inline name editing after the plan rerenders.
+- Side-panel descriptions are editable and persist through the same override path.
+- `Skipped` is now a first-class task status with matching table/bar styling.
+
+---
+
+# Luv QA decision — connector ownership and RBAC metadata
+
+- **Date:** 2026-05-22T16:20:26.073+02:00
+- **Agent:** Luv
+- **Scope:** `data/solutions.json` connector planning metadata
+
+## Decision
+Connector planning metadata should distinguish **platform deployment ownership** from **source-system ownership**, and AMA-based families must explicitly model the Azure roles needed for **DCR/agent deployment** (not just workspace access).
+
+## Why
+The QA review found repeated planning errors when a connector spans two control planes:
+- source system / vendor admin work (for example AWS IAM, SaaS API credentials, WEC/WEF, device forwarding)
+- Azure deployment work (for example AMA, DCR, Function App, Sentinel connector configuration)
+
+A single `owner_recommended` value and simplified permissions block under-state that split for many connectors.
+
+## Impact
+- Sebastian can normalize connector families with more accurate role metadata.
+- K can later surface primary + secondary owners instead of implying one team can finish every connector alone.
+- Future QA should treat Arc, DCR, and source-platform admin prerequisites as first-class planning dependencies.
+
+---
+
+# Sebastian — Windows AMA connector records
+
+- **Date:** 2026-05-22T16:20:26.073+02:00
+- **Scope:** `data/solutions.json`
+
+## Decision
+Add four AMA-specific companion connector records in `categories.third_party.solutions`:
+- `windows-forwarded-events-via-ama`
+- `windows-firewall-via-ama`
+- `windows-dns-events-via-ama`
+- `sysmon-via-ama`
+
+Keep the existing umbrella Windows solution records unchanged.
+
+## Why
+- The existing `Windows Forwarded Events`, `Windows Firewall`, `Windows Server DNS`, and `Windows Security Events` records mix legacy and modern paths or contain generic planner content.
+- The planner needs connector-specific AMA onboarding data with explicit owners, dependencies, and infrastructure requirements.
+- Companion records let the product surface precise plans without deleting legacy Content Hub bundle metadata that other screens still reference.
+
+## Data model notes
+- New records carry both `setup_tasks` (explicit phase/task model) and `planner.setup_tasks` (backward-compatible mirror for current UI/export code).
+- Added `contentCounts` and `requiredInfrastructure` as richer metadata while preserving existing `analytics`, `workbooks`, and onboarding fields.
+- `vendor: "Microsoft"` is stored as descriptive metadata only; no current UI logic depends on it.

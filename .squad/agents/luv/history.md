@@ -65,3 +65,8 @@
   - High-risk connector specifics: `windows-security-events` needs conditional Arc + audit-policy modeling, `windows-forwarded-events` needs explicit WEC/WEF prerequisites, and `defender-xdr` should model duplicate-incident cutover dependencies.
   - Key file paths for future QA: `data/solutions.json`, `.squad/agents/luv/connector-research-windows-family.md`, `.squad/agents/luv/solutions-qa-review.md`.
 
+
+## 2026-05-22T15:12Z — Cross-agent alignment (UX batch)
+- QA finding on RBAC metadata accepted by team; queued for Sebastian implementation
+- Upstream: K-21 completed collapsible groups; solution start dates now editable per group
+- Next: review planner group headers for RBAC/owner visibility in detail panel
