@@ -48,6 +48,11 @@
 - Preserved the dual `mouseup` + `click` trigger activation and the 300ms blur delay, while removing the temporary global click diagnostic and stray debug logging.
 - Added Step 2 persistence for vendor picks, optional Azure/on-prem server counts, current wizard step, and a reset control that clears the planner's `sentinelPlanner.*` saved state.
 
+### 2026-05-22T15:16:35.155+02:00 — Gantt picker UX and US date standard
+- Inline Gantt date editing works better as a small anchored popup with a text field plus calendar grid; saving on day-pick and validating manual `MM/DD/YYYY` entry keeps spreadsheet speed without losing a picker.
+- Duration editing is clearer when the table shows human-readable labels (`2 weeks`, `3 days`) while the picker itself uses compact quick-pick chips (`2w`, `3d`) and a number+unit custom control.
+- The Frappe timeline header is easiest to restyle by rebuilding the HTML header rows after render, which allows true month-span bands and custom day-number labels without forking the library.
+
 ## Archive
 
 Previous detailed sessions archived to **history-archive.md**:
@@ -74,3 +79,30 @@ Previous detailed sessions archived to **history-archive.md**:
 ## 2026-05-22T13:09:00Z — Session gantt-fixes-and-solutions
 
 **Team Update:** Both K and Sebastian completed assigned work. Decisions merged and logged.
+
+---
+
+## 2026-05-22T16:20:26Z — K-19 Completion Summary
+
+**Agent K-19** completed Gantt owner dropdown overflow and status color alignment:
+
+1. **Owner popup layering** — Replaced native datalist editor with anchored popup pattern, proper z-index handling
+2. **Status color alignment** — Unified colors across table badges and Gantt bars:
+   - Planned = muted slate (phase palette preserved)
+   - In Progress = teal
+   - Completed = green
+   - In Review = amber
+3. **Related fixes:**
+   - Date/duration inline picker UX with MM/DD/YYYY format
+   - Owner column fallback mapping (task → solution → role heuristic)
+   - Detail panel descriptions from task or solution metadata
+   - Deferred layout refresh to prevent inline editor closure during Frappe stabilization
+
+**Decisions logged:**
+- `k-color-overflow-fix.md`
+- `k-status-bar-colors.md`
+- `k-gantt-inline-picker-ux.md`
+- `k-owner-column.md`
+- `k-side-panel-descriptions.md`
+
+**Impact:** Gantt planner is now stable for production use with consistent color semantics and reliable inline editing.

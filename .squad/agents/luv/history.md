@@ -36,3 +36,25 @@
 - Cascade updates implemented for timing changes
 - Frontend: js/gantt-planner.js, css/style.css modified
 - Status: Ready for QA
+
+---
+
+## 2026-05-22T16:20:26Z — Luv-2 Completion Summary
+
+**Agent Luv-2** completed Windows connector research across 4 families:
+
+**Research deliverable:**
+- `.squad/agents/luv/connector-research-windows-family.md` — Complete breakdown of:
+  1. **Forwarded Events** (CEF via AMA)
+  2. **Windows Firewall** (Advanced Security events via AMA)
+  3. **DNS Query Events** (via AMA + DCR)
+  4. **Sysmon** (via AMA + custom DCR)
+
+**Content per connector:**
+- Setup complexity assessment
+- RBAC and permissions requirements
+- Infrastructure prerequisites
+- AMA/DCR configuration patterns
+- Schema and event data details
+
+**Impact:** Research provides data foundation for Sebastian's Windows connector integration task (K-20 upcoming). All connector requirements and setup steps documented for downstream planning.

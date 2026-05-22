@@ -228,3 +228,121 @@ stabilizeGanttRender() can emit a follow-up onLayoutChange even when the table h
 - Existing category, tags, connectors, and analytics fields remain sufficient; no catalog schema change is required.
 
 ---
+
+### 2026-05-22: K — Status-based Gantt bar colors
+**By:** K (Frontend Developer)
+**Date:** 2026-05-22
+**Status:** COMPLETE
+
+**Decision**
+- Keep `Planned` bars on the existing phase palette so phase sequencing still reads clearly in the dark-theme Gantt.
+- Override non-planned task bars with muted status colors shared across phases: blue-teal for `In Progress`, green for `Completed`, and amber for `In Review`.
+- Apply the same subtask lightening pass to those status colors so nested rows stay visually related to their parent rows.
+
+**Why**
+- Once users start updating execution state, status should be more visually important than phase tone.
+- Keeping `Planned` on the phase palette preserves the planning-oriented overview when nothing has started yet.
+- Slightly desaturated colors fit the existing dark UI better than bright traffic-light tones.
+
+**Impact**
+- Changing a task status in the inline editor now updates the Gantt bar color on the next rebuild/render pass.
+- Status dots in the table remain CSS-driven and unchanged.
+
+---
+
+### 2026-05-22: K — Gantt owner popup and status color alignment
+**By:** K (Frontend Dev)
+**Date:** 2026-05-22
+**Status:** COMPLETE
+
+**Decision**
+- Replaced the owner cell's native datalist editor with the same anchored popup pattern used by the inline date/duration editors so owner selection renders as an overlay inside the Gantt table instead of bleeding through adjacent rows.
+- Shifted planned phase bar colors to a muted slate palette and aligned status colors so table badges and Gantt bars now agree: Planned = muted slate, In Progress = teal, Completed = green, In Review = amber.
+
+**Why**
+- Native datalist dropdowns do not respect the planner's inline editor layering as reliably as the custom popup shell.
+- Planned and In Progress were visually too close, and In Review was inconsistent between the table badge and the bar fill.
+
+**Impact**
+- Owner edits open in a contained popup with proper z-index/positioning.
+- Unstarted bars read as quieter/default work, while active and review states are clearly distinct.
+
+---
+
+### 2026-05-22: K — Gantt inline picker UX
+**By:** K (Frontend Dev)
+**Date:** 2026-05-22
+**Status:** COMPLETE
+
+**Decision**
+- Step 5 Gantt table and chart popup dates now use `MM/DD/YYYY`, and the frontend persists that preference under `sentinelPlanner.dateFormat.v1`.
+- Inline date editing uses an anchored dark-theme popup with both manual text entry and a calendar grid; impossible dates stay invalid and do not save.
+- Inline duration editing uses a Monday.com-style picker with quick-pick chips plus a number/unit custom control, while table cells display human-readable durations.
+- The Gantt timeline header is rebuilt post-render into a two-tier month/year + day-number layout so month spans can be visually grouped without modifying the vendored library.
+
+**Why**
+- Consistent date format improves readability across inline editors and calendar pickers.
+- Custom picker patterns ensure impossible dates cannot be entered.
+- Two-tier header provides better visual grouping of months in the timeline.
+
+**Impact**
+- Date and duration editing experience is consistent and robust across the planner.
+- Timeline header now shows both months and day numbers clearly.
+
+---
+
+### 2026-05-22: K — Owner column fallback mapping
+**By:** K (Frontend Dev)
+**Date:** 2026-05-22
+**Status:** COMPLETE
+
+**Decision**
+- Use the new Gantt Owner column as a supported role/team field, not a person field. Task rows now prefer `setup_tasks[].owner` when present, otherwise infer a role from task/solution wording (for example RBAC/identity work → Identity/Entra Admin, architecture/design work → SOC Architect, forwarders/servers/agents → Operations Team, validation/content tuning → SOC Engineers). If nothing matches, the UI falls back to the solution-level owner recommendation and finally displays `—`.
+
+**Why**
+- The current catalog mostly has solution-level `owner_recommended` values and does not yet provide per-task owners. Heuristic defaults keep the new column useful immediately without forcing a data migration, while inline owner overrides still let customers tailor each task to their own organization.
+
+**Impact**
+- Gantt table and detail panel show a role-based owner per task.
+- Owner can be reassigned inline and persisted with task overrides.
+- Custom free-text team names remain allowed for customer-specific org models.
+
+---
+
+### 2026-05-22: K — Side panel click and descriptions
+**By:** K (Frontend Dev)
+**Date:** 2026-05-22
+**Status:** COMPLETE
+
+**Decision**
+- Keep row activation for name/number cells, but move inline-cell activation back to capture phase so editable value cells intercept clicks before the row handler runs. The row handler now only suppresses clicks when the inline trigger/editor itself is active.
+- Thread task-level `description` and `required_roles` into plan rows, with safe fallback to solution onboarding notes / solution description so the detail panel can show meaningful context immediately and become richer as catalog metadata is added.
+
+**Why**
+- Inline editing and detail-panel opening need to coexist without forcing the whole row to behave as an edit target.
+- Task-level context ensures customers understand what each subtask involves.
+
+**Impact**
+- Detail panel shows meaningful descriptions from task or solution metadata.
+- Inline editing and detail-panel clicks coexist without conflict.
+
+**Files:** `js/gantt-planner.js`, `css/style.css`
+
+---
+
+### 2026-05-22: User directive — Optional server split trigger
+**By:** madesous (via Copilot)
+**Date:** 2026-05-22T15:11:55Z
+**Status:** APPROVED
+
+**What**
+- The "Optional server split" (Azure vs on-prem server counts) should NOT be on the Environment page (Step 2). It should appear later, as a setting triggered only when the customer selects Windows servers — only customers with Windows servers need this option.
+
+**Why**
+- User request — captures intended user experience.
+- Reduces cognitive load on non-Windows scenarios.
+
+**Impact**
+- Server split setting moves to Step 5 or is conditionally shown when Windows solutions are selected.
+
+---
