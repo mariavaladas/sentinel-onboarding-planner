@@ -53,6 +53,12 @@
 - Duration editing is clearer when the table shows human-readable labels (`2 weeks`, `3 days`) while the picker itself uses compact quick-pick chips (`2w`, `3d`) and a number+unit custom control.
 - The Frappe timeline header is easiest to restyle by rebuilding the HTML header rows after render, which allows true month-span bands and custom day-number labels without forking the library.
 
+### 2026-05-22T16:42:32.7641933+02:00 — Task CRUD on top of planner overrides
+- A versioned localStorage payload works best when custom task records and per-task overrides live together; upgrading the state shape (`overrides` + `customTasks`) avoids introducing a second browser store.
+- Treating catalog-backed tasks as immutable defaults and persisting rename/status/description changes as overlays keeps rebuild, export, and reset flows deterministic.
+- User-added rows need hard delete plus override cleanup, while template rows should be skipped with a status override so numbering, dependencies, and export visibility stay intact.
+- Full Gantt/table rerenders are compatible with CRUD if the controller can reopen the intended inline field by `{ taskId, fieldKey }` immediately after a new task is injected.
+
 ## Archive
 
 Previous detailed sessions archived to **history-archive.md**:

@@ -23,6 +23,7 @@
                     <p class="header-subtitle">Plan Sentinel onboarding scope, sequencing, and handoff before implementation starts.</p>
                 </div>
             </div>
+            <button type="button" class="app-button app-button--subtle" id="resetPlannerState">Reset saved progress</button>
         </header>
 
         <div class="progress-container">
@@ -64,9 +65,9 @@
                         </article>
                     </div>
 
-                    <div class="workspace-connect-section" id="workspaceSection">
+                    <div class="workspace-connect-section">
                         <div class="workspace-connect-divider"><span>Optional</span></div>
-                        <div class="workspace-connect-card" id="workspaceCard">
+                        <div class="workspace-connect-card">
                             <h3>🔗 Connect to an existing workspace</h3>
                             <p>Import your existing connectors so new sources are shown alongside what's already deployed.</p>
                             <div class="token-instructions" id="tokenInstructions">
@@ -114,12 +115,12 @@
                     <p class="step-description">Choose the platforms and vendors you expect to bring into Sentinel. These choices highlight likely solutions in the next step.</p>
 
                     <div class="category-grid vendor-grid">
-                        <div class="category-card vendor-card selected" data-vendor="azure">
+                        <div class="category-card vendor-card" data-vendor="azure">
                             <div class="category-icon">☁️</div>
                             <h3>Azure</h3>
                             <div class="category-check">✓</div>
                         </div>
-                        <div class="category-card vendor-card selected" data-vendor="microsoft365">
+                        <div class="category-card vendor-card" data-vendor="microsoft365">
                             <div class="category-icon">🛡️</div>
                             <h3>Microsoft 365</h3>
                             <div class="category-check">✓</div>
@@ -263,9 +264,26 @@
 
                     <p class="helper-text">You can still search for additional third-party solutions in the next step.</p>
 
+                    <div class="environment-size-card">
+                        <div>
+                            <h3>Optional server split</h3>
+                            <p class="environment-size-description">Capture how many servers are already in Azure versus on-premises or other clouds so you can pick up where you left off later.</p>
+                        </div>
+                        <div class="environment-size-grid">
+                            <label class="environment-size-field" for="azureServerCount">
+                                <span>Azure servers</span>
+                                <input type="number" id="azureServerCount" min="0" step="1" inputmode="numeric" placeholder="0">
+                            </label>
+                            <label class="environment-size-field" for="onPremServerCount">
+                                <span>On-prem / other cloud servers</span>
+                                <input type="number" id="onPremServerCount" min="0" step="1" inputmode="numeric" placeholder="0">
+                            </label>
+                        </div>
+                    </div>
+
                     <div class="nav-buttons">
                         <button type="button" class="app-button" data-prev>← Back</button>
-                        <button type="button" class="app-button app-button--accent" data-next id="step2Next">Continue to solutions →</button>
+                        <button type="button" class="app-button app-button--accent" data-next>Continue to solutions →</button>
                     </div>
                 </div>
             </section>

@@ -6,12 +6,13 @@ import {
     getSelectedSolutionsData,
     initStep3,
     loadSolutionData,
+    selectedVendors,
     setConnectedSolutionIds,
     setConnectedSolutionsFromWorkspace,
     toggleVendor
 } from './modules/solutions.js';
 import { exportTopologyAsPdf, exportTopologyAsPng, renderTopology } from './modules/topology.js';
-import { nextStep, prevStep, updateProgress } from './modules/wizard.js';
+import { nextStep, prevStep, setCurrentStep } from './modules/wizard.js';
 import { sortByScore } from './modules/scoring.js';
 
 const AZURE_TOKEN_COMMAND = 'az account get-access-token --resource https://management.azure.com --query accessToken -o tsv';
@@ -21,6 +22,153 @@ const workspaceConnectionState = {
     resourceGroups: [],
     workspaces: [],
     selectedWorkspace: null
+};
+
+const STORAGE_PREFIX = 'sentinelPlanner.';
+const SELECTED_VENDORS_STORAGE_KEY = `${STORAGE_PREFIX}selectedVendors`;
+const SERVER_ENVIRONMENT_STORAGE_KEY = `${STORAGE_PREFIX}serverEnvironment`;
+const CURRENT_STEP_STORAGE_KEY = `${STORAGE_PREFIX}currentStep`;
+const SELECTED_SOLUTIONS_STORAGE_KEY = `${STORAGE_PREFIX}selectedSolutions`;
+const CONNECTED_SOLUTIONS_STORAGE_KEY = `${STORAGE_PREFIX}connectedSolutionIds`;
+const PLANNER_STORAGE_KEYS = [
+    SELECTED_VENDORS_STORAGE_KEY,
+    SERVER_ENVIRONMENT_STORAGE_KEY,
+    CURRENT_STEP_STORAGE_KEY,
+    SELECTED_SOLUTIONS_STORAGE_KEY,
+    CONNECTED_SOLUTIONS_STORAGE_KEY
+];
+const SERVER_ENVIRONMENT_INPUT_IDS = {
+    azure: 'azureServerCount',
+    onprem: 'onPremServerCount'
+};
+
+const canUseLocalStorage = () => {
+    try {
+        return typeof window !== 'undefined' && !!window.localStorage;
+    } catch {
+        return false;
+    }
+};
+
+const readJsonFromStorage = (storageKey, fallbackValue = null) => {
+    if (!canUseLocalStorage()) {
+        return fallbackValue;
+    }
+
+    try {
+        const rawValue = window.localStorage.getItem(storageKey);
+        return rawValue ? JSON.parse(rawValue) : fallbackValue;
+    } catch (error) {
+        console.warn(`Unable to read ${storageKey}:`, error);
+        return fallbackValue;
+    }
+};
+
+const writeJsonToStorage = (storageKey, value) => {
+    if (!canUseLocalStorage()) {
+        return;
+    }
+
+    try {
+        window.localStorage.setItem(storageKey, JSON.stringify(value));
+    } catch (error) {
+        console.warn(`Unable to write ${storageKey}:`, error);
+    }
+};
+
+const getPersistedCurrentStep = () => {
+    if (!canUseLocalStorage()) {
+        return 1;
+    }
+
+    const rawValue = window.localStorage.getItem(CURRENT_STEP_STORAGE_KEY);
+    const parsedStep = Number.parseInt(rawValue || '', 10);
+    return Number.isFinite(parsedStep) ? parsedStep : 1;
+};
+
+const getVendorCards = () => Array.from(document.querySelectorAll('[data-vendor]'));
+
+const applySelectedVendors = (vendorIds = []) => {
+    const nextVendors = new Set(Array.isArray(vendorIds) ? vendorIds.filter(Boolean) : []);
+    selectedVendors.clear();
+
+    getVendorCards().forEach((card) => {
+        const vendorId = card.dataset.vendor;
+        const isSelected = Boolean(vendorId) && nextVendors.has(vendorId);
+        card.classList.toggle('selected', isSelected);
+        if (isSelected) {
+            selectedVendors.add(vendorId);
+        }
+    });
+};
+
+const persistSelectedVendors = () => {
+    writeJsonToStorage(SELECTED_VENDORS_STORAGE_KEY, Array.from(selectedVendors));
+};
+
+const restoreSelectedVendors = () => {
+    const storedVendors = readJsonFromStorage(SELECTED_VENDORS_STORAGE_KEY, null);
+    if (Array.isArray(storedVendors)) {
+        applySelectedVendors(storedVendors);
+        return;
+    }
+
+    const markupSelections = getVendorCards()
+        .filter((card) => card.classList.contains('selected'))
+        .map((card) => card.dataset.vendor)
+        .filter(Boolean);
+    const vendorsToApply = markupSelections.length > 0
+        ? markupSelections
+        : ['azure', 'microsoft365'];
+    applySelectedVendors(vendorsToApply);
+    persistSelectedVendors();
+};
+
+const getServerEnvironmentInputs = () => ({
+    azure: document.getElementById(SERVER_ENVIRONMENT_INPUT_IDS.azure),
+    onprem: document.getElementById(SERVER_ENVIRONMENT_INPUT_IDS.onprem)
+});
+
+const normalizeServerCount = (value) => {
+    const parsedValue = Number.parseInt(value || '', 10);
+    return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 0;
+};
+
+const persistServerEnvironment = () => {
+    const { azure, onprem } = getServerEnvironmentInputs();
+    writeJsonToStorage(SERVER_ENVIRONMENT_STORAGE_KEY, {
+        azure: normalizeServerCount(azure?.value),
+        onprem: normalizeServerCount(onprem?.value)
+    });
+};
+
+const restoreServerEnvironment = () => {
+    const storedServerEnvironment = readJsonFromStorage(SERVER_ENVIRONMENT_STORAGE_KEY, {});
+    const { azure, onprem } = getServerEnvironmentInputs();
+    const azureCount = normalizeServerCount(storedServerEnvironment?.azure);
+    const onPremCount = normalizeServerCount(storedServerEnvironment?.onprem);
+
+    if (azure) {
+        azure.value = azureCount > 0 ? String(azureCount) : '';
+    }
+
+    if (onprem) {
+        onprem.value = onPremCount > 0 ? String(onPremCount) : '';
+    }
+};
+
+const clearPlannerLocalStorage = () => {
+    if (!canUseLocalStorage()) {
+        return;
+    }
+
+    const keysToClear = new Set([
+        ...Array.from({ length: window.localStorage.length }, (_, index) => window.localStorage.key(index))
+            .filter((storageKey) => storageKey && storageKey.startsWith(STORAGE_PREFIX)),
+        ...PLANNER_STORAGE_KEYS
+    ]);
+
+    keysToClear.forEach((storageKey) => window.localStorage.removeItem(storageKey));
 };
 
 const getSelectedPlanSolutions = () => sortByScore(getSelectedSolutionsData());
@@ -274,10 +422,9 @@ window.onWorkspaceChange = onWorkspaceChange;
 
 document.addEventListener('DOMContentLoaded', async () => {
     await loadSolutionData();
-    updateProgress();
 
-    // Clear any stale connected state from previous sessions
-    try { window.localStorage.removeItem('sentinelPlanner.connectedSolutionIds'); } catch (_) {}
+    restoreSelectedVendors();
+    restoreServerEnvironment();
 
     document.querySelectorAll('[data-next]').forEach((button) => {
         button.addEventListener('click', () => nextStep({
@@ -290,7 +437,25 @@ document.addEventListener('DOMContentLoaded', async () => {
         button.addEventListener('click', () => prevStep({ onStepChange: handleStepChange }));
     });
 
-    document.querySelectorAll('[data-vendor]').forEach((card) => card.addEventListener('click', () => toggleVendor(card)));
+    document.querySelectorAll('[data-vendor]').forEach((card) => card.addEventListener('click', () => {
+        toggleVendor(card);
+        persistSelectedVendors();
+    }));
+
+    Object.values(getServerEnvironmentInputs()).forEach((input) => {
+        input?.addEventListener('input', persistServerEnvironment);
+        input?.addEventListener('change', persistServerEnvironment);
+    });
+
+    document.getElementById('resetPlannerState')?.addEventListener('click', () => {
+        if (!window.confirm('Clear all saved Sentinel Planner progress and start over?')) {
+            return;
+        }
+
+        clearPlannerLocalStorage();
+        window.location.reload();
+    });
+
     document.getElementById('nlpSearchButton')?.addEventListener('click', processNlpInput);
     document.addEventListener('keydown', handleNlpKeydown);
 
@@ -323,4 +488,19 @@ document.addEventListener('DOMContentLoaded', async () => {
             window.alert('Excel export failed. Try again.');
         }
     });
+
+    let restoredStep = getPersistedCurrentStep();
+
+    // If restoring to a step that requires solutions but none are persisted, fall back to step 1
+    if (restoredStep >= 4 && getSelectedSolutionsData().length === 0) {
+        restoredStep = 1;
+        if (canUseLocalStorage()) {
+            window.localStorage.removeItem(CURRENT_STEP_STORAGE_KEY);
+        }
+    }
+
+    restoredStep = setCurrentStep(restoredStep);
+    if (restoredStep > 1) {
+        handleStepChange(restoredStep);
+    }
 });

@@ -107,6 +107,21 @@
 - The user prefers scripted bulk edits for large catalog changes and explicitly wanted single-connector third-party permissions preserved.
 - Key files: `data/solutions.json`, `scripts/clear_permissions_for_multi_connector_solutions.py`, `.squad/agents/sebastian/history.md`, `.squad/decisions/inbox/sebastian-permissions-multi-connector.md`.
 
+### 2026-05-22T16:20:26.073+02:00: AMA-specific Windows connector records
+**Architecture decisions:**
+- Added companion AMA-specific connector records instead of overwriting the existing umbrella Windows solutions, so the catalog can expose precise onboarding plans without deleting legacy bundle metadata.
+- Stored the new planning model twice per connector: `setup_tasks` with explicit `phase`, `duration`, `dependencies`, and `owner_role`, plus `planner.setup_tasks` as a UI-safe mirror for current planner and export code.
+- Added `contentCounts`, `requiredInfrastructure`, and connector-specific permissions metadata on the new records while keeping the existing top-level `analytics`, `workbooks`, and onboarding fields for backward compatibility.
+
+**Patterns discovered:**
+- Windows AMA connectors normalize cleanly into the same five-phase sequence: Prerequisites, Infrastructure, Configuration, Validation, Operationalization.
+- Research docs that already express task IDs, durations, owners, and dependencies can be converted directly into catalog records with only a thin compatibility transform for `planner.setup_tasks`.
+- GitHub solution folder counts are a reliable source for `analytic_rules`, `workbooks`, and `hunting_queries` when Microsoft docs do not surface the totals directly.
+
+**User preferences and key files:**
+- The user wanted BOM-safe scripted edits, real task sequencing from Luv's Windows-family research, and direct JSON validation after writing.
+- Key files: `data/solutions.json`, `.squad/agents\luv\connector-research-windows-family.md`, `.squad/agents/sebastian/history.md`, `.squad/decisions/inbox/sebastian-windows-connectors.md`, `.squad/skills/windows-ama-connector-pattern/SKILL.md`.
+
 ## Cross-Agent Context (2026-05-21)
 
 ### K — Start Week Editing COMPLETE

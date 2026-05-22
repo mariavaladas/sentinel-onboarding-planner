@@ -58,3 +58,10 @@
 - Schema and event data details
 
 **Impact:** Research provides data foundation for Sebastian's Windows connector integration task (K-20 upcoming). All connector requirements and setup steps documented for downstream planning.
+- **2026-05-22T16:20:26.073+02:00 — solutions.json connector QA review learnings**
+  - Reviewed all **488** connector entries with `setup_tasks` and wrote the report to `.squad/agents/luv/solutions-qa-review.md`.
+  - Biggest planning-risk pattern: connector families that deploy **AMA/DCR**, **Azure Functions**, or **source-cloud exports** often under-specify the real RBAC/owner prerequisites.
+  - Most repeat issues clustered around six metadata families: Azure diagnostic connectors, M365/Defender tenant connectors, Syslog/CEF forwarders, host AMA/DCR connectors, cloud-export connectors, and function-based API connectors.
+  - High-risk connector specifics: `windows-security-events` needs conditional Arc + audit-policy modeling, `windows-forwarded-events` needs explicit WEC/WEF prerequisites, and `defender-xdr` should model duplicate-incident cutover dependencies.
+  - Key file paths for future QA: `data/solutions.json`, `.squad/agents/luv/connector-research-windows-family.md`, `.squad/agents/luv/solutions-qa-review.md`.
+

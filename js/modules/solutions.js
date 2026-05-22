@@ -1,11 +1,10 @@
-import { calculatePriorityScore, getPhase } from './scoring.js';
-
 export let solutionsData = null;
 export const selectedCategories = new Set();
 export const selectedSolutions = new Set();
 export const selectedVendors = new Set(['azure', 'microsoft365']);
 export const connectedSolutionIds = new Set();
 
+const SELECTED_SOLUTIONS_STORAGE_KEY = 'sentinelPlanner.selectedSolutions';
 const CONNECTED_SOLUTIONS_STORAGE_KEY = 'sentinelPlanner.connectedSolutionIds';
 const connectorKindToSolutionIds = {
     azureactivedirectory: ['microsoft-entra-id'],
@@ -77,6 +76,37 @@ const vendorToSolutions = {
     symantec: []
 };
 
+const PLATFORM_VENDOR_KEYS = ['azure', 'microsoft365', 'windows', 'linux', 'aws', 'gcp'];
+const PLATFORM_VENDOR_KEY_SET = new Set(PLATFORM_VENDOR_KEYS);
+const SPECIFIC_VENDOR_KEYS = Object.keys(vendorToSolutions).filter((vendor) => !PLATFORM_VENDOR_KEY_SET.has(vendor));
+
+const INFRASTRUCTURE_LABELS = {
+    vm: 'Linux or Windows VM',
+    agent: 'Azure Monitor Agent (AMA)',
+    dcr: 'Data Collection Rule (DCR)',
+    'azure-arc': 'Azure Arc (for non-Azure servers)',
+    wec: 'Windows Event Collector (WEC) server',
+    syslog: 'Linux VM (Syslog/CEF forwarder)'
+};
+
+const REQUIRED_INFRASTRUCTURE = {
+    fortinet: ['Linux VM (Syslog/CEF forwarder)'],
+    'fortinet-forti-gate-next-generation-firewall-connector-for-microsoft-sentinel': ['Linux VM (Syslog/CEF forwarder)'],
+    checkpoint: ['Linux VM (Syslog/CEF forwarder)'],
+    'cisco-asa': ['Linux VM (Syslog/CEF forwarder)'],
+    'cisco-asa-2': ['Linux VM (Syslog/CEF forwarder)'],
+    'palo-alto-networks': ['Linux VM (Syslog/CEF forwarder)'],
+    'azure-cloud-ngfw-by-palo-alto-networks': ['Linux VM (Syslog/CEF forwarder)'],
+    barracuda: ['Linux VM (Syslog/CEF forwarder)'],
+    'barracuda-cloud-gen-firewall': ['Linux VM (Syslog/CEF forwarder)'],
+    'barracuda-waf': ['Linux VM (Syslog/CEF forwarder)'],
+    zscaler: ['Linux VM (Syslog/CEF forwarder)'],
+    'f5-networks': ['Linux VM (Syslog/CEF forwarder)'],
+    'f5-big-ip': ['Linux VM (Syslog/CEF forwarder)'],
+    'windows-forwarded-events': ['Windows Event Collector (WEC) server'],
+    'windows-security-events': ['Windows Server (with AMA)', 'Data Collection Rule (DCR)']
+};
+
 function setCatalogInfo(text) {
     const catalogInfo = document.getElementById('catalogInfo');
     if (catalogInfo) {
@@ -91,24 +121,6 @@ function getAllSolutions() {
 function createLogoBadge(src, altText, fallbackText) {
     const badge = document.createElement('div');
     badge.className = 'solution-item-logo';
-
-    const image = document.createElement('img');
-    image.src = src;
-    image.alt = altText;
-    image.addEventListener('error', () => {
-        if (badge.contains(image)) {
-            badge.removeChild(image);
-        }
-        badge.textContent = fallbackText;
-    });
-
-    badge.appendChild(image);
-    return badge;
-}
-
-function createResultLogo(src, altText, fallbackText) {
-    const badge = document.createElement('div');
-    badge.className = 'result-card-logo';
 
     const image = document.createElement('img');
     image.src = src;
@@ -221,40 +233,45 @@ async function fetchAndDisplayVersions(solutions) {
     }
 }
 
-function isVendorRelevantToSolution(vendor, solution) {
+function matchesVendorSignature(vendor, solution) {
     const name = (solution.name || '').toLowerCase();
-    const tags = (solution.tags || []).map(t => t.toLowerCase());
+    const tags = (solution.tags || []).map((tag) => String(tag).toLowerCase());
 
     switch (vendor) {
         case 'azure':
-            return (tags.includes('azure') && (name.includes('azure') || tags.some(t => ['activity', 'ad', 'firewall', 'storage', 'virtual', 'devops', 'databricks'].some(keyword => t.includes(keyword)))))
-                || (name.includes('azure') && !name.includes('sentinel'));
+            return solution?.category === 'azure' || tags.includes('azure') || name.includes('azure');
         case 'microsoft365':
-            return tags.includes('microsoft 365') || tags.includes('m365')
-                || name.includes('exchange') || name.includes('sharepoint') || name.includes('teams')
-                || name.includes('office') || name.includes('defender for office');
+            return solution?.category === 'microsoft_365_security'
+                || tags.includes('microsoft 365')
+                || tags.includes('m365')
+                || name.includes('microsoft 365')
+                || name.includes('exchange')
+                || name.includes('sharepoint')
+                || name.includes('teams')
+                || name.includes('office')
+                || name.includes('defender for office');
         case 'windows':
-            return tags.includes('windows') || name.toLowerCase().includes('windows');
+            return tags.includes('windows') || name.includes('windows');
         case 'linux':
-            return tags.includes('linux') || name.toLowerCase().includes('linux');
+            return tags.includes('linux') || name.includes('linux');
         case 'aws':
-            return tags.includes('aws') || name.toLowerCase().includes('aws');
+            return tags.includes('aws') || name.includes('aws');
         case 'gcp':
-            return tags.includes('gcp') || tags.includes('google') || name.toLowerCase().includes('google');
+            return tags.includes('gcp') || tags.includes('google') || name.includes('google');
         case 'crowdstrike':
-            return name.toLowerCase().includes('crowdstrike') || tags.some(t => t.includes('crowdstrike'));
+            return name.includes('crowdstrike') || tags.some((tag) => tag.includes('crowdstrike'));
         case 'paloalto':
-            return name.toLowerCase().includes('palo alto') || name.toLowerCase().includes('paloalto') || tags.some(t => t.toLowerCase().includes('palo'));
+            return name.includes('palo alto') || name.includes('paloalto') || tags.some((tag) => tag.includes('palo'));
         case 'cisco':
-            return name.toLowerCase().includes('cisco') || tags.some(t => t.toLowerCase().includes('cisco'));
+            return name.includes('cisco') || tags.some((tag) => tag.includes('cisco'));
         case 'checkpoint':
-            return name.toLowerCase().includes('check point') || name.toLowerCase().includes('checkpoint') || tags.some(t => t.toLowerCase().includes('checkpoint'));
+            return name.includes('check point') || name.includes('checkpoint') || tags.some((tag) => tag.includes('checkpoint'));
         case 'fortinet':
-            return name.toLowerCase().includes('fortinet') || tags.some(t => t.toLowerCase().includes('fortinet'));
+            return name.includes('fortinet') || tags.some((tag) => tag.includes('fortinet'));
         case 'zscaler':
-            return name.toLowerCase().includes('zscaler') || tags.some(t => t.toLowerCase().includes('zscaler'));
+            return name.includes('zscaler') || tags.some((tag) => tag.includes('zscaler'));
         case 'okta':
-            return name.toLowerCase().includes('okta') || tags.some(t => t.toLowerCase().includes('okta'));
+            return name.includes('okta') || tags.some((tag) => tag.includes('okta'));
         case 'pingidentity':
             return name.includes('ping') || tags.some((tag) => tag.includes('ping'));
         case 'alibabacloud':
@@ -292,12 +309,64 @@ function isVendorRelevantToSolution(vendor, solution) {
     }
 }
 
+function getSolutionVendorMatches(solution) {
+    const specificMatches = SPECIFIC_VENDOR_KEYS.filter((vendor) => matchesVendorSignature(vendor, solution));
+    if (specificMatches.length > 0) {
+        return new Set(specificMatches);
+    }
+
+    const platformMatches = PLATFORM_VENDOR_KEYS.filter((vendor) => matchesVendorSignature(vendor, solution));
+    return new Set(platformMatches);
+}
+
+function isVendorRelevantToSolution(vendor, solution) {
+    return getSolutionVendorMatches(solution).has(vendor);
+}
+
+function getSolutionContentCount(solution, keys = []) {
+    for (const key of keys) {
+        const value = solution?.[key];
+        if (value === undefined || value === null || value === '') {
+            continue;
+        }
+
+        const numericValue = Number(value);
+        if (!Number.isNaN(numericValue)) {
+            return numericValue;
+        }
+    }
+
+    return 0;
+}
+
+function getConnectorCount(solution) {
+    return getSolutionContentCount(solution, ['connectors', 'connectorCount']);
+}
+
+function getAnalyticRuleCount(solution) {
+    return getSolutionContentCount(solution, ['analytics', 'analyticRules', 'analyticRuleCount']);
+}
+
+function getWorkbookCount(solution) {
+    return getSolutionContentCount(solution, ['workbooks', 'workbookCount']);
+}
+
+function getPlaybookCount(solution) {
+    return getSolutionContentCount(solution, ['playbooks', 'playbookCount']);
+}
+
 function hasMinimumContent(solution) {
-    const connectors = Number(solution.connectors) || 0;
-    const analytics = Number(solution.analytics) || 0;
-    const workbooks = Number(solution.workbooks) || 0;
-    const playbooks = Number(solution.playbooks) || 0;
+    const connectors = getConnectorCount(solution);
+    const analytics = getAnalyticRuleCount(solution);
+    const workbooks = getWorkbookCount(solution);
+    const playbooks = getPlaybookCount(solution);
     return connectors >= 1 && (analytics >= 1 || workbooks >= 1 || playbooks >= 2);
+}
+
+function hasValuableContent(solution) {
+    const connectors = getConnectorCount(solution);
+    const analytics = getAnalyticRuleCount(solution);
+    return connectors >= 1 && analytics >= 1;
 }
 
 function getPreselectedSolutionIds() {
@@ -355,35 +424,53 @@ function canUseLocalStorage() {
     }
 }
 
-function persistConnectedSolutionIds() {
+function persistSolutionIds(storageKey, solutionIds, label) {
     if (!canUseLocalStorage()) {
         return;
     }
 
     try {
-        window.localStorage.setItem(CONNECTED_SOLUTIONS_STORAGE_KEY, JSON.stringify(Array.from(connectedSolutionIds)));
+        window.localStorage.setItem(storageKey, JSON.stringify(Array.from(solutionIds)));
     } catch (error) {
-        console.warn('Unable to persist connected solutions:', error);
+        console.warn(`Unable to persist ${label}:`, error);
     }
 }
 
-function hydrateConnectedSolutionIds() {
+function restoreSolutionIds(storageKey, targetSet, label) {
     if (!canUseLocalStorage()) {
         return;
     }
 
     try {
-        const storedValue = window.localStorage.getItem(CONNECTED_SOLUTIONS_STORAGE_KEY);
-        const parsedIds = storedValue ? JSON.parse(storedValue) : [];
-        if (!Array.isArray(parsedIds)) {
+        const rawValue = window.localStorage.getItem(storageKey);
+        if (!rawValue) {
             return;
         }
 
-        parsedIds.filter(Boolean).forEach((solutionId) => connectedSolutionIds.add(solutionId));
+        const storedSolutionIds = JSON.parse(rawValue);
+        if (!Array.isArray(storedSolutionIds)) {
+            return;
+        }
+
+        targetSet.clear();
+        storedSolutionIds
+            .filter((solutionId) => typeof solutionId === 'string' && solutionId)
+            .forEach((solutionId) => targetSet.add(solutionId));
     } catch (error) {
-        console.warn('Unable to restore connected solutions:', error);
+        console.warn(`Unable to restore ${label}:`, error);
     }
 }
+
+function persistSelectedSolutions() {
+    persistSolutionIds(SELECTED_SOLUTIONS_STORAGE_KEY, selectedSolutions, 'selected solutions');
+}
+
+function persistConnectedSolutionIds() {
+    persistSolutionIds(CONNECTED_SOLUTIONS_STORAGE_KEY, connectedSolutionIds, 'connected solutions');
+}
+
+restoreSolutionIds(SELECTED_SOLUTIONS_STORAGE_KEY, selectedSolutions, 'selected solutions');
+restoreSolutionIds(CONNECTED_SOLUTIONS_STORAGE_KEY, connectedSolutionIds, 'connected solutions');
 
 function resolveConnectedSolutionIds(connectors = []) {
     const allSolutions = getAllSolutions();
@@ -439,94 +526,131 @@ export function setConnectedSolutionsFromWorkspace(connectors = []) {
 // Don't hydrate stale connected state from localStorage on startup.
 // Connected state should only come from an actual workspace connection in the current session.
 
-function createMetric(value, label) {
-    const metric = document.createElement('div');
-    metric.className = 'metric';
-
-    const metricValue = document.createElement('div');
-    metricValue.className = 'metric-value';
-    metricValue.textContent = `${value}`;
-
-    const metricLabel = document.createElement('div');
-    metricLabel.className = 'metric-label';
-    metricLabel.textContent = label;
-
-    metric.append(metricValue, metricLabel);
-    return metric;
-}
-
-function createStatCard(value, label) {
-    const card = document.createElement('div');
-    card.className = 'stat-card';
-
-    const number = document.createElement('div');
-    number.className = 'stat-number';
-    number.textContent = `${value}`;
-
-    const text = document.createElement('div');
-    text.className = 'stat-label';
-    text.textContent = label;
-
-    card.append(number, text);
-    return card;
-}
-
-function createEmptyState(message) {
-    const state = document.createElement('div');
-    state.className = 'planner-view';
-
-    const text = document.createElement('p');
-    text.className = 'helper-text';
-    text.textContent = message;
-
-    state.appendChild(text);
-    return state;
-}
-
-function formatSolutionLabel(value = '') {
-    return String(value)
-        .split(/[-_]/g)
-        .filter(Boolean)
-        .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
-        .join(' ');
-}
-
-function getSolutionHighlights(solution) {
-    const highlights = [];
-
-    if (solution?.onboarding?.setup_summary) {
-        highlights.push(solution.onboarding.setup_summary);
+function normalizeRequirementList(value) {
+    if (Array.isArray(value)) {
+        return value.filter(Boolean);
     }
 
-    const detectionAreas = solution?.value_scoring?.detection_areas || [];
-    if (detectionAreas.length > 0) {
-        highlights.push(`Coverage focus: ${detectionAreas.slice(0, 3).map(formatSolutionLabel).join(', ')}`);
-    } else if (solution?.export_metadata?.integrates_with?.length) {
-        highlights.push(`Integrates with ${solution.export_metadata.integrates_with.slice(0, 3).map(formatSolutionLabel).join(', ')}`);
-    } else if (solution?.description) {
-        highlights.push(solution.description);
+    if (typeof value === 'string' && value.trim()) {
+        return [value.trim()];
     }
 
-    return highlights.slice(0, 2);
+    return [];
 }
 
-function createHighlightsSection(solution) {
-    const highlights = getSolutionHighlights(solution);
-    if (highlights.length === 0) {
+function titleCaseRequirement(value) {
+    return value
+        .replace(/[-_]+/g, ' ')
+        .replace(/\b\w/g, (match) => match.toUpperCase());
+}
+
+function formatInfrastructureRequirement(value) {
+    const normalizedValue = String(value || '').trim();
+
+    if (!normalizedValue) {
+        return '';
+    }
+
+    const mappedLabel = INFRASTRUCTURE_LABELS[normalizedValue.toLowerCase()];
+    if (mappedLabel) {
+        return mappedLabel;
+    }
+
+    if (/^[a-z0-9_-]+$/.test(normalizedValue)) {
+        return titleCaseRequirement(normalizedValue);
+    }
+
+    return normalizedValue;
+}
+
+function createRequirementSection(labelText, sectionClassName, listClassName, chipClassName, values) {
+    if (values.length === 0) {
         return null;
     }
 
     const section = document.createElement('div');
-    section.className = 'solution-item-highlights';
+    section.className = sectionClassName;
 
-    highlights.forEach((highlight) => {
-        const line = document.createElement('p');
-        line.className = 'solution-item-highlight';
-        line.textContent = highlight;
-        section.appendChild(line);
+    const label = document.createElement('span');
+    label.className = `${sectionClassName}-label`;
+    label.textContent = labelText;
+
+    const list = document.createElement('div');
+    list.className = listClassName;
+
+    values.forEach((value) => {
+        const chip = document.createElement('span');
+        chip.className = chipClassName;
+        chip.textContent = value;
+        list.appendChild(chip);
     });
 
+    section.append(label, list);
     return section;
+}
+
+function getRequiredRoles(solution) {
+    return [...new Set([
+        ...(solution?.permissions?.azure_roles || []),
+        ...(solution?.permissions?.m365_roles || [])
+    ].filter(Boolean))];
+}
+
+function createRolesSection(solution) {
+    return createRequirementSection(
+        'Required roles',
+        'solution-item-roles',
+        'solution-item-role-list',
+        'solution-role-chip',
+        getRequiredRoles(solution)
+    );
+}
+
+function getRequiredInfrastructure(solution) {
+    const explicitInfrastructure = normalizeRequirementList(solution?.onboarding?.infrastructure_required)
+        .map(formatInfrastructureRequirement)
+        .filter(Boolean);
+    const solutionId = String(solution?.id || '').toLowerCase();
+    const solutionName = String(solution?.name || '').toLowerCase();
+    const lookupText = `${solutionId} ${solutionName}`;
+    const mappedInfrastructure = Object.entries(REQUIRED_INFRASTRUCTURE)
+        .filter(([key]) => lookupText.includes(key))
+        .flatMap(([, requirements]) => requirements);
+    const inferredInfrastructure = [];
+
+    if (/(fortinet|check\s*point|checkpoint|palo\s*alto|cisco\s*asa|barracuda|f5|zscaler)/.test(lookupText)) {
+        inferredInfrastructure.push('Linux VM (Syslog/CEF forwarder)');
+    }
+
+    return [...new Set([
+        ...explicitInfrastructure,
+        ...mappedInfrastructure,
+        ...inferredInfrastructure
+    ])];
+}
+
+function createInfrastructureSection(solution) {
+    return createRequirementSection(
+        'Required infrastructure',
+        'solution-item-infrastructure',
+        'solution-item-infrastructure-list',
+        'solution-infrastructure-chip',
+        getRequiredInfrastructure(solution)
+    );
+}
+
+function normalizeDifficultyLabel(label) {
+    const normalizedLabel = String(label || '').trim().toLowerCase();
+
+    if (normalizedLabel === 'hard') {
+        return 'Extended';
+    }
+
+    if (!normalizedLabel) {
+        return '';
+    }
+
+    return normalizedLabel.charAt(0).toUpperCase() + normalizedLabel.slice(1);
 }
 
 function syncSolutionCardState(solutionCard, solutionId) {
@@ -558,14 +682,18 @@ function createSolutionItem(solution, recommendedIds = new Set()) {
     item.dataset.name = solution.name;
 
     const isRecommended = recommendedIds.has(solution.id);
+    const isValuable = hasValuableContent(solution);
+
     if (isRecommended) {
         item.classList.add('recommended');
+    }
 
-        const recommendedStar = document.createElement('span');
-        recommendedStar.className = 'solution-item-corner-star';
-        recommendedStar.setAttribute('aria-hidden', 'true');
-        recommendedStar.textContent = '★';
-        item.appendChild(recommendedStar);
+    if (isValuable) {
+        const valuableStar = document.createElement('span');
+        valuableStar.className = 'solution-item-corner-star';
+        valuableStar.setAttribute('aria-hidden', 'true');
+        valuableStar.textContent = '★';
+        item.appendChild(valuableStar);
     }
 
     const main = document.createElement('div');
@@ -599,17 +727,22 @@ function createSolutionItem(solution, recommendedIds = new Set()) {
         name.appendChild(connBadge);
     }
 
+    const connectorCount = getConnectorCount(solution);
+    const analyticRuleCount = getAnalyticRuleCount(solution);
+    const workbookCount = getWorkbookCount(solution);
+    const playbookCount = getPlaybookCount(solution);
+
     const meta = document.createElement('div');
     meta.className = 'solution-item-meta';
-    meta.textContent = `${solution.connectors || 0} connectors · ${solution.analytics} rules · ${solution.workbooks} workbooks · ${solution.playbooks} playbooks`;
+    meta.textContent = `${connectorCount} connectors · ${analyticRuleCount} rules · ${workbookCount} workbooks · ${playbookCount} playbooks`;
 
     const tags = document.createElement('div');
     tags.className = 'solution-tags';
 
-    if (solution.is1P) {
+    if (isValuable) {
         const featuredTag = document.createElement('span');
         featuredTag.className = 'solution-tag solution-tag-featured';
-        featuredTag.textContent = '★ FEATURED';
+        featuredTag.textContent = '★ VALUABLE';
         tags.appendChild(featuredTag);
     }
 
@@ -618,9 +751,10 @@ function createSolutionItem(solution, recommendedIds = new Set()) {
     versionBadge.dataset.solution = solution.id;
 
     const complexity = Number(solution?.value_scoring?.complexity_level) || 0;
-    const diffLabel = solution?.onboarding?.difficulty
-        || (complexity <= 1 ? 'Easy' : complexity <= 2 ? 'Moderate' : 'Hard');
-    const diffClass = diffLabel.toLowerCase();
+    const rawDifficulty = solution?.onboarding?.difficulty
+        || (complexity <= 1 ? 'Easy' : complexity <= 2 ? 'Moderate' : 'Extended');
+    const diffLabel = normalizeDifficultyLabel(rawDifficulty);
+    const diffClass = diffLabel.toLowerCase() === 'extended' ? 'hard' : diffLabel.toLowerCase();
     const hours = Number(solution?.value_scoring?.setup_hours) || 0;
     const hoursText = hours > 0 ? ` · ~${hours}h` : '';
 
@@ -634,15 +768,8 @@ function createSolutionItem(solution, recommendedIds = new Set()) {
         badges.appendChild(diffBadge);
     }
 
-    const ownerRec = solution?.planner?.owner_recommended;
-    if (ownerRec) {
-        const ownerBadge = document.createElement('span');
-        ownerBadge.className = 'solution-owner-badge';
-        ownerBadge.textContent = ownerRec;
-        badges.appendChild(ownerBadge);
-    }
-
-    const highlights = createHighlightsSection(solution);
+    const rolesSection = createRolesSection(solution);
+    const infrastructureSection = createInfrastructureSection(solution);
 
     header.appendChild(name);
     info.append(header, meta);
@@ -653,8 +780,12 @@ function createSolutionItem(solution, recommendedIds = new Set()) {
 
     info.appendChild(versionBadge);
 
-    if (highlights) {
-        info.appendChild(highlights);
+    if (rolesSection) {
+        info.appendChild(rolesSection);
+    }
+
+    if (infrastructureSection) {
+        info.appendChild(infrastructureSection);
     }
 
     if (badges.childElementCount > 0) {
@@ -838,6 +969,7 @@ export function toggleSolution(element, solutionId) {
         selectedSolutions.add(solutionId);
     }
 
+    persistSelectedSolutions();
     syncSolutionCardState(solutionCard, solutionId);
     updateStep3Button();
 }
@@ -854,87 +986,3 @@ export function getSelectedSolutionsData() {
     return getAllSolutions().filter((solution) => selectedIds.has(solution.id));
 }
 
-export function renderSummaryStats(solutions = []) {
-    const statsContainer = document.getElementById('summaryStats');
-    if (!statsContainer) {
-        return;
-    }
-
-    statsContainer.replaceChildren();
-
-    const totals = solutions.reduce((stats, solution) => {
-        stats.connectors += Number(solution.connectors) || 0;
-        stats.analytics += Number(solution.analytics) || 0;
-        stats.workbooks += Number(solution.workbooks) || 0;
-        stats.playbooks += Number(solution.playbooks) || 0;
-        return stats;
-    }, { connectors: 0, analytics: 0, workbooks: 0, playbooks: 0 });
-
-    [
-        [solutions.length, 'Solutions'],
-        [totals.connectors, 'Connectors'],
-        [totals.analytics, 'Analytics Rules'],
-        [totals.workbooks, 'Workbooks'],
-        [totals.playbooks, 'Playbooks']
-    ].forEach(([value, label]) => {
-        statsContainer.appendChild(createStatCard(value, label));
-    });
-}
-
-export function renderResultsGrid(solutions = []) {
-    const resultsContainer = document.getElementById('resultsGrid');
-    if (!resultsContainer) {
-        return;
-    }
-
-    resultsContainer.replaceChildren();
-
-    if (solutions.length === 0) {
-        resultsContainer.appendChild(createEmptyState('No solutions are selected yet.'));
-        return;
-    }
-
-    solutions.forEach((solution) => {
-        const card = document.createElement('article');
-        card.className = 'result-card';
-
-        const header = document.createElement('div');
-        header.className = 'result-card-header';
-
-        const titleGroup = document.createElement('div');
-
-        const title = document.createElement('div');
-        title.className = 'result-card-title';
-        title.textContent = solution.name;
-
-        const meta = document.createElement('p');
-        meta.className = 'result-card-meta';
-        meta.textContent = `Priority ${calculatePriorityScore(solution)} · ${getPhase(solution)}`;
-
-        titleGroup.append(title, meta);
-        header.append(createResultLogo(solution.logo, solution.name, '🔹'), titleGroup);
-
-        const description = document.createElement('p');
-        description.className = 'result-card-desc';
-        description.textContent = solution.description;
-
-        const metrics = document.createElement('div');
-        metrics.className = 'result-card-metrics';
-        metrics.append(
-            createMetric(solution.connectors, 'Connectors'),
-            createMetric(solution.analytics, 'Analytics'),
-            createMetric(solution.workbooks, 'Workbooks'),
-            createMetric(solution.playbooks, 'Playbooks')
-        );
-
-        const link = document.createElement('a');
-        link.className = 'result-card-link';
-        link.href = solution.github_url;
-        link.target = '_blank';
-        link.rel = 'noopener noreferrer';
-        link.textContent = 'View solution details';
-
-        card.append(header, description, metrics, link);
-        resultsContainer.appendChild(card);
-    });
-}

@@ -1,4 +1,4 @@
-import { selectedSolutions, solutionsData, updateStep3Button } from './solutions.js';
+import { selectedSolutions, solutionsData, toggleSolution, updateStep3Button } from './solutions.js';
 
 function createMessage(text) {
     const message = document.createElement('p');
@@ -44,10 +44,9 @@ function createSuggestionTag(solution) {
     tag.textContent = selectedSolutions.has(solution.id) ? `✓ ${solution.name}` : `+ ${solution.name}`;
 
     tag.addEventListener('click', () => {
-        selectedSolutions.add(solution.id);
         const item = document.querySelector(`.solution-item[data-id="${solution.id}"]`);
-        if (item) {
-            item.classList.add('selected');
+        if (!selectedSolutions.has(solution.id)) {
+            toggleSolution(item, solution.id);
         }
         tag.textContent = `✓ ${solution.name}`;
         tag.classList.add('selected');

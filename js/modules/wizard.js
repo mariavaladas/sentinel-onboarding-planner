@@ -1,5 +1,6 @@
 let currentStep = 1;
 const totalSteps = 5;
+const CURRENT_STEP_STORAGE_KEY = 'sentinelPlanner.currentStep';
 
 function setStepState(step, isActive) {
     const element = document.getElementById(`step${step}`);
@@ -7,10 +8,51 @@ function setStepState(step, isActive) {
     element.classList.toggle('active', isActive);
 }
 
+function canUseLocalStorage() {
+    try {
+        return typeof window !== 'undefined' && !!window.localStorage;
+    } catch {
+        return false;
+    }
+}
+
+function persistCurrentStep() {
+    if (!canUseLocalStorage()) {
+        return;
+    }
+
+    try {
+        window.localStorage.setItem(CURRENT_STEP_STORAGE_KEY, String(currentStep));
+    } catch (error) {
+        console.warn('Unable to persist current wizard step:', error);
+    }
+}
+
+function clampStep(step) {
+    const parsedStep = Number.parseInt(step, 10);
+    if (!Number.isFinite(parsedStep)) {
+        return 1;
+    }
+
+    return Math.min(totalSteps, Math.max(1, parsedStep));
+}
+
 function activateStep(nextStepNumber) {
+    const nextStep = clampStep(nextStepNumber);
     setStepState(currentStep, false);
-    currentStep = nextStepNumber;
+    currentStep = nextStep;
     setStepState(currentStep, true);
+    persistCurrentStep();
+}
+
+export function setCurrentStep(nextStepNumber) {
+    activateStep(nextStepNumber);
+    updateProgress();
+    return currentStep;
+}
+
+export function getCurrentStep() {
+    return currentStep;
 }
 
 export function nextStep({ canProceed, onStepChange } = {}) {
@@ -22,8 +64,7 @@ export function nextStep({ canProceed, onStepChange } = {}) {
         return currentStep;
     }
 
-    activateStep(currentStep + 1);
-    updateProgress();
+    setCurrentStep(currentStep + 1);
     if (typeof onStepChange === 'function') {
         onStepChange(currentStep);
     }
@@ -36,8 +77,7 @@ export function prevStep({ onStepChange } = {}) {
         return currentStep;
     }
 
-    activateStep(currentStep - 1);
-    updateProgress();
+    setCurrentStep(currentStep - 1);
     if (typeof onStepChange === 'function') {
         onStepChange(currentStep);
     }
