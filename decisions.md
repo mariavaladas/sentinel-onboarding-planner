@@ -1327,3 +1327,16 @@ The previous compound numbering (`0.1`, `1.4`, `4.2`) did not match the expected
 - Inline editing is discoverable from the table itself without needing a separate edit action.
 - Schedule edits continue to rebuild dependent task timing through the existing dependency-based recalculation flow.
 
+
+---
+
+# K — Inline editor event delegation
+
+# K decision — Inline editor event delegation
+
+- Date: 2026-05-22T11:15:33.921+02:00
+- Context: Gantt table duration and date cells were not reliably entering inline edit mode from the visible table.
+- Decision: Use a single capture-phase activation handler on the Gantt table surface and register per-cell editor openers when rows render.
+- Why: This keeps inline editing wired even when rows are rebuilt and prevents the row-level detail click action from swallowing editable-cell clicks.
+- Impact: Duration, start date, due date, status, and impact cells keep the same save/cancel behavior, with clearer hover affordance on editable cells.
+

@@ -34,6 +34,10 @@
 - Inline table editing needs a clear cell-level affordance in addition to nested triggers so users can click anywhere in the value cell and immediately edit.
 - Duration parsing should accept shorthand entries (`4h`, `1d`, `1w`, `2.5d`), and date edits should accept `DD/MM/YYYY` text while still snapping to business days.
 
+### 2026-05-22T11:15:33.921+02:00 — Gantt inline editor activation
+- Gantt table inline editing is more reliable when cell activation is delegated from the table surface in capture phase instead of relying only on per-cell click listeners.
+- Editable date and duration cells also need their own hover highlight so users can see the click target even when rows are rebuilt during layout updates.
+
 ## Archive
 
 Previous detailed sessions archived to **history-archive.md**:
@@ -47,3 +51,10 @@ Previous detailed sessions archived to **history-archive.md**:
 - Cascade updates implemented for timing changes
 - Frontend: js/gantt-planner.js, css/style.css modified
 - Status: Ready for QA
+
+### 2026-05-22T11:26:46.145+02:00 — Coordinator direct click handler fix
+- Inline editing event delegation issue resolved by Coordinator with belt-and-suspenders approach.
+- Each editable cell now has individual stopPropagation click handler.
+- Row-level handler checks event.target to skip clicks from editable cells.
+- Both K's cell openers and Coordinator's direct handlers ensure reliable cell editing without row interference.
+
