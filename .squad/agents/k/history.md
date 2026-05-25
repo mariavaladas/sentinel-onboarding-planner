@@ -138,3 +138,11 @@ Previous detailed sessions archived to **history-archive.md**:
 1. Navigation should default to Welcome (wizard-first)
 2. Timeline zoom dropdown styling for dark theme
 3. Task row bleed fix on small screens (inline badges)
+
+### 2026-05-25T08:59:01Z — Expand/collapse toggle hardening (COMPLETE)
+- **What:** Hardened Gantt expand/collapse activation with shared primary-activation helper responding to `click` and left-button `mouseup` (plus keyboard). Made solution-group names clickable toggle targets. Widened chevron hit area in CSS.
+- **Why:** Collapse control had become fragile after recent responsive/layout changes. Tiny chevron with plain `click` handler too easy to miss.
+- **Validation:** Node syntax check ✓; Headless browser test with "Windows Security Events" showed 6→19 row expansion on both `click()` and `mouseup` paths ✓
+- **Files:** js/gantt-planner.js, css/style.css
+- **Decision:** "K — Expand/collapse toggle hardening" (2026-05-25T08:59:01Z)
+- **Status:** ✓ COMPLETE — expand/collapse toggle working as intended. Group labels are now reliable expand targets.

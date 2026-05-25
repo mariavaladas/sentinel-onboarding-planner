@@ -483,3 +483,31 @@ Keep the existing umbrella Windows solution records unchanged.
 - New records carry both `setup_tasks` (explicit phase/task model) and `planner.setup_tasks` (backward-compatible mirror for current UI/export code).
 - Added `contentCounts` and `requiredInfrastructure` as richer metadata while preserving existing `analytics`, `workbooks`, and onboarding fields.
 - `vendor: "Microsoft"` is stored as descriptive metadata only; no current UI logic depends on it.
+
+---
+
+### 2026-05-25T08:59:01Z: K — Expand/collapse toggle hardening
+
+**By:** K (Frontend Dev)
+**Date:** 2026-05-25T10:59:01+02:00
+**Status:** COMPLETE
+
+**What**
+- Hardened Gantt expand/collapse activation with a shared primary-activation helper that responds to both click and left-button mouseup (plus keyboard) for table chevrons and chart labels.
+- Made solution-group names (for rows like **Windows Security Events**) a dedicated toggle label in the task table, so connector groups can expand/collapse from the label as well as the chevron.
+- Increased the chevron hit area in css/style.css to make the control easier to hit after the recent responsive/layout changes.
+
+**Why**
+- The collapse control had become too fragile after recent table/layout work: relying on a tiny chevron with a plain click handler made the expand action easy to miss or lose.
+- Solution-group rows are not inline-editable by name, so turning the visible label into a toggle keeps row selection separate while giving the user a reliable expand target.
+
+**Validation**
+- \
+ode --check js/gantt-planner.js\
+- Headless browser verification with only **Windows Security Events** selected:
+  - collapsed state: 6 visible rows
+  - after toggle activation: 19 visible rows
+  - verified via both \click()\ and \mouseup\ activation paths
+
+**Files:** js/gantt-planner.js, css/style.css
+
