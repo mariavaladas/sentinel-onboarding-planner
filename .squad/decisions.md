@@ -511,3 +511,63 @@ ode --check js/gantt-planner.js\
 
 **Files:** js/gantt-planner.js, css/style.css
 
+
+---
+
+### 2026-05-25T12:11:24: User directive
+**By:** madesous (via Copilot)
+**What:** When there are more than 2 solutions in the Gantt table, collapse them by default (user must expand). When there is only 1 solution, expand it by default.
+**Why:** User request — better UX for plans with many solutions vs simple single-solution plans.
+
+
+---
+
+# K — Inline editor fixes
+
+- **By:** K (Frontend Developer)
+- **Date:** 2026-05-25T12:01:41.627+02:00
+- **Scope:** `js/gantt-planner.js`
+- **Status:** COMPLETE
+
+## Decision
+- Inline status and impact `<select>` editors now commit only from the native `change` event. Blur is dismissal-only so it cannot overwrite a fresh selection with the previous value.
+- The duration popup now attempts to apply the current typed value when the user clicks outside the editor, matching the commit-on-dismiss behavior already used by the date and owner editors.
+
+## Why
+- Native select focus transitions can fire blur before the browser finalizes the newly chosen option, which caused reverted status and impact values on affected rows.
+- Planner users expect popup edits to persist when they click away; dropping typed duration values made the grid feel inconsistent next to the owner and date editors.
+
+## Impact
+- Status and impact edits should stick on any editable row, including later-phase rows such as Training & Handover.
+- Duration edits now save on outside click as long as the typed value is valid; invalid input remains in the editor for correction instead of silently disappearing.
+
+
+---
+
+# K — Manual status persistence and contextual solution-group defaults
+
+- **Date:** 2026-05-25T12:11:24.551+02:00
+- **By:** K (Frontend Developer)
+- **Scope:** `js/gantt-planner.js`
+- **Status:** Proposed for merge
+
+## Decision
+
+1. A user-selected task status must always persist as an explicit override, including `Planned`.
+2. Solution-group default collapse state is contextual to the current plan:
+   - 1-2 selected solutions => expanded by default
+   - 3+ selected solutions => collapsed by default
+3. Stored `solutionGroups.collapsed` values should only exist when the user choice differs from the current contextual default.
+
+## Why
+
+- Reverting a task to `Planned` previously removed the explicit override, so the schedule-driven auto-status resolver immediately turned the task back into `In Progress`, `In Review`, or `Completed`.
+- Small plans are easier to scan when fully open, while larger plans need an initially compact view to reduce visual noise.
+- Persisting only deviations from the active default keeps local storage compatible with older planner state while still supporting both explicit expand and explicit collapse.
+
+## Impact
+
+- Users can move between `Planned`, `In Progress`, `In Review`, `Completed`, and `Skipped` without directional restrictions.
+- Manual `Planned` now sticks until the user changes it again.
+- Solution groups open automatically for 1-2 solution plans and start collapsed for larger plans, while toggle behavior continues to work normally after first render.
+
