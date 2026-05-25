@@ -571,3 +571,66 @@ ode --check js/gantt-planner.js\
 - Manual `Planned` now sticks until the user changes it again.
 - Solution groups open automatically for 1-2 solution plans and start collapsed for larger plans, while toggle behavior continues to work normally after first render.
 
+
+---
+
+### 2026-05-25T12:43:02Z: Capacity sizing rules
+**By:** madesous (via Copilot)
+**What:**
+1. Multi-site firewalls get EPS **per site** (separate form per firewall instance)
+2. Recommend load balancer when >= 3 VMs required for firewalls
+3. Above 50k EPS, suggest Azure Monitor Pipeline over standalone AMA
+4. Back-navigation preserves manual task overrides; fields editable on Gantt chart too
+**Why:** User decisions finalizing Deckard's capacity UX architecture.
+
+---
+
+### 2026-05-25T12:43:02.353+02:00: K — Connector capacity inputs implementation
+**By:** K (Frontend Developer)
+**Date:** 2026-05-25T12:43:02.353+02:00
+**Status:** COMPLETE
+**Scope:** js/modules/capacity.js, js/modules/solutions.js, js/gantt-planner.js, css/style.css, index.html, js/app.js
+**What:**
+1. Connector capacity stored in existing sentinelPlanner.taskDurationOverrides.v1 persistence surface (no new store)
+2. Shared Windows sizing entry keyed under solutionGroups for AMA-based Windows connectors
+3. Per-solution EPS sizing entries for firewall/CEF connectors
+4. Removed legacy Step 2 server split prompt; sizing only in Step 3 card flow and Step 5 detail panel
+**Why:**
+- Planner already rebuilds rows, badges, export, and manual overrides from override-backed plan model, so capacity belongs in that same state
+- Shared Windows sizing avoids duplicate data entry while letting Gantt edits refresh every related connector task reactively
+- Aligns UI with approved connector-first sizing experience
+**Impact:** Sizing now captured in approved Step 3 card flow and Step 5 detail panel; Step 2 server split removed to reduce duplicate inputs.
+
+---
+
+### 2026-05-25T12:36:45.443+02:00: Connector Capacity Input UX Architecture — APPROVED
+**By:** Deckard (Lead / Architect)
+**Status:** APPROVED
+**What:** Complete UX architecture for per-connector capacity inputs (server count for Windows connectors, EPS for firewall/CEF):
+1. **Pattern:** Expand-in-place on solution card, not modal or separate step
+2. **Server-count connectors** (Windows Security Events, WEF, DNS, Sysmon):
+   - Single shared Windows sizing form (all Windows connectors reference same data)
+   - Input: total server count + on-prem/Azure/mix split + default path
+   - Output: estimated AMA collectors + forwarders
+3. **EPS-based connectors** (Palo Alto, Fortinet, Check Point, etc.):
+   - Per-firewall EPS input (can be different EPS per site for multi-site deployments)
+   - Output: estimated CEF forwarder VMs based on 5,000 EPS/VM ceiling
+4. **Form UX:** Reactive VM estimate on every keystroke, "I don't know" defaults path, validation rules (no hard blocks, all advisory)
+5. **Gantt editability:** Solution group header shows ~VM badge; clicking opens detail panel Sizing tab with same form fields; edits propagate to planner task counts reactively
+6. **Validation:** Non-numeric input (red border), 0 servers/EPS (warning), >100k EPS (advisory about pipeline), negatives (clamped to 0), decimals (rounded up for VM calc)
+7. **Mobile:** Responsive collapse <640px; capacity form stacks vertically
+8. **Handling fatigue (10+ connectors):** Smart grouping (Windows-shared input), collapse after save, summary badge showing completion state, non-blocking validation (no gate on Continue)
+9. **Defaults:** 1,000 EPS default, 100 Windows servers default (50% on-prem)
+**Why:**
+- Expand-in-place keeps user in context without navigation cost
+- Shared Windows sizing reflects realistic single-estate model
+- Non-blocking validation maintains advisory tone of planner
+- Gantt editability via existing detail panel surface reuses established edit UX
+- Mobile-first responsive collapse ensures usability on all screens
+**Open questions (answered by user):**
+1. Load balancer recommendation: >= 3 VMs required (CONFIRMED)
+2. Pipeline recommendation: Above 50k EPS (CONFIRMED)
+3. Multiple EPS firewalls of same type: Per-firewall EPS form (each site gets separate input) (CONFIRMED)
+4. Step 3 → Step 5 sync on back-nav: Preserve user overrides, warn user, update defaults only (CONFIRMED)
+**Impact:** K can now implement capacity inputs with confidence; sizing form blueprint ready for Step 3 and Step 5 surfaces; shared Windows state pattern established; VM guidance display (inline micro-result + Gantt badge + Excel summary) specified.
+

@@ -51,6 +51,27 @@
 - Keyboard shortcuts for navigation
 - Dynamic category grouping in split-pane view
 
+## Learnings
+
+### 2026-05-25T12:43:02.353+02:00 — Connector capacity inputs
+- Stored connector sizing in the existing `sentinelPlanner.taskDurationOverrides.v1` planner payload under `solutionGroups`, with one shared Windows sizing record and per-firewall EPS entries.
+- Step 3 capacity UX now lives in `js/modules/solutions.js` with shared sizing math in `js/modules/capacity.js`; Step 5 Gantt badges and side-panel edits live in `js/gantt-planner.js`.
+- Manual Gantt task overrides remain intact when sizing changes because connector rows rebuild from the same override-backed plan pipeline instead of resetting task edits.
+- Removed the old Step 2 server split prompt from `index.html` and `js/app.js` so sizing is captured only where connector context exists.
+
 ---
 
 **See:** history-archive.md for earlier sessions and learnings (2026-05-18 through 2026-05-22).
+
+
+### 2026-05-25T12:43:02Z — Connector Capacity Inputs Implementation — COMPLETE
+- Implemented capacity data store in existing sentinelPlanner.taskDurationOverrides.v1 (no new state added)
+- Shared Windows sizing for AMA connectors (Security Events, WEF, DNS, Sysmon) keyed under solutionGroups
+- Per-solution EPS sizing entries for firewall/CEF connectors (each site gets separate input)
+- Step 3 solution card capacity forms with reactive VM estimation
+- Step 5 Gantt detail panel Sizing tab for editing capacity (propagates reactive updates)
+- Removed legacy Step 2 server-split prompt to eliminate duplicate inputs
+- Validation: non-numeric (red border), 0 servers (warning), >100k EPS (advisory), negatives (clamped), decimals (rounded up)
+- Mobile responsive: forms stack vertically <640px; detail panel becomes bottom sheet
+- Files: js/modules/capacity.js (new), js/modules/solutions.js, js/gantt-planner.js, css/style.css
+- Status: COMPLETE; awaiting Sebastian data model updates (capacity_type, sizing_defaults fields)
