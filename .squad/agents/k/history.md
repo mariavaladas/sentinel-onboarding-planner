@@ -73,6 +73,18 @@
 - User preference captured: the Name column should start comfortably wide (320px minimum flow, 200px floor) and drawer interactions should reuse the dark desktop panel / mobile bottom-sheet pattern already established elsewhere in the planner.
 - Key file paths: `js/gantt-planner.js` (column widths, dependency overrides, detail drawer editing), `css/style.css` (resize handles, drawer form styling, mobile bottom-sheet behavior).
 
+### 2026-05-25T14:37:09.027+02:00 — Gantt scroll stabilization
+- Normalized both Gantt resizers in `js/gantt-planner.js` to pointer-captured drag sessions so resize listeners exist only during an active drag and always clean up on pointerup, pointercancel, lost capture, or window blur.
+- Reinforced the planner scroll surfaces in `css/style.css` with `min-height: 0` on split-pane containers and explicit `touch-action: pan-x pan-y` on the table/chart scrollers, while keeping `touch-action: none` only on the resize affordances.
+- User preference captured: planner scrolling must stay fully native for mouse wheel and trackpad gestures even after adding drawers and resizable columns.
+- Key file paths: `js/gantt-planner.js`, `css/style.css`, `.squad/decisions/inbox/k-scroll-fix.md`.
+
+### 2026-05-25T14:38:50.012+02:00 — Planner table + gantt tab split
+- Step 5 now uses a shared-state tabbed workspace in `js/gantt-planner.js`: `📋 Table` owns spreadsheet editing, dependencies, and per-group add-task rows; `📊 Gantt` owns the timeline, zoom controls, auto-fit, and the compact left task list.
+- User preference captured: planner UX should follow a Monday.com-style split where table editing and timeline navigation never fight over the same scroll container.
+- Shared detail drawer, collapse state, and schedule overrides now re-render both views from the same plan model, while the active tab is remembered in session storage.
+- Key file paths: `index.html` (shared planner toolbar), `css/style.css` (tab strip, table shell, gantt sidebar), `js/gantt-planner.js` (shared planner controller + tab state), `.squad/decisions/inbox/k-tab-split.md`.
+
 ---
 
 **See:** history-archive.md for earlier sessions and learnings (2026-05-18 through 2026-05-22).
@@ -117,3 +129,47 @@
 **Next:**
 - Address Luv's QA findings in capacity inputs
 - Coordinate with Luv on firewall sizing per-instance model
+
+---
+
+### 2026-05-25T14:38:50.012+02:00: K-9 & K-10 Session Complete
+
+**Task:** Fix Gantt scroll glitch + implement Table/Gantt tab split  
+**Status:** SUCCESS  
+**Scope:** js/gantt-planner.js, css/style.css, index.html  
+
+**K-9 Scroll Fix:**
+- Constrained column-resize and split-pane divider to pointer-captured drag sessions
+- Listeners exist only during active drag; clean up on pointerup, pointercancel, lost capture, or window blur
+- Preserved native scrolling with `touch-action: pan-x pan-y` on scroll containers
+- Fixed scroll conflicts that emerged after drawer and resize handler additions
+
+**K-10 Tab Split:**
+- Separated planner into two tabs following Monday.com pattern
+- `📋 Table` tab: spreadsheet editing, resizable columns, per-group add-task rows
+- `📊 Gantt` tab: timeline visualization, zoom, auto-fit, compact task list
+- Shared state: detail drawer, collapse state, schedule overrides
+- Session-aware tab persistence (remembers user's last active tab)
+
+**Why:**
+- Scroll fixes eliminate interaction conflicts and restore native platform feel
+- Tab split improves UX by separating editing workflow from schedule analysis
+- Both tabs can scroll independently without triggering false state mutations
+
+**Decisions Logged:**
+- k-scroll-fix.md — Pointer-captured resize handlers
+- k-tab-split.md — Table/Gantt tab architecture
+- copilot-directive-tab-split.md — User directive (Monday.com pattern reference)
+
+**Decisions Archived:**
+- k-gantt-empty-fix.md (2025-07-14) — moved to decisions-archive.md by Scribe
+
+**Files Modified:**
+- index.html: added tab container and navigation
+- css/style.css: tab strip styling, resize handle refinements, scroll container fixes
+- js/gantt-planner.js: tab state controller, pointer handler updates, scroll context per tab
+
+**Outcome:**
+- Both fixes deployed and decision registry updated
+- Inbox decisions (3 files) merged and archived
+- Ready for next iteration
