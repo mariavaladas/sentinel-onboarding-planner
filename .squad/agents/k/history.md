@@ -65,6 +65,13 @@
 - Gantt/table row clicks need to stay selection-only for toolbar reliability; collapse/expand should live on dedicated chevrons or bar labels so `+ Add task` enables consistently from solution summary rows.
 - Custom timeline headers can branch cleanly by zoom mode (Weeks / Months / Quarters) after Frappe renders, which keeps the dropdown swap low-risk in a static frontend.
 
+### 2026-05-25T10:29:47.633+02:00 — Wizard-first resume and responsive planner containment
+- Default entry should stay on **Welcome** even when `sentinelPlanner.currentStep` points to a later step; saved progress is safer as an explicit resume CTA than an automatic jump into Step 5.
+- Native `<select>` controls in this project need explicit dark-theme treatment (`color-scheme: dark` plus dark option colours) because browser defaults can break the planner toolbar and workspace picker styling.
+- The Gantt task table is sensitive to stacked content inside absolute-positioned rows; keep custom schedule badges inline with the title row and hand smaller viewports over to the mobile planner layout sooner.
+- User preference: smaller screens should prioritize a readable wizard-first flow over aggressive state restoration.
+- Key file paths: `index.html`, `css/style.css`, `js/app.js`, `js/modules/wizard.js`, `js/gantt-planner.js`.
+
 ## Archive
 
 Previous detailed sessions archived to **history-archive.md**:
@@ -123,3 +130,11 @@ Previous detailed sessions archived to **history-archive.md**:
 - K-21 completed: collapsible groups, per-solution start dates, timeline dropdown, add-task fix
 - Upstream: Luv flagged RBAC metadata gaps; Sebastian queued Windows AMA companion records
 - Next: await QA acceptance on inline editing flicker fix and group UI state persistence
+
+## 2026-05-25 — Spawned for UI Bug Fixes
+
+**Status:** In Progress  
+**Tasks:**
+1. Navigation should default to Welcome (wizard-first)
+2. Timeline zoom dropdown styling for dark theme
+3. Task row bleed fix on small screens (inline badges)
