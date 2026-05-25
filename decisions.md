@@ -1340,3 +1340,53 @@ The previous compound numbering (`0.1`, `1.4`, `4.2`) did not match the expected
 - Why: This keeps inline editing wired even when rows are rebuilt and prevents the row-level detail click action from swallowing editable-cell clicks.
 - Impact: Duration, start date, due date, status, and impact cells keep the same save/cancel behavior, with clearer hover affordance on editable cells.
 
+---
+
+## k-hierarchical-numbering
+
+- **Date:** 2026-05-25T11:45:17.295+02:00
+- **Agent:** K
+- **Scope:** \js/gantt-planner.js\
+
+### Decision
+- Treat each solution-group row as the numbered parent in the shared global sequence.
+- Number catalog solution tasks relative to that parent with dot notation (\4.1\, \4.2\, ...).
+- Number nested subtasks with recursive dot notation (\4.6.1\, \4.6.2\, ...).
+- Leave existing global numbering behavior in place for top-level non-solution rows so kickoff and closeout tasks still read \1\, \2\, \3\, \5\, \6\, ... around the grouped solution work.
+
+### Rationale
+- The UI now reflects the visible hierarchy instead of flattening solution tasks into the global sequence.
+- Using the solution group's number as the parent keeps connector headers and their child tasks aligned in both the table and Gantt views.
+- Preserving the global counter for true top-level rows avoids renumbering unrelated planner phases.
+
+### Validation
+- Verified in a headless browser with a sample \Windows Security Events\ plan: \1\, \2\, \3\, \4\, \4.1\, \4.2\, \4.2.1\ ... \5\, \6\.
+
+---
+
+## k-detail-panel-addtask-reorder
+
+- **Date:** 2026-05-25T11:45:17.295+02:00
+- **By:** K
+- **Scope:** \js/gantt-planner.js\, \css/style.css\
+
+### Decision
+- Restore the planner interaction model so a row click opens the right-side detail drawer again, with the task-name click following the same row-first behavior.
+- Keep quick schedule/status edits inline in the grid, but move task-name editing into the detail drawer (plus the existing new-task inline focus flow) so row clicks reliably surface details.
+- Persist manual row order as scoped planner state (\	askOrders\) with three boundaries:
+  - phase-root rows reorder only within their phase block,
+  - solution tasks reorder only within their solution group,
+  - subtasks reorder only within their parent task.
+- Apply reordering as block moves so solution groups and summary rows carry their children with them.
+- Keep the toolbar \+ Add task\ button available whenever at least one solution group exists by falling back to the last solution group when no row is selected.
+
+### Why
+- The user expects the planner to behave like a task browser first, with a dependable detail drawer for deep review.
+- Reorder controls must not break hierarchical numbering or let subtasks escape their parent scope.
+- Adding work from the top toolbar should not depend on a fragile active-row state.
+
+### Impact
+- Detail metadata is richer and available again in the dark-theme drawer.
+- Manual ordering survives rerenders and export ordering because the ordered rows are renumbered after the scoped move logic runs.
+- The planner remains responsive without introducing a framework or changing the approved architecture.
+

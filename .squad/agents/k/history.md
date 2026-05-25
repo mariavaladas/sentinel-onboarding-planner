@@ -72,6 +72,24 @@
 - User preference: smaller screens should prioritize a readable wizard-first flow over aggressive state restoration.
 - Key file paths: `index.html`, `css/style.css`, `js/app.js`, `js/modules/wizard.js`, `js/gantt-planner.js`.
 
+### 2026-05-25T11:45:17.295+02:00 — Hierarchical planner numbering
+- Solution-group rows in `js/gantt-planner.js` must consume the shared global task counter so connector parents like `Windows Security Events` render as top-level items (`4`, `5`, ...).
+- Solution setup rows should derive their numbers from the parent solution number (`4.1`, `4.2`, ...), while summary subtasks use the same dot notation recursively (`4.6.1`, `4.6.2`, ...).
+- Closeout standard tasks still depend on the untouched global counter, so their numbering resumes after the last solution group rather than after every child task.
+- User preference: hierarchical numbering should mirror the visible parent/child structure instead of using flat continuation or letter suffixes.
+- Key file path: `js/gantt-planner.js`.
+
+### 2026-05-25T11:45:17.295+02:00 — Detail drawer restoration, scoped reordering, and toolbar task insertion
+- Planner row selection is now row-first again: clicking a task row or task name should open the right-side detail drawer, while quick schedule/status edits remain inline and task-name edits are handled from the drawer or the new-task inline focus flow.
+- Custom task ordering persists best as scoped `taskOrders` state in the planner localStorage payload, with separate scopes for phase-root rows, per-solution top-level rows, and per-parent subtasks so hierarchy-safe reordering survives rerenders.
+- The toolbar `+ Add task` action should still work without a selected row by falling back to the last visible solution group; this keeps new connector work inserted before closeout rows when possible.
+- Key file paths: `js/gantt-planner.js`, `css/style.css`, `index.html`, `.squad/agents/k/history.md`, `.squad/decisions/inbox/k-detail-panel-addtask-reorder.md`.
+
+### 2026-05-25T12:01:41.627+02:00 — Inline editor commit semantics
+- Native `<select>` editors in `js/gantt-planner.js` should commit only from the `change` event; blur should merely dismiss after the browser finishes focus changes so status and impact selections do not revert.
+- Duration popup outside-click handling should mirror the date and owner editors by attempting to apply the current typed duration before closing, which preserves spreadsheet-style edits without forcing the Apply button.
+- Key file paths: `js/gantt-planner.js`, `.squad/agents/k/history.md`, `.squad/decisions/inbox/k-inline-editor-fixes.md`.
+
 ## Archive
 
 Previous detailed sessions archived to **history-archive.md**:
@@ -146,3 +164,24 @@ Previous detailed sessions archived to **history-archive.md**:
 - **Files:** js/gantt-planner.js, css/style.css
 - **Decision:** "K — Expand/collapse toggle hardening" (2026-05-25T08:59:01Z)
 - **Status:** ✓ COMPLETE — expand/collapse toggle working as intended. Group labels are now reliable expand targets.
+
+## 2026-05-25T10:01:41Z — Hierarchical numbering and interactive planner features
+
+**Agent K** completed two major features:
+
+1. **Hierarchical task numbering** (decision: k-hierarchical-numbering)
+   - Solution-group rows consume the shared global task counter (4, 5, ...)
+   - Solution setup tasks use dot notation relative to parent (4.1, 4.2, ...)
+   - Subtasks use recursive dots (4.6.1, 4.6.2, ...)
+   - Closeout tasks resume global counter after last solution group
+   - Files: js/gantt-planner.js
+   - Validation: Tested with Windows Security Events plan
+
+2. **Detail drawer restoration + Add Task + scoped reorder** (decision: k-detail-panel-addtask-reorder)
+   - Row click opens right-side detail drawer with task metadata
+   - Inline schedule/status edits remain in grid; task-name edits via drawer
+   - Manual row ordering persists per scope: phase-root, per-solution, per-parent-subtask
+   - Toolbar \+ Add task\ works without selection by falling back to last solution group
+   - Files: \js/gantt-planner.js\, \css/style.css\
+
+**Status:** ✓ COMPLETE — both features integrated and verified in headless browser testing.

@@ -64,9 +64,37 @@
   - Most repeat issues clustered around six metadata families: Azure diagnostic connectors, M365/Defender tenant connectors, Syslog/CEF forwarders, host AMA/DCR connectors, cloud-export connectors, and function-based API connectors.
   - High-risk connector specifics: `windows-security-events` needs conditional Arc + audit-policy modeling, `windows-forwarded-events` needs explicit WEC/WEF prerequisites, and `defender-xdr` should model duplicate-incident cutover dependencies.
   - Key file paths for future QA: `data/solutions.json`, `.squad/agents/luv/connector-research-windows-family.md`, `.squad/agents/luv/solutions-qa-review.md`.
-
+- **2026-05-25T11:45:17.295+02:00 — inline editing bug investigation learnings**
+  - Inline planner editing is centralized in `js/gantt-planner.js` under `createTaskTable()`, with dedicated editors for duration (`3258-3409`), select fields (`3411-3478`), name (`3480-3563`), owner (`3566-3677`), and dates (`3680-3866`).
+  - Standard post-solution rows such as `task-training-handover` and `task-go-live-monitoring` are created by `addStandardTasks()` and are **not** specially locked; row-type restrictions are driven mainly by `isSummary` and `isSolutionGroup` flags in `createRow()`.
+  - Important editability pattern: solution-group rows disable owner/status/impact inline editing, while summary rows keep schedule fields read-only; this behavior is enforced in `createRow()` and cell launchers, not by CSS.
+  - The highest-risk QA hotspot in Step 5 is the shared native `<select>` inline editor used by Status and Impact; its delayed blur-save pattern can race with change handling and make valid selections look rejected.
+  - Key file paths for this area: `js/gantt-planner.js`, `css/style.css`, `.squad/agents/luv/test-report-inline-editing.md`.
 
 ## 2026-05-22T15:12Z — Cross-agent alignment (UX batch)
 - QA finding on RBAC metadata accepted by team; queued for Sebastian implementation
 - Upstream: K-21 completed collapsible groups; solution start dates now editable per group
 - Next: review planner group headers for RBAC/owner visibility in detail panel
+
+## 2026-05-25T10:01:41Z — Inline editing bug root cause audit
+
+**Agent Luv** completed QA audit of inline editing functionality:
+
+**Audit focus:** Status dropdown reliability issue  
+
+**Key findings:**
+- **Root cause:** Generic select editor blur/change race condition
+- **Pattern:** Native \<select>\ inline editor (shared by Status and Impact) uses delayed blur-save pattern that can race with change handling
+- **Effect:** Valid selections may appear rejected or unsaved under timing conditions
+- **Affected rows:** No row-specific lock on Training & Handover; editability depends on flags set in \createRow()\
+
+**Bug catalog:** 4 issues documented in .squad/agents/luv/test-report-inline-editing.md
+- Select editor race condition (HIGH)
+- Standard row editability edge cases
+- Timing dependencies in blur/save handlers
+- Recovery patterns for visible rejections
+
+**Impact:** Inline editing audit complete; race condition identified for K's follow-up fix.  
+**Files:** \js/gantt-planner.js\, \.squad/agents/luv/test-report-inline-editing.md\
+
+**Status:** ✓ COMPLETE — root cause documented and passed to K for remediation.
