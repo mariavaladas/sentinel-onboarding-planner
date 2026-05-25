@@ -634,3 +634,69 @@ ode --check js/gantt-planner.js\
 4. Step 3 → Step 5 sync on back-nav: Preserve user overrides, warn user, update defaults only (CONFIRMED)
 **Impact:** K can now implement capacity inputs with confidence; sizing form blueprint ready for Step 3 and Step 5 surfaces; shared Windows state pattern established; VM guidance display (inline micro-result + Gantt badge + Excel summary) specified.
 
+
+---
+
+# K — Gantt columns + detail drawer follow-up
+
+- **Date:** 2026-05-25T13:26:20.812+02:00
+- **By:** K
+- **Scope:** `js/gantt-planner.js`, `css/style.css`
+
+## Decision
+- Keep the existing split-grid Gantt table layout, but move column sizing into a session-scoped width model so every header can be resized with an Excel-style drag handle without introducing a new table component.
+- Restore the Step 5 detail drawer on the current overlay shell instead of introducing a second planner layout; extend that drawer with editable fields for task name, description, status, assigned owner, and dependencies while keeping duration in the existing duration editor.
+- Reuse the established dark drawer pattern and switch the drawer to a bottom sheet below `768px` to match the Step 3 sizing workspace behavior.
+
+## Why
+- The current planner architecture already syncs a custom task grid with Frappe Gantt; replacing it with a semantic table would add UI churn and break the existing inline editors.
+- Session-only persistence matches the user request for column widths that survive re-renders during one browser session without becoming long-term local preferences.
+- Reusing the current drawer shell fixes the missing task-details workflow faster than rebuilding a parallel side-panel system.
+
+## Impact
+- Name starts wider by default and every visible Gantt column can be resized from the header edge.
+- Task-row clicks reopen a richer detail drawer with editable planner metadata while inline grid controls remain non-opening interaction targets.
+- Mobile users get the same task drawer as a bottom sheet instead of a narrow right rail.
+
+
+---
+
+# K sizing panel decision
+
+- **Date:** 2026-05-25T13:12:43.036+02:00
+- **By:** K
+- **Scope:** Step 3 connector capacity UX
+
+## Decision
+Move connector sizing off the solution cards and into a dedicated right-side drawer on desktop, with a bottom-sheet overlay on screens narrower than 768px.
+
+## Why
+The inline expand pattern made sizing forms too cramped and forced excessive scrolling inside the card grid.
+
+## Implementation notes
+- Keep cards compact; show only a one-line sizing summary on-card.
+- Open/update the drawer from connector card selection without requiring the user to close it between connectors.
+- Preserve shared Windows sizing behavior, but allow the shared form to be edited from any Windows-family connector card.
+- Reuse the dark Gantt detail-drawer visual language for consistency.
+
+
+---
+
+# Luv QA decision — reject connector capacity inputs as currently implemented
+
+**Date:** 2026-05-25T12:49:09.330+02:00  
+**By:** Luv  
+**Status:** REJECT
+
+## Decision
+Do **not** accept the connector capacity inputs feature yet.
+
+## Why
+QA found three release-impacting gaps:
+1. Firewall sizing is implemented **per solution**, not **per firewall instance / site**, so multi-site deployments cannot be modeled correctly.
+2. Capacity classification is heuristic and currently pulls some API/cloud connectors into the firewall sizing path.
+3. Numeric handling diverges from the approved rules: decimals do not round up for VM sizing, and negatives are rejected instead of clamped to 0.
+
+## Impact
+K should fix the sizing model and classification logic before the feature is approved. The detailed bug list and repro steps are in `.squad/agents/luv/test-report-capacity-inputs.md`.
+

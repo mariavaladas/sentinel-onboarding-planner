@@ -59,6 +59,20 @@
 - Manual Gantt task overrides remain intact when sizing changes because connector rows rebuild from the same override-backed plan pipeline instead of resetting task edits.
 - Removed the old Step 2 server split prompt from `index.html` and `js/app.js` so sizing is captured only where connector context exists.
 
+### 2026-05-25T13:12:43.036+02:00 — Step 3 sizing drawer pattern
+- Replaced inline Step 3 sizing expansion with a persistent right-side drawer in `index.html`, `css/style.css`, and `js/modules/solutions.js`; cards now stay compact and only surface a one-line summary.
+- Reused the existing dark detail-drawer visual language from the Gantt planner, but adapted it into a non-blocking Step 3 workspace layout so users can keep clicking connector cards while the panel stays open.
+- Shared Windows sizing now opens from any Windows-family connector card and clearly states that edits apply across the shared Windows group.
+- User preference captured: Step 3 sizing must avoid cramped inline forms and excessive scrolling; on mobile (`<768px`) the drawer shifts to a bottom-sheet overlay instead of a desktop side panel.
+- Key file paths: `index.html` (drawer host), `css/style.css` (workspace + drawer responsive styling), `js/modules/solutions.js` (drawer state, card summaries, sizing editor rendering).
+
+### 2026-05-25T13:26:20.812+02:00 — Gantt columns + detail drawer restoration
+- Restored the Step 5 task detail drawer in `js/gantt-planner.js` with editable panel fields for name, description, status, assigned owner, dependencies, and the existing duration editor; row clicks still ignore inline grid controls.
+- Added Excel-like column resizing to the Gantt table by driving column widths from session-scoped state (`sentinelPlanner.ganttTableColumnWidths.session.v1`) so widths survive re-renders without persisting beyond the browser session.
+- Dependency edits now update the visible dependency list and Gantt arrow relationships; when a task does not have a direct start override, dependency changes can also shift the derived start week inside the current plan session.
+- User preference captured: the Name column should start comfortably wide (320px minimum flow, 200px floor) and drawer interactions should reuse the dark desktop panel / mobile bottom-sheet pattern already established elsewhere in the planner.
+- Key file paths: `js/gantt-planner.js` (column widths, dependency overrides, detail drawer editing), `css/style.css` (resize handles, drawer form styling, mobile bottom-sheet behavior).
+
 ---
 
 **See:** history-archive.md for earlier sessions and learnings (2026-05-18 through 2026-05-22).
@@ -75,3 +89,31 @@
 - Mobile responsive: forms stack vertically <640px; detail panel becomes bottom sheet
 - Files: js/modules/capacity.js (new), js/modules/solutions.js, js/gantt-planner.js, css/style.css
 - Status: COMPLETE; awaiting Sebastian data model updates (capacity_type, sizing_defaults fields)
+
+---
+
+### 2026-05-25T13:26:20.812+02:00: K-8 Session Complete
+
+**Task:** Add resizable Gantt columns + restore task detail side panel
+**Status:** SUCCESS
+**Scope:** js/gantt-planner.js, css/style.css
+
+**What:**
+- Implemented Excel-style resizable Gantt table columns with session-scoped width persistence
+- Restored Step 5 detail drawer with editable task fields (name, description, status, owner, dependencies)
+- Reused existing overlay drawer pattern for visual consistency
+- Column widths survive re-renders during session but reset on page reload (no localStorage)
+
+**Why:**
+- Column resizing improves usability for task visibility in crowded plans
+- Detail drawer restores task-detail workflow previously removed
+- Session-only persistence matches user request for workflow convenience without long-term preferences
+
+**Decisions Logged:**
+- k-gantt-columns-panel.md — Column resizing + drawer architecture
+- k-sizing-panel.md — Connector sizing UX refactor to drawer
+- luv-capacity-qa.md — QA reject on capacity inputs (classification + numeric handling gaps)
+
+**Next:**
+- Address Luv's QA findings in capacity inputs
+- Coordinate with Luv on firewall sizing per-instance model

@@ -10,6 +10,13 @@
 
 (Session learnings will be appended here)
 
+- **2026-05-25T12:49:09.330+02:00 — connector capacity inputs QA learnings**
+  - Capacity logic is split across `js/modules/capacity.js` (classification + sizing math), `js/modules/solutions.js` (Step 3 cards), and `js/gantt-planner.js` (Step 5 planner/detail panel + persistence).
+  - Shared Windows sizing persists under `sentinelPlanner.taskDurationOverrides.v1` using `solutionGroups["__shared-windows-sizing__"]`; firewall sizing persists per `solution.id`, which means multi-site same-product firewalls are not representable yet.
+  - Step 3/5 responsive behavior for sizing is driven in `css/style.css` by the `@media (max-width: 640px)` rules that collapse `.solution-sizing-grid`, `.gantt-detail-sizing__grid`, and the `gantt-table-badge--sizing` label.
+  - QA hotspot: connector classification is heuristic text matching in `classifyConnectorCapacity()`, so catalog wording can wrongly surface EPS forms for API/cloud connectors such as Cortex XDR-style entries.
+  - User preference/policy reminder: keep QA outputs human-readable, write reports under `.squad/agents/luv/`, and record any team-impacting accept/reject call in `.squad/decisions/inbox/`.
+
 - **2026-05-21T14:28:20.714+02:00 — solutions.json audit learnings**
   - Audited **485** catalog records across `azure` (18), `microsoft_365_security` (20), and `third_party` (447).
   - Found a schema-wide blocker: **all 485 records are missing the required per-record `category` field**.
@@ -98,3 +105,27 @@
 **Files:** \js/gantt-planner.js\, \.squad/agents/luv/test-report-inline-editing.md\
 
 **Status:** ✓ COMPLETE — root cause documented and passed to K for remediation.
+
+---
+
+### 2026-05-25T13:26:20.812+02:00: Capacity Inputs QA Review
+
+**Date:** 2026-05-25T12:49:09.330+02:00
+**Status:** REJECT
+**Task:** Validate K's connector capacity inputs implementation
+
+**QA Findings:**
+1. Firewall sizing heuristic pulls API/cloud connectors incorrectly
+2. Multi-site deployments cannot be modeled (firewall sizing is per-solution, not per-instance)
+3. Numeric handling gaps (decimals don't round up for VM calc, negatives rejected instead of clamped)
+
+**Test Report:**
+.squad/agents/luv/test-report-capacity-inputs.md
+
+**Impact:**
+- Feature blocked pending K's fixes
+- Classification logic and numeric handling must align with approved rules
+- Coordinate with K on per-firewall instance sizing model
+
+**Next:**
+- Re-review after K addresses fixes
