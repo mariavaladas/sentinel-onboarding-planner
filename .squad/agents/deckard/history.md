@@ -169,3 +169,55 @@ The planner is advisory, not blocking. Incomplete sizing = warning badge, not a 
 - Files: decisions.md (full architecture spec + tradeoffs + implementation notes)
 - Status: APPROVED; ready for K implementation and Sebastian data model sync
 
+### 2026-05-28T15:36:59.054+02:00: Uber-boxes topology spec — environment zones
+
+**Decision Made:**
+- Rejected the previous "split chips within existing nodes" approach in favour of environment uber-boxes as first-class topology zones.
+- Three zones: On-Premises (amber `#f59e0b`), Azure (blue `#0078d4`), 3rd Party Cloud / SaaS (violet `#8b5cf6`).
+- Connectors that span both environments appear in BOTH boxes with separate source nodes + separate server nodes.
+- On-prem server nodes show Arc Agent + AMA Agent; Azure server nodes show AMA Agent only — architectural distinction, not cosmetic.
+- All zone assignment is derivable from existing `onPremPercent` + `classifySolution()` — no new user inputs.
+- WEC and CEF hardcoded to On-Premises; azure_native/event_hub to Azure; api/direct/logic_app to SaaS.
+- Uber-boxes are `zIndex: -1`, `pointerEvents: none` — purely visual containers; uber-box wraps left column only.
+- Chip system (AMA ×N, WEC ×N) retained; counts scaled to environment's portion via updated `buildServerIndicatorsForGroup(type, solutions, snapshot, environment)`.
+
+**Artifacts:**
+- Spec: `.squad/decisions/inbox/deckard-uber-boxes-topology-spec.md` (replaces `deckard-azure-onprem-topology-spec.md`)
+
+**Key Paths:**
+- `js/modules/topology.js` — all changes; new `UberBoxNode`, `getZonesForType()`, layout algorithm rewrite
+- `js/modules/capacity.js` — no changes needed
+- `data/solutions.json` — no changes needed
+
+**User preferences observed:**
+- Prefer architectural clarity over cosmetic enhancements (rejected chip-only split)
+- Split connectors should genuinely appear in both boxes, not be summarised in one
+- Arc dependency must be visible in the topology, not buried in task lists
+
+## Learnings
+
+### 2026-05-27T14:12:46.945+02:00: Windows connector overlap sizing proposal
+- Architecture decision: move from one shared Windows sizing assumption to pool-based Windows AMA sizing, with default shared population and an explicit "additional servers" branch when connectors are not on the same hosts.
+- Architecture decision: treat Windows Forwarded Events as a separate WEC-server population with its own Azure/on-prem split, never merged into the AMA host pool.
+- Pattern: keep sizing advisory and non-blocking; only ask the overlap question when two or more Windows AMA connectors are selected; preserve entered values when users toggle between shared and separate.
+- User preference: spec-first decision proposal in `.squad/decisions/inbox/` before implementation, with clear UX and data-model guidance for K.
+- Key file paths: `data/solutions.json`, `js/modules/capacity.js`, `js/modules/solutions.js`, `js/gantt-planner.js`, `index.html`, `.squad/decisions/inbox/deckard-windows-sizing-spec.md`
+
+### 2026-06-01T13:42 — Topology Specs Merged into Decisions Archive
+
+Five topology specification decisions authored by Deckard were merged from inbox into decisions.md as part of K's Cribl integration session:
+
+1. **deckard-topology-servers-spec.md** — Server indicator strip system: OS + role + count chips inside server nodes. Established the pattern for Windows (AMA ×N, WEC ×N), Linux (CEF ×N), and estimated defaults.
+
+2. **deckard-azure-onprem-topology-spec.md** — Initial Azure/on-prem visual distinction proposal using split chips within existing nodes. Provides the data flow foundation (profiles carry `onPremPercent` to topology).
+
+3. **deckard-uber-boxes-topology-spec.md** — Replaces split-chip approach with environment uber-boxes as first-class zones. Three zones (On-Premises amber, Azure blue, 3rd Party SaaS violet) with connectors appearing in multiple boxes when they span environments. Arc Agent visibility on on-prem nodes.
+
+Supporting specs also merged:
+- **k-linux-topology-separate-dcrs.md** — Linux/CEF path split: `linux_server` path with shared Linux DCRs (4k servers), separate from `syslog_cef` path with collector VMs and Syslog/CEF DCRs (65k EPS).
+- **k-pool-grouped-source-nodes.md** — Windows source nodes visualized as pool-based sub-sections instead of flat connector lists.
+- **k-shared-dcr-logic.md** — Shared middle-column Windows DCR nodes outside environment boxes, balancing load across DCRs.
+- **k-sysmon-topology-fix.md** — Windows family inference fix using canonical `WINDOWS_FAMILY_IDS` set.
+- **luv-uberbox-sizing.md** — Windows row height estimation using structure-based model (chrome, pools, agent lines, overflow).
+
+All specs now canonical in `decisions.md` and ready for team reference.

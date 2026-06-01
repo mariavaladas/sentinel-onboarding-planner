@@ -10,6 +10,12 @@
 
 (Session learnings will be appended here)
 
+- **2026-06-01T13:42 — Sizing specs merged into decisions archive**
+  - `luv-uberbox-sizing.md` was merged into `decisions.md` as part of K's Cribl integration session. This spec provides the Windows row height estimation model for topology uber-boxes: structure-based calculation using nodeChrome (56), poolGap (10), sectionBase (104), solutionBox (33), solutionGap (6), arcAgentExtra (28), bottomSlack (18). Accounts for extra Arc Agent line on on-prem pools. Keeps non-Windows rows at shared 220px baseline.
+  - Supporting specs also merged: `k-linux-zone-and-label-styling.md` (Linux on-prem % split alongside server count), `k-collector-placement.md` (shared collectorVmZone across firewall connectors), `k-remove-estimated-volume.md` (removed unreliable volume estimate card), and 10 additional topology/routing/classification specs.
+  - All topology decisions now canonical and team-accessible in `decisions.md`.
+
+
 - **2026-05-25T12:49:09.330+02:00 — connector capacity inputs QA learnings**
   - Capacity logic is split across `js/modules/capacity.js` (classification + sizing math), `js/modules/solutions.js` (Step 3 cards), and `js/gantt-planner.js` (Step 5 planner/detail panel + persistence).
   - Shared Windows sizing persists under `sentinelPlanner.taskDurationOverrides.v1` using `solutionGroups["__shared-windows-sizing__"]`; firewall sizing persists per `solution.id`, which means multi-site same-product firewalls are not representable yet.
@@ -129,3 +135,63 @@
 
 **Next:**
 - Re-review after K addresses fixes
+
+---
+
+## 2026-05-29 — Gantt & Table Tabs QA Pass
+
+**Agent:** Luv  
+**Method:** Deep static code review (`js/gantt-planner.js` 7,593 lines + `css/style.css`)  
+**Report:** `.squad/agents/luv/test-report-gantt-table-qa.md`
+
+**Key learnings:**
+- `.gantt-summary-toggle` CSS class carries `text-decoration: underline dotted` (line 4277) — always check this when "no underlines" is a spec requirement; it's a non-obvious SVG text rule hiding in the toolbar section of the stylesheet
+- `bindPrimaryActivation` calls `event.stopPropagation()` — any element using it blocks click events from reaching parent-level chart listeners. Summary task bar labels use this, so their click toggles collapse/expand and does NOT open the sidebar
+- `pointer-events: none` on non-summary bar labels is deliberate pass-through to the bar rect — correct for sidebar open. Summary labels are the exception (`pointer-events: auto`) which enables the collapse toggle but breaks "text click → sidebar"
+- `detailOverlay.addEventListener('keydown', ...)` only catches Escape when focus is inside the overlay subtree. Pattern to watch: always use `document.addEventListener('keydown', ...)` with a visibility guard for modal-style overlay panels
+- `sidebarController` is always `null` in the Gantt timeline-only layout — `sidebarHost` is created but never appended to DOM. The Gantt tab uses `detailOverlay` exclusively for task details; the sidebar CSS rules for Gantt (lines 3324–3336) are dead
+- Font-weight non-uniformity (`600` on solution group rows/bars) is present in both Table and Gantt — may be intentional hierarchy, but always flag against "uniform weight" spec requirements until explicitly accepted
+- `console.debug` at line 5863 fires on every MutationObserver tick inside `stabilizeGanttRender` — noisy in production
+
+**Bugs found:** 1 critical (dotted underline on summary bars), 3 medium, 2 low  
+**Status:** COMPLETE — report delivered to madesous; BUG-GT-001 and BUG-GT-004 queued for K
+
+---
+
+## 2026-05-26T09:09:34+02:00 — Gantt/Table live QA pass
+
+**Agent:** Luv  
+**Method:** Headless browser pass against `http://localhost:8080` with 12 selected solutions and live interactions across both planner tabs.
+
+**Validated:**
+- Table tab: no inline `+ Add task` rows between groups, dependency text stayed contained, task labels rendered at `13px/400`, row + group row clicks opened details, X/backdrop/Escape close paths worked, toolbar `+ Add task` inserted a new editable row, scrollbar + wheel scrolling responded normally.
+- Gantt tab: all visible rows rendered as bars, solution-group labels sat outside-right of bars, bar clicks and label clicks opened details, task labels had no underline, zoom dropdown worked for Weeks/Months/Quarters, scrollbar/wheel scrolling responded, task labels stayed at `13px/400`.
+- Code hygiene: no active `console.debug` calls remain in `js/gantt-planner.js`.
+
+**Bugs found:**
+- Critical: inline start-date edits persist `startWeek` override state but both Table and Gantt continue showing the original date (`task-stakeholder-kickoff` stayed `05/25/2026` after saving `05/26/2026`).
+- Medium: Gantt interactions still emit repeated `frappe-gantt` runtime exceptions (`Cannot read properties of null (reading 'classList')`) during normal bar/label interactions.
+
+**Behavior note:**
+- With more than two selected solutions, solution groups default to collapsed and therefore initially show `(expand)`; toggling worked and revealed/hid child rows and bars correctly.
+
+---
+
+## 2026-05-26T12:03:28+02:00 — k-20 verification pass
+
+**Agent:** Luv  
+**Scope:** `js/gantt-planner.js`, `data/solutions.json`
+
+**Findings:**
+- Capacity scaling is wired correctly in `getTaskPlannedDurationWeeks()` -> `scaleTaskDurationDays()` and applied through `createSolutionPlanRows()` using the shared Windows capacity snapshot. Edge-case math checks out for Arc (on-prem count), DCR (total server count), and validation; non-matched Windows Security Events tasks stay fixed.
+- Inline date-save flow now persists first (`saveTaskDurationOverride`) and only then rebuilds planner state (`rebuildPlanData`) before refreshing views, so the stale start-date bug path is closed without an async race.
+- Frappe null/classList mitigation is robust: `syncGanttTimelineHeader()` preserves `.date-range-highlight` nodes instead of deleting Frappe-owned header state, and the chart interaction code adds defensive element guards before DOM/classList access.
+- **Blocking data issue:** `planner.setup_tasks` for `windows-security-events` is updated correctly, but the duplicated top-level `setup_tasks` block in `solutions.json` is still stale. It is missing `wse-workbooks` and `wse-tune-event-set`, and it still carries the old durations for `wse-audit-policy`, `wse-arc-onboarding`, `wse-validate-securityevent`, `wse-analytics-rules`, and `wse-handoff`.
+
+**Verdict:** REJECT  
+**Why:** `solutions.json` now has conflicting task definitions for the same connector, so K's data changes are not complete or internally consistent.
+
+- **2026-05-29T10:42:08.284+02:00 — topology uber-box sizing QA learnings**
+  - `estimateRowHeight()` for `windows_events` should track the rendered pool-card box model instead of a coarse `poolCount > 2` switch: node chrome is ~56px, inter-pool spacing is 10px, a base pool section is ~104px, and each solution box adds ~33px plus 6px between stacked solutions.
+  - The on-prem Windows variant is taller because each non-WEC pool renders an extra Arc Agent line; that adds ~28px per pool and must be keyed off zone/role, not just the number of pools.
+  - QA sanity check for the new formula: representative estimates land at `358px` for Azure (2 pools, 1 solution each) and `589px` for On-Prem (3 pools, 1 solution each with Arc), which keeps the intended bottom slack near the ~30px target.
