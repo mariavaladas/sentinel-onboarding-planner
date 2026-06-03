@@ -37,16 +37,18 @@ function clampStep(step) {
     return Math.min(totalSteps, Math.max(1, parsedStep));
 }
 
-function activateStep(nextStepNumber) {
+function activateStep(nextStepNumber, { persist = true } = {}) {
     const nextStep = clampStep(nextStepNumber);
     setStepState(currentStep, false);
     currentStep = nextStep;
     setStepState(currentStep, true);
-    persistCurrentStep();
+    if (persist) {
+        persistCurrentStep();
+    }
 }
 
-export function setCurrentStep(nextStepNumber) {
-    activateStep(nextStepNumber);
+export function setCurrentStep(nextStepNumber, options = {}) {
+    activateStep(nextStepNumber, options);
     updateProgress();
     return currentStep;
 }

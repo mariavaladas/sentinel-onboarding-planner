@@ -1,18 +1,20 @@
 import { exportToExcel } from './modules/export.js';
 import { initGanttPlanner } from './gantt-planner.js';
 import { renderMitreCoverage } from './modules/mitre.js';
-import { processNlpInput, handleNlpInput, handleNlpKeydown } from './modules/search.js';
+import { handleNlpInput, handleNlpKeydown } from './modules/search.js';
 import {
+    blockTopologyNavigationWhileSizing,
     getSelectedSolutionsData,
     initStep3,
     loadSolutionData,
     selectedVendors,
+    syncCriblEnvironmentSelection,
     setConnectedSolutionIds,
     setConnectedSolutionsFromWorkspace,
     toggleVendor
 } from './modules/solutions.js';
 import { exportTopologyAsPdf, exportTopologyAsPng, renderTopology } from './modules/topology.js';
-import { nextStep, prevStep, setCurrentStep } from './modules/wizard.js';
+import { getCurrentStep, nextStep, prevStep, setCurrentStep } from './modules/wizard.js';
 import { sortByScore } from './modules/scoring.js';
 
 const AZURE_TOKEN_COMMAND = 'az account get-access-token --resource https://management.azure.com --query accessToken -o tsv';
@@ -26,21 +28,16 @@ const workspaceConnectionState = {
 
 const STORAGE_PREFIX = 'sentinelPlanner.';
 const SELECTED_VENDORS_STORAGE_KEY = `${STORAGE_PREFIX}selectedVendors`;
-const SERVER_ENVIRONMENT_STORAGE_KEY = `${STORAGE_PREFIX}serverEnvironment`;
 const CURRENT_STEP_STORAGE_KEY = `${STORAGE_PREFIX}currentStep`;
 const SELECTED_SOLUTIONS_STORAGE_KEY = `${STORAGE_PREFIX}selectedSolutions`;
 const CONNECTED_SOLUTIONS_STORAGE_KEY = `${STORAGE_PREFIX}connectedSolutionIds`;
 const PLANNER_STORAGE_KEYS = [
     SELECTED_VENDORS_STORAGE_KEY,
-    SERVER_ENVIRONMENT_STORAGE_KEY,
     CURRENT_STEP_STORAGE_KEY,
     SELECTED_SOLUTIONS_STORAGE_KEY,
     CONNECTED_SOLUTIONS_STORAGE_KEY
 ];
-const SERVER_ENVIRONMENT_INPUT_IDS = {
-    azure: 'azureServerCount',
-    onprem: 'onPremServerCount'
-};
+const STEP_LABELS = ['Welcome', 'Environment', 'Solutions', 'Topology', 'Planner'];
 
 const canUseLocalStorage = () => {
     try {
@@ -86,7 +83,84 @@ const getPersistedCurrentStep = () => {
     return Number.isFinite(parsedStep) ? parsedStep : 1;
 };
 
+const clampStepNumber = (step) => {
+    const parsedStep = Number.parseInt(step || '', 10);
+    if (!Number.isFinite(parsedStep)) {
+        return 1;
+    }
+    return Math.min(STEP_LABELS.length, Math.max(1, parsedStep));
+};
+
+const getStepLabel = (step) => STEP_LABELS[clampStepNumber(step) - 1] || 'Welcome';
+
+const setupResumeProgressButton = (step = 1) => {
+    const resumeButton = document.getElementById('resumeProgressButton');
+    if (!resumeButton) {
+        return;
+    }
+
+    const nextStep = clampStepNumber(step);
+    if (nextStep <= 1) {
+        resumeButton.hidden = true;
+        resumeButton.textContent = 'Resume saved progress';
+        resumeButton.onclick = null;
+        return;
+    }
+
+    resumeButton.hidden = false;
+    resumeButton.textContent = `Resume at ${getStepLabel(nextStep)} →`;
+    resumeButton.onclick = () => {
+        const resumedStep = setCurrentStep(nextStep);
+        handleStepChange(resumedStep);
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+    };
+};
+
 const getVendorCards = () => Array.from(document.querySelectorAll('[data-vendor]'));
+
+const bindRemoteLogoFallbacks = (root = document) => {
+    root.querySelectorAll('[data-remote-logo]').forEach((image) => {
+        if (image.dataset.logoBound === 'true') {
+            return;
+        }
+
+        image.dataset.logoBound = 'true';
+        const wrapper = image.closest('[data-logo-wrapper]');
+        const fallback = wrapper?.querySelector('[data-logo-fallback]');
+
+        const showFallback = () => {
+            wrapper?.classList.add('logo-is-fallback');
+            image.hidden = true;
+            if (fallback) {
+                fallback.hidden = false;
+            }
+        };
+
+        const showImage = () => {
+            wrapper?.classList.remove('logo-is-fallback');
+            image.hidden = false;
+            if (fallback) {
+                fallback.hidden = true;
+            }
+        };
+
+        image.addEventListener('load', showImage);
+        image.addEventListener('error', showFallback);
+
+        if (!image.getAttribute('src')) {
+            showFallback();
+            return;
+        }
+
+        if (image.complete) {
+            if (image.naturalWidth > 0) {
+                showImage();
+            } else {
+                showFallback();
+            }
+        }
+    });
+};
 
 const applySelectedVendors = (vendorIds = []) => {
     const nextVendors = new Set(Array.isArray(vendorIds) ? vendorIds.filter(Boolean) : []);
@@ -100,6 +174,8 @@ const applySelectedVendors = (vendorIds = []) => {
             selectedVendors.add(vendorId);
         }
     });
+
+    syncCriblEnvironmentSelection({ clearCapacity: !selectedVendors.has('cribl'), persist: false });
 };
 
 const persistSelectedVendors = () => {
@@ -122,39 +198,6 @@ const restoreSelectedVendors = () => {
         : ['azure', 'microsoft365'];
     applySelectedVendors(vendorsToApply);
     persistSelectedVendors();
-};
-
-const getServerEnvironmentInputs = () => ({
-    azure: document.getElementById(SERVER_ENVIRONMENT_INPUT_IDS.azure),
-    onprem: document.getElementById(SERVER_ENVIRONMENT_INPUT_IDS.onprem)
-});
-
-const normalizeServerCount = (value) => {
-    const parsedValue = Number.parseInt(value || '', 10);
-    return Number.isFinite(parsedValue) && parsedValue > 0 ? parsedValue : 0;
-};
-
-const persistServerEnvironment = () => {
-    const { azure, onprem } = getServerEnvironmentInputs();
-    writeJsonToStorage(SERVER_ENVIRONMENT_STORAGE_KEY, {
-        azure: normalizeServerCount(azure?.value),
-        onprem: normalizeServerCount(onprem?.value)
-    });
-};
-
-const restoreServerEnvironment = () => {
-    const storedServerEnvironment = readJsonFromStorage(SERVER_ENVIRONMENT_STORAGE_KEY, {});
-    const { azure, onprem } = getServerEnvironmentInputs();
-    const azureCount = normalizeServerCount(storedServerEnvironment?.azure);
-    const onPremCount = normalizeServerCount(storedServerEnvironment?.onprem);
-
-    if (azure) {
-        azure.value = azureCount > 0 ? String(azureCount) : '';
-    }
-
-    if (onprem) {
-        onprem.value = onPremCount > 0 ? String(onPremCount) : '';
-    }
 };
 
 const clearPlannerLocalStorage = () => {
@@ -421,16 +464,24 @@ window.onRgChange = onRgChange;
 window.onWorkspaceChange = onWorkspaceChange;
 
 document.addEventListener('DOMContentLoaded', async () => {
+    bindRemoteLogoFallbacks();
     await loadSolutionData();
 
     restoreSelectedVendors();
-    restoreServerEnvironment();
+    const restoredConnectedSolutionIds = readJsonFromStorage(CONNECTED_SOLUTIONS_STORAGE_KEY, null);
+    setConnectedSolutionIds(Array.isArray(restoredConnectedSolutionIds) ? restoredConnectedSolutionIds : []);
 
     document.querySelectorAll('[data-next]').forEach((button) => {
-        button.addEventListener('click', () => nextStep({
-            canProceed: (step) => step !== 3 || getSelectedSolutionsData().length > 0,
-            onStepChange: handleStepChange
-        }));
+        button.addEventListener('click', (event) => {
+            if (getCurrentStep() === 3 && blockTopologyNavigationWhileSizing(event)) {
+                return;
+            }
+
+            nextStep({
+                canProceed: (step) => step !== 3 || getSelectedSolutionsData().length > 0,
+                onStepChange: handleStepChange
+            });
+        });
     });
 
     document.querySelectorAll('[data-prev]').forEach((button) => {
@@ -442,11 +493,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         persistSelectedVendors();
     }));
 
-    Object.values(getServerEnvironmentInputs()).forEach((input) => {
-        input?.addEventListener('input', persistServerEnvironment);
-        input?.addEventListener('change', persistServerEnvironment);
-    });
-
     document.getElementById('resetPlannerState')?.addEventListener('click', () => {
         if (!window.confirm('Clear all saved Sentinel Planner progress and start over?')) {
             return;
@@ -456,7 +502,12 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.reload();
     });
 
-    document.getElementById('nlpSearchButton')?.addEventListener('click', processNlpInput);
+    window.addEventListener('sentinelPlanner:capacity-changed', () => {
+        if (getCurrentStep() === 4) {
+            renderTopologyStep();
+        }
+    });
+
     document.addEventListener('keydown', handleNlpKeydown);
 
     let nlpDebounceTimer = null;
@@ -491,7 +542,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     let restoredStep = getPersistedCurrentStep();
 
-    // If restoring to a step that requires solutions but none are persisted, fall back to step 1
+    // If the saved step requires planned solutions but the saved shortlist is gone, start clean.
     if (restoredStep >= 4 && getSelectedSolutionsData().length === 0) {
         restoredStep = 1;
         if (canUseLocalStorage()) {
@@ -499,8 +550,6 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    restoredStep = setCurrentStep(restoredStep);
-    if (restoredStep > 1) {
-        handleStepChange(restoredStep);
-    }
+    setupResumeProgressButton(restoredStep);
+    setCurrentStep(1, { persist: false });
 });

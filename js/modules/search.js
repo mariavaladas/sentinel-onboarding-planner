@@ -1,4 +1,10 @@
-import { selectedSolutions, solutionsData, toggleSolution, updateStep3Button } from './solutions.js';
+import {
+    applySolutionSearch,
+    findSolutionsBySearchQuery,
+    selectedSolutions,
+    toggleSolution,
+    updateStep3Button
+} from './solutions.js';
 
 function createMessage(text) {
     const message = document.createElement('p');
@@ -7,35 +13,14 @@ function createMessage(text) {
     return message;
 }
 
-function getTerms(input) {
-    return input
-        .toLowerCase()
-        .split(/[,;]+/)
-        .map((term) => term.trim())
-        .filter((term) => term.length > 0);
-}
+const MAX_SUGGESTIONS = 24;
 
 export function findMatchingSolutions(input) {
-    const allSolutions = Object.values(solutionsData?.categories || {})
-        .flatMap((category) => category?.solutions || []);
-    const terms = getTerms(input);
-    const matches = [];
+    return findSolutionsBySearchQuery(input);
+}
 
-    terms.forEach((term) => {
-        allSolutions.forEach((solution) => {
-            const searchableText = [
-                solution.name,
-                solution.description,
-                ...(solution.tags || [])
-            ].join(' ').toLowerCase();
-
-            if (searchableText.includes(term) && !matches.some((match) => match.id === solution.id)) {
-                matches.push(solution);
-            }
-        });
-    });
-
-    return matches;
+function getCurrentSearchQuery() {
+    return `${document.getElementById('nlpInput')?.value || ''}`.trim();
 }
 
 function createSuggestionTag(solution) {
@@ -45,7 +30,7 @@ function createSuggestionTag(solution) {
 
     tag.addEventListener('click', () => {
         const item = document.querySelector(`.solution-item[data-id="${solution.id}"]`);
-        if (!selectedSolutions.has(solution.id)) {
+        if (!selectedSolutions.has(solution.id) && item) {
             toggleSolution(item, solution.id);
         }
         tag.textContent = `✓ ${solution.name}`;
@@ -56,14 +41,12 @@ function createSuggestionTag(solution) {
     return tag;
 }
 
-function renderSuggestions() {
-    const input = document.getElementById('nlpInput');
+function renderSuggestions(userText = '') {
     const suggestionsContainer = document.getElementById('nlpSuggestions');
-    if (!input || !suggestionsContainer) {
+    if (!suggestionsContainer) {
         return;
     }
 
-    const userText = `${input.value || ''}`.trim();
     suggestionsContainer.replaceChildren();
 
     if (!userText) {
@@ -74,19 +57,30 @@ function renderSuggestions() {
 
     if (matches.length === 0) {
         suggestionsContainer.appendChild(createMessage('No matching connectors found. Try different keywords or browse the list below.'));
-    } else {
-        matches.forEach((solution) => {
-            suggestionsContainer.appendChild(createSuggestionTag(solution));
-        });
+        return;
+    }
+
+    matches.slice(0, MAX_SUGGESTIONS).forEach((solution) => {
+        suggestionsContainer.appendChild(createSuggestionTag(solution));
+    });
+
+    if (matches.length > MAX_SUGGESTIONS) {
+        suggestionsContainer.appendChild(createMessage(`Showing the first ${MAX_SUGGESTIONS} quick-add matches. The cards below are fully filtered.`));
     }
 }
 
+function syncSearchUi() {
+    const userText = getCurrentSearchQuery();
+    applySolutionSearch(userText);
+    renderSuggestions(userText);
+}
+
 export function handleNlpInput() {
-    renderSuggestions();
+    syncSearchUi();
 }
 
 export function processNlpInput() {
-    renderSuggestions();
+    syncSearchUi();
 }
 
 export function handleNlpKeydown(event) {

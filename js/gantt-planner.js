@@ -1,5 +1,15 @@
 // Gantt Planner v5 — Timeline dropdown, collapsible groups, per-solution start dates
-import { initPlannerView } from './modules/planning.js';
+import {
+    buildCapacitySnapshot,
+    classifyConnectorCapacity,
+    createDefaultSizingDraft,
+    getSizingDetailLines,
+    getSizingResultMessages,
+    getSolutionCapacityProfile,
+    updateConnectorCapacityEntries,
+    applySizingToTaskContent,
+    clearCriblIngestionEntries
+} from './modules/capacity.js';
 import { calculatePriorityScore, getPhase } from './modules/scoring.js';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -10,9 +20,70 @@ const HOURS_PER_WEEK = HOURS_PER_DAY * DAYS_PER_WEEK;
 const BUSINESS_DAY_START_HOUR = 9;
 const BUSINESS_DAY_END_HOUR = BUSINESS_DAY_START_HOUR + HOURS_PER_DAY;
 const DURATION_OVERRIDE_STORAGE_KEY = 'sentinelPlanner.taskDurationOverrides.v1';
+const DURATION_OVERRIDE_STATE_VERSION = 7;
 const DATE_FORMAT_STORAGE_KEY = 'sentinelPlanner.dateFormat.v1';
 const TABLE_DATE_FORMAT = 'MM/DD/YYYY';
 const START_WEEK_MIN = 1;
+const GANTT_TABLE_COLUMN_WIDTHS_STORAGE_KEY = 'sentinelPlanner.ganttTableColumnWidths.session.v1';
+const PLANNER_ACTIVE_TAB_STORAGE_KEY = 'sentinelPlanner.plannerActiveTab.session.v1';
+const GANTT_TABLE_COLUMNS = [
+    {
+        key: 'number',
+        label: '#',
+        headerClassName: 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--number',
+        width: 72,
+        minWidth: 60
+    },
+    {
+        key: 'name',
+        label: 'Task name',
+        headerClassName: 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--task',
+        width: 360,
+        minWidth: 220
+    },
+    {
+        key: 'owner',
+        label: 'Owner',
+        headerClassName: 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--owner',
+        width: 156,
+        minWidth: 120
+    },
+    {
+        key: 'status',
+        label: 'Status',
+        headerClassName: 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--status',
+        width: 148,
+        minWidth: 120
+    },
+    {
+        key: 'duration',
+        label: 'Duration',
+        headerClassName: 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--duration',
+        width: 124,
+        minWidth: 108
+    },
+    {
+        key: 'startDate',
+        label: 'Start date',
+        headerClassName: 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--date',
+        width: 128,
+        minWidth: 112
+    },
+    {
+        key: 'dependencies',
+        label: 'Dependencies',
+        headerClassName: 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--dependencies',
+        width: 224,
+        minWidth: 156
+    },
+    {
+        key: 'impact',
+        label: 'Priority',
+        headerClassName: 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--impact',
+        width: 118,
+        minWidth: 96
+    }
+];
 const DURATION_VALUE_PRESETS = [0.5, 1, 2, 3];
 const DURATION_UNITS = ['hours', 'days', 'weeks'];
 const DURATION_PICKER_UNITS = ['hours', 'days', 'weeks'];
@@ -36,14 +107,22 @@ const DEFAULT_NEW_TASK_DURATION_VALUE = 1;
 const DEFAULT_NEW_TASK_DURATION_UNIT = 'days';
 const DEFAULT_NEW_TASK_DESCRIPTION = '';
 const DEFAULT_NEW_TASK_SUMMARY = 'Capture the onboarding step, owner, and notes for this task.';
-const DETAIL_FIELDS = ['Solution', 'Task type', 'Milestone', 'Goal', 'Owner', 'Resource Type', 'Impact', 'Start week', 'Start date', 'Due date', 'Duration'];
-const DETAIL_EXTRA_FIELDS = ['Connector type', 'Difficulty', 'Required permissions', 'Parent task', 'Effort (hours)', 'Optional'];
+const DETAIL_FIELDS = ['Solution', 'Task type', 'Owner', 'Status', 'Phase', 'Resource Type', 'Impact', 'Start week', 'Start date', 'Due date', 'Duration', 'Milestone', 'Goal'];
+const DETAIL_EXTRA_FIELDS = ['Connector type', 'Difficulty', 'Required permissions', 'Dependencies', 'Parent task', 'Effort (hours)', 'Optional'];
 const MIN_TASK_DURATION_WEEKS = 0.0125;
 const SUMMARY_EXPANDED_PREFIX = '▾';
 const SUMMARY_COLLAPSED_PREFIX = '▸';
 const SOLUTION_GROUP_EXPANDED_PREFIX = '▼';
 const SOLUTION_GROUP_COLLAPSED_PREFIX = '▶';
 const SUBTASK_INDENT_PREFIX = ' └ ';
+
+function getSolutionGroupActionVerb(isCollapsed = false) {
+    return isCollapsed ? 'expand' : 'collapse';
+}
+
+function getSolutionGroupActionLabel(isCollapsed = false) {
+    return `(${getSolutionGroupActionVerb(isCollapsed)})`;
+}
 const CLEAN_EFFORT_HOURS = [0.5, 1, 2, 3];
 const GANTT_TABLE_ROW_FALLBACK_HEIGHT = 44;
 const GANTT_TABLE_DESCRIPTION_LIMIT = 84;
@@ -154,6 +233,7 @@ let durationOverrideState = null;
 let storedDateFormatPreference = null;
 let durationOverridesPersistToStorage = true;
 let ganttResizeCleanup = null;
+let ganttTableColumnWidths = null;
 
 export function getCurrentGanttPlanData() {
     return currentGanttPlanData;
@@ -220,6 +300,126 @@ function createSvgElement(tag, className) {
 
 function escapeAttributeSelectorValue(value = '') {
     return String(value).replace(/\\/g, '\\\\').replace(/"/g, '\\"');
+}
+
+function bindPrimaryActivation(node, onActivate, { dedupeMs = 200 } = {}) {
+    if (!node || typeof onActivate !== 'function') return;
+
+    let activatedRecently = false;
+    const resetActivation = () => {
+        activatedRecently = false;
+    };
+    const activate = (event) => {
+        event?.preventDefault?.();
+        event?.stopPropagation?.();
+        if (activatedRecently) return;
+        activatedRecently = true;
+        setTimeout(resetActivation, dedupeMs);
+        onActivate(event);
+    };
+
+    node.addEventListener('click', activate);
+    node.addEventListener('mouseup', (event) => {
+        if (event.button === 0) activate(event);
+    });
+    node.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+            activate(event);
+        }
+    });
+}
+
+function startPointerDragSession(event, handle, { onMove, onEnd, bodyClassName = 'is-resizing-gantt' } = {}) {
+    if (!(event instanceof PointerEvent) || !handle || typeof onMove !== 'function') {
+        return null;
+    }
+    if (!event.isPrimary || event.button !== 0) {
+        return null;
+    }
+
+    const pointerId = event.pointerId;
+    let isActive = true;
+
+    if (bodyClassName) {
+        document.body.classList.add(bodyClassName);
+    }
+
+    const cleanup = ({ cancelled = false } = {}) => {
+        if (!isActive) {
+            return;
+        }
+        isActive = false;
+
+        handle.removeEventListener('pointermove', handlePointerMove);
+        handle.removeEventListener('pointerup', handlePointerUp);
+        handle.removeEventListener('pointercancel', handlePointerCancel);
+        handle.removeEventListener('lostpointercapture', handleLostPointerCapture);
+        window.removeEventListener('blur', handleBlur);
+
+        if (bodyClassName) {
+            document.body.classList.remove(bodyClassName);
+        }
+
+        if (typeof handle.releasePointerCapture === 'function' && handle.hasPointerCapture?.(pointerId)) {
+            try {
+                handle.releasePointerCapture(pointerId);
+            } catch {
+                // Ignore browsers that drop capture before cleanup runs.
+            }
+        }
+
+        onEnd?.({ cancelled });
+    };
+
+    const handlePointerMove = (pointerEvent) => {
+        if (!isActive || pointerEvent.pointerId !== pointerId) {
+            return;
+        }
+        if (pointerEvent.pointerType !== 'touch' && pointerEvent.buttons === 0) {
+            cleanup({ cancelled: true });
+            return;
+        }
+        onMove(pointerEvent);
+    };
+
+    const handlePointerUp = (pointerEvent) => {
+        if (pointerEvent.pointerId !== pointerId) {
+            return;
+        }
+        cleanup();
+    };
+
+    const handlePointerCancel = (pointerEvent) => {
+        if (pointerEvent.pointerId !== pointerId) {
+            return;
+        }
+        cleanup({ cancelled: true });
+    };
+
+    const handleLostPointerCapture = () => {
+        cleanup({ cancelled: true });
+    };
+
+    const handleBlur = () => {
+        cleanup({ cancelled: true });
+    };
+
+    handle.addEventListener('pointermove', handlePointerMove);
+    handle.addEventListener('pointerup', handlePointerUp);
+    handle.addEventListener('pointercancel', handlePointerCancel);
+    handle.addEventListener('lostpointercapture', handleLostPointerCapture);
+    window.addEventListener('blur', handleBlur);
+
+    if (typeof handle.setPointerCapture === 'function') {
+        try {
+            handle.setPointerCapture(pointerId);
+        } catch {
+            cleanup({ cancelled: true });
+            return null;
+        }
+    }
+
+    return { cleanup };
 }
 
 function formatWeeks(value) {
@@ -347,7 +547,7 @@ function getRowCalendarDueDate(row, projectStartDate) {
 }
 
 function resolveRowStatus(row, projectStartDate) {
-    if (row?.hasDirectStatusOverride) {
+    if (row?.hasDirectStatusOverride || row?.statusWasManuallySet) {
         return normalizeStatusLabel(row?.status);
     }
 
@@ -585,6 +785,15 @@ function getTaskRequiredRoles(task = {}, fallbacks = []) {
     return [...new Set(roleCandidates
         .map((role) => String(role || '').trim())
         .filter(Boolean))];
+}
+
+function resolveSizedTaskContent(taskName = '', description = '', solution = {}, capacityProfile = null) {
+    return applySizingToTaskContent({
+        taskName,
+        description,
+        solution,
+        profile: capacityProfile
+    });
 }
 
 function sortByOrder(items = []) {
@@ -861,6 +1070,113 @@ function getTaskEffortHours(task = {}) {
     return 1;
 }
 
+function durationDaysToWeeks(durationDays = 0) {
+    const safeDurationDays = Number(durationDays);
+    if (!Number.isFinite(safeDurationDays) || safeDurationDays <= 0) {
+        return null;
+    }
+    return roundWeekPrecision(safeDurationDays / DAYS_PER_WEEK);
+}
+
+function getTaskBaseDurationDays(task = {}) {
+    const explicitDurationDays = Number(task?.duration_days ?? task?.duration);
+    return Number.isFinite(explicitDurationDays) && explicitDurationDays > 0
+        ? explicitDurationDays
+        : null;
+}
+
+function getScaledDurationStepCount(itemCount = 0, threshold = 0, stepSize = 1) {
+    const safeItemCount = Math.max(0, Number(itemCount) || 0);
+    if (safeItemCount <= threshold) {
+        return 0;
+    }
+    return Math.ceil((safeItemCount - threshold) / Math.max(1, stepSize));
+}
+
+function scaleTaskDurationDays(task = {}, solution = {}, capacityProfile = null, baseDurationDays = null) {
+    const safeBaseDurationDays = Number(baseDurationDays);
+    if (!Number.isFinite(safeBaseDurationDays) || safeBaseDurationDays <= 0) {
+        return null;
+    }
+
+    if (capacityProfile?.type !== 'windows' || !capacityProfile?.hasSavedSizing || !capacityProfile?.result) {
+        return safeBaseDurationDays;
+    }
+
+    const solutionId = String(solution?.id || '').trim().toLowerCase();
+    const taskId = String(task?.id || '').trim().toLowerCase();
+    const taskLabel = String(task?.task || task?.name || '').trim().toLowerCase();
+    const matchesTask = (...candidates) => candidates.some((candidate) => taskId === candidate || taskLabel.includes(candidate));
+
+    if (solutionId === 'windows-security-events') {
+        if (matchesTask('wse-arc-onboarding', 'onboard non-azure windows hosts to azure arc')) {
+            const stepCount = getScaledDurationStepCount(capacityProfile.result.onPremServers, 15, 10);
+            return safeBaseDurationDays + stepCount;
+        }
+
+        if (matchesTask('wse-deploy-dcr', 'deploy ama and configure the windows security events dcr')) {
+            const stepCount = getScaledDurationStepCount(capacityProfile.result.servers, 15, 10);
+            return safeBaseDurationDays + (stepCount * 0.5);
+        }
+
+        if (matchesTask('wse-validate-securityevent', 'validate securityevent ingestion')) {
+            const stepCount = getScaledDurationStepCount(capacityProfile.result.servers, 20, 20);
+            return safeBaseDurationDays + (stepCount * 0.5);
+        }
+    }
+
+    return safeBaseDurationDays;
+}
+
+function getTaskDurationPreferredUnit(task = {}, fallbackUnit) {
+    return getTaskBaseDurationDays(task) != null ? 'days' : fallbackUnit;
+}
+
+function getTaskPlannedDurationWeeks(task = {}, solution = {}, capacityProfile = null) {
+    const baseDurationDays = getTaskBaseDurationDays(task);
+    if (baseDurationDays == null) {
+        return null;
+    }
+
+    const scaledDurationDays = scaleTaskDurationDays(task, solution, capacityProfile, baseDurationDays);
+    return durationDaysToWeeks(scaledDurationDays);
+}
+
+function resolvePlannedTaskDurations(items = [], totalDurationWeeks, getWeight, getExplicitDurationWeeks) {
+    if (!Array.isArray(items) || items.length === 0) return [];
+
+    const explicitDurations = items.map((item) => {
+        const explicitDuration = Number(getExplicitDurationWeeks?.(item));
+        return Number.isFinite(explicitDuration) && explicitDuration > 0 ? explicitDuration : null;
+    });
+
+    if (!explicitDurations.some((duration) => duration != null)) {
+        return allocateDurations(totalDurationWeeks, items, getWeight);
+    }
+
+    if (explicitDurations.every((duration) => duration != null)) {
+        return explicitDurations.map((duration) => roundWeekPrecision(duration));
+    }
+
+    const missingItems = items.filter((_, index) => explicitDurations[index] == null);
+    const explicitTotalDuration = explicitDurations.reduce((total, duration) => total + (duration || 0), 0);
+    const remainingDurationWeeks = Math.max(
+        (Number(totalDurationWeeks) || 0) - explicitTotalDuration,
+        missingItems.length * MIN_TASK_DURATION_WEEKS
+    );
+    const allocatedMissingDurations = allocateDurations(remainingDurationWeeks, missingItems, getWeight);
+    let missingIndex = 0;
+
+    return explicitDurations.map((duration) => {
+        if (duration != null) {
+            return roundWeekPrecision(duration);
+        }
+        const allocatedDuration = allocatedMissingDurations[missingIndex] ?? MIN_TASK_DURATION_WEEKS;
+        missingIndex += 1;
+        return roundWeekPrecision(allocatedDuration);
+    });
+}
+
 function allocateDurations(totalDurationWeeks, items, getWeight) {
     if (!Array.isArray(items) || items.length === 0) return [];
 
@@ -1021,13 +1337,14 @@ function createDurationPresentation({ businessHours = 0, preferredUnit } = {}) {
 
 function createEmptyDurationOverrideState() {
     return {
-        version: 4,
+        version: DURATION_OVERRIDE_STATE_VERSION,
         savedAt: '',
         workingHoursPerDay: HOURS_PER_DAY,
         workingDaysPerWeek: DAYS_PER_WEEK,
         overrides: {},
         customTasks: {},
-        solutionGroups: {}
+        solutionGroups: {},
+        taskOrders: {}
     };
 }
 
@@ -1037,6 +1354,117 @@ function canUseLocalStorage() {
     } catch (_) {
         return false;
     }
+}
+
+function canUseSessionStorage() {
+    try {
+        return typeof window !== 'undefined' && !!window.sessionStorage;
+    } catch (_) {
+        return false;
+    }
+}
+
+function normalizeGanttTableColumnWidths(rawWidths = {}) {
+    return Object.fromEntries(GANTT_TABLE_COLUMNS.map((column) => {
+        const parsedWidth = Number(rawWidths?.[column.key]);
+        const nextWidth = Number.isFinite(parsedWidth)
+            ? Math.max(column.minWidth, Math.round(parsedWidth))
+            : column.width;
+        return [column.key, nextWidth];
+    }));
+}
+
+function getGanttTableColumnWidths() {
+    if (ganttTableColumnWidths) {
+        return { ...ganttTableColumnWidths };
+    }
+
+    const defaultWidths = normalizeGanttTableColumnWidths();
+    if (!canUseSessionStorage()) {
+        ganttTableColumnWidths = defaultWidths;
+        return { ...ganttTableColumnWidths };
+    }
+
+    try {
+        const rawValue = window.sessionStorage.getItem(GANTT_TABLE_COLUMN_WIDTHS_STORAGE_KEY);
+        if (!rawValue) {
+            ganttTableColumnWidths = defaultWidths;
+            return { ...ganttTableColumnWidths };
+        }
+
+        ganttTableColumnWidths = normalizeGanttTableColumnWidths(JSON.parse(rawValue));
+        return { ...ganttTableColumnWidths };
+    } catch (_) {
+        ganttTableColumnWidths = defaultWidths;
+        return { ...ganttTableColumnWidths };
+    }
+}
+
+function persistGanttTableColumnWidths(nextWidths = {}) {
+    ganttTableColumnWidths = normalizeGanttTableColumnWidths(nextWidths);
+    if (!canUseSessionStorage()) {
+        return { ...ganttTableColumnWidths };
+    }
+
+    try {
+        window.sessionStorage.setItem(GANTT_TABLE_COLUMN_WIDTHS_STORAGE_KEY, JSON.stringify(ganttTableColumnWidths));
+    } catch (_) {
+        // Session persistence is best-effort only.
+    }
+
+    return { ...ganttTableColumnWidths };
+}
+
+function getStoredPlannerActiveTab() {
+    if (!canUseSessionStorage()) {
+        return 'table';
+    }
+
+    try {
+        return window.sessionStorage.getItem(PLANNER_ACTIVE_TAB_STORAGE_KEY) === 'gantt' ? 'gantt' : 'table';
+    } catch (_) {
+        return 'table';
+    }
+}
+
+function persistPlannerActiveTab(tabId = 'table') {
+    const normalizedTabId = tabId === 'gantt' ? 'gantt' : 'table';
+    if (!canUseSessionStorage()) {
+        return normalizedTabId;
+    }
+
+    try {
+        window.sessionStorage.setItem(PLANNER_ACTIVE_TAB_STORAGE_KEY, normalizedTabId);
+    } catch (_) {
+        // Session persistence is best-effort only.
+    }
+
+    return normalizedTabId;
+}
+
+function getPlannerAutoFitViewMode(totalDurationWeeks = 0) {
+    const durationWeeks = Math.max(0, Number(totalDurationWeeks) || 0);
+    if (durationWeeks <= 20) return 'Weeks';
+    if (durationWeeks <= 78) return 'Months';
+    return 'Quarters';
+}
+
+function scrollGanttToLeadingEdge(chartHost) {
+    const ganttContainer = chartHost?.querySelector?.('.gantt-container');
+    if (ganttContainer) {
+        ganttContainer.scrollLeft = 0;
+    }
+}
+
+function getGanttTableColumnTemplate(columnWidths = {}) {
+    return GANTT_TABLE_COLUMNS.map((column) => `${Math.max(column.minWidth, Number(columnWidths?.[column.key]) || column.width)}px`).join(' ');
+}
+
+function getGanttTableColumnPixelWidth(columnWidths = {}) {
+    return GANTT_TABLE_COLUMNS.reduce(
+        (totalWidth, column) => totalWidth + Math.max(column.minWidth, Number(columnWidths?.[column.key]) || column.width),
+        0
+    );
 }
 
 function getDurationOverrideState() {
@@ -1063,7 +1491,7 @@ function getDurationOverrideState() {
         durationOverrideState = {
             ...emptyState,
             ...(parsed && typeof parsed === 'object' ? parsed : {}),
-            version: 4,
+            version: DURATION_OVERRIDE_STATE_VERSION,
             overrides: parsed?.overrides && typeof parsed.overrides === 'object'
                 ? parsed.overrides
                 : {},
@@ -1072,6 +1500,9 @@ function getDurationOverrideState() {
                 : {},
             solutionGroups: parsed?.solutionGroups && typeof parsed.solutionGroups === 'object'
                 ? parsed.solutionGroups
+                : {},
+            taskOrders: parsed?.taskOrders && typeof parsed.taskOrders === 'object'
+                ? parsed.taskOrders
                 : {}
         };
         durationOverridesPersistToStorage = true;
@@ -1108,15 +1539,21 @@ function getCustomTaskEntries() {
     return { ...(getDurationOverrideState().customTasks || {}) };
 }
 
+function getTaskOrderEntries() {
+    return { ...(getDurationOverrideState().taskOrders || {}) };
+}
+
 function buildDurationState({
     taskId,
     defaultDurationWeeks,
+    defaultDurationPreferredUnit,
     durationOverrides = {},
     isDurationEditable = true,
     isCustomInherited = false
 } = {}) {
     const defaultDuration = createDurationPresentation({
-        businessHours: durationWeeksToBusinessHours(defaultDurationWeeks)
+        businessHours: durationWeeksToBusinessHours(defaultDurationWeeks),
+        preferredUnit: defaultDurationPreferredUnit
     });
     let effectiveDuration = defaultDuration;
     let hasDirectDurationOverride = false;
@@ -1207,13 +1644,14 @@ function hasTaskOverridePayload(entry = {}) {
         || Object.prototype.hasOwnProperty.call(entry, 'owner')
         || Object.prototype.hasOwnProperty.call(entry, 'step')
         || Object.prototype.hasOwnProperty.call(entry, 'description')
+        || Object.prototype.hasOwnProperty.call(entry, 'dependencies')
     ));
 }
 
 function persistTaskOverrideEntries(state, overrides, savedAt = new Date().toISOString()) {
     persistDurationOverrideState({
         ...state,
-        version: 4,
+        version: DURATION_OVERRIDE_STATE_VERSION,
         savedAt,
         workingHoursPerDay: HOURS_PER_DAY,
         workingDaysPerWeek: DAYS_PER_WEEK,
@@ -1223,6 +1661,9 @@ function persistTaskOverrideEntries(state, overrides, savedAt = new Date().toISO
             : {},
         solutionGroups: state?.solutionGroups && typeof state.solutionGroups === 'object'
             ? state.solutionGroups
+            : {},
+        taskOrders: state?.taskOrders && typeof state.taskOrders === 'object'
+            ? state.taskOrders
             : {}
     });
     return overrides;
@@ -1289,12 +1730,7 @@ function saveTaskFieldOverride(row, nextFields = {}) {
     const nextEntry = createTaskOverrideEntry(row, existingEntry, updatedAt, defaultStartWeek);
 
     if (Object.prototype.hasOwnProperty.call(nextFields, 'status')) {
-        const nextStatus = normalizeStatusLabel(nextFields.status);
-        if (nextStatus === normalizeStatusLabel(row.defaultStatus || 'Planned')) {
-            delete nextEntry.status;
-        } else {
-            nextEntry.status = nextStatus;
-        }
+        nextEntry.status = normalizeStatusLabel(nextFields.status);
     }
 
     if (Object.prototype.hasOwnProperty.call(nextFields, 'impact')) {
@@ -1333,6 +1769,22 @@ function saveTaskFieldOverride(row, nextFields = {}) {
             delete nextEntry.description;
         } else {
             nextEntry.description = nextDescription;
+        }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(nextFields, 'dependencies')) {
+        const nextDependencies = [...new Set((Array.isArray(nextFields.dependencies) ? nextFields.dependencies : [])
+            .map((dependencyId) => String(dependencyId || '').trim())
+            .filter((dependencyId) => dependencyId && dependencyId !== row.id))];
+        const defaultDependencies = [...new Set((Array.isArray(row.defaultDependencies) ? row.defaultDependencies : [])
+            .map((dependencyId) => String(dependencyId || '').trim())
+            .filter(Boolean))];
+        const isDefaultDependencies = nextDependencies.length === defaultDependencies.length
+            && nextDependencies.every((dependencyId, index) => dependencyId === defaultDependencies[index]);
+        if (isDefaultDependencies) {
+            delete nextEntry.dependencies;
+        } else {
+            nextEntry.dependencies = nextDependencies;
         }
     }
 
@@ -1394,7 +1846,7 @@ function resetAllTaskDurationOverrides() {
 
     persistDurationOverrideState({
         ...state,
-        version: 4,
+        version: DURATION_OVERRIDE_STATE_VERSION,
         savedAt: new Date().toISOString(),
         workingHoursPerDay: HOURS_PER_DAY,
         workingDaysPerWeek: DAYS_PER_WEEK,
@@ -1402,7 +1854,10 @@ function resetAllTaskDurationOverrides() {
         customTasks: state?.customTasks && typeof state.customTasks === 'object'
             ? state.customTasks
             : {},
-        solutionGroups
+        solutionGroups,
+        taskOrders: state?.taskOrders && typeof state.taskOrders === 'object'
+            ? state.taskOrders
+            : {}
     });
     return overrides;
 }
@@ -1423,6 +1878,133 @@ function sortCustomTaskEntries(customTasks = {}) {
         });
 }
 
+function getPhaseRootOrderScope(phaseKey = '') {
+    return `phase-root:${String(phaseKey || 'shared').trim() || 'shared'}`;
+}
+
+function getSolutionTaskOrderScope(solutionId = '') {
+    return `solution:${String(solutionId || 'shared').trim() || 'shared'}:top-level`;
+}
+
+function getSubtaskOrderScope(parentRowId = '') {
+    return `parent:${String(parentRowId || 'shared').trim() || 'shared'}:subtasks`;
+}
+
+function getTaskOrderScopeKeyForRow(row = {}) {
+    if (!row?.id) return '';
+    if (row.parentId) return getSubtaskOrderScope(row.parentId);
+    if (row.solutionId && !row.isSolutionGroup) return getSolutionTaskOrderScope(row.solutionId);
+    return getPhaseRootOrderScope(row.phaseKey);
+}
+
+function normalizeTaskOrderEntries(taskOrders = {}) {
+    return Object.fromEntries(Object.entries(taskOrders || {}).flatMap(([scopeKey, ids]) => {
+        if (!scopeKey || !Array.isArray(ids)) return [];
+        const normalizedIds = [...new Set(ids
+            .map((id) => String(id || '').trim())
+            .filter(Boolean))];
+        return normalizedIds.length > 0 ? [[scopeKey, normalizedIds]] : [];
+    }));
+}
+
+function applyScopedIdOrder(items = [], scopeKey = '', taskOrders = {}) {
+    const orderIds = Array.isArray(taskOrders?.[scopeKey]) ? taskOrders[scopeKey] : [];
+    if (!orderIds.length || !Array.isArray(items) || items.length <= 1) {
+        return [...items];
+    }
+
+    const orderIndexById = new Map(orderIds.map((id, index) => [String(id), index]));
+    return [...items]
+        .map((item, index) => ({
+            item,
+            index,
+            orderIndex: orderIndexById.has(String(item?.id)) ? orderIndexById.get(String(item.id)) : Number.POSITIVE_INFINITY
+        }))
+        .sort((left, right) => {
+            if (left.orderIndex !== right.orderIndex) {
+                return left.orderIndex - right.orderIndex;
+            }
+            return left.index - right.index;
+        })
+        .map(({ item }) => item);
+}
+
+function getOrderedScopeIds(scopeKey = '', fallbackIds = [], taskOrders = {}) {
+    return applyScopedIdOrder(
+        (Array.isArray(fallbackIds) ? fallbackIds : []).map((id) => ({ id })),
+        scopeKey,
+        taskOrders
+    ).map((item) => item.id);
+}
+
+function persistTaskOrderEntries(state, taskOrders, savedAt = new Date().toISOString()) {
+    const normalizedTaskOrders = normalizeTaskOrderEntries(taskOrders);
+    persistDurationOverrideState({
+        ...state,
+        version: DURATION_OVERRIDE_STATE_VERSION,
+        savedAt,
+        workingHoursPerDay: HOURS_PER_DAY,
+        workingDaysPerWeek: DAYS_PER_WEEK,
+        overrides: state?.overrides && typeof state.overrides === 'object'
+            ? state.overrides
+            : {},
+        customTasks: state?.customTasks && typeof state.customTasks === 'object'
+            ? state.customTasks
+            : {},
+        solutionGroups: state?.solutionGroups && typeof state.solutionGroups === 'object'
+            ? state.solutionGroups
+            : {},
+        taskOrders: normalizedTaskOrders
+    });
+    return normalizedTaskOrders;
+}
+
+function saveTaskOrderScope(scopeKey = '', orderedIds = []) {
+    if (!scopeKey) return getTaskOrderEntries();
+    const state = getDurationOverrideState();
+    const taskOrders = { ...(state.taskOrders || {}) };
+    const normalizedIds = [...new Set((Array.isArray(orderedIds) ? orderedIds : [])
+        .map((id) => String(id || '').trim())
+        .filter(Boolean))];
+
+    if (normalizedIds.length > 1) {
+        taskOrders[scopeKey] = normalizedIds;
+    } else {
+        delete taskOrders[scopeKey];
+    }
+
+    return persistTaskOrderEntries(state, taskOrders);
+}
+
+function appendTaskToOrderScope(scopeKey = '', taskId = '') {
+    const safeTaskId = String(taskId || '').trim();
+    if (!scopeKey || !safeTaskId) return getTaskOrderEntries();
+
+    const state = getDurationOverrideState();
+    const currentIds = Array.isArray(state.taskOrders?.[scopeKey]) ? state.taskOrders[scopeKey] : null;
+    if (!currentIds || currentIds.includes(safeTaskId)) {
+        return state.taskOrders || {};
+    }
+
+    return saveTaskOrderScope(scopeKey, [...currentIds, safeTaskId]);
+}
+
+function removeTaskIdsFromTaskOrders(taskIds = []) {
+    const idsToRemove = new Set((Array.isArray(taskIds) ? taskIds : [taskIds])
+        .map((taskId) => String(taskId || '').trim())
+        .filter(Boolean));
+    if (idsToRemove.size === 0) return getTaskOrderEntries();
+
+    const state = getDurationOverrideState();
+    const taskOrders = Object.fromEntries(Object.entries(state.taskOrders || {}).flatMap(([scopeKey, ids]) => {
+        if (!Array.isArray(ids)) return [];
+        const remainingIds = ids.filter((id) => !idsToRemove.has(String(id || '').trim()));
+        return remainingIds.length > 1 ? [[scopeKey, remainingIds]] : [];
+    }));
+
+    return persistTaskOrderEntries(state, taskOrders);
+}
+
 function generateCustomTaskId(solutionId = 'shared') {
     const safePrefix = String(solutionId || 'shared').replace(/[^a-z0-9]+/gi, '-').replace(/^-+|-+$/g, '').toLowerCase() || 'shared';
     return `task-custom-${safePrefix}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 8)}`;
@@ -1431,7 +2013,7 @@ function generateCustomTaskId(solutionId = 'shared') {
 function persistCustomTaskEntries(state, customTasks, savedAt = new Date().toISOString()) {
     persistDurationOverrideState({
         ...state,
-        version: 4,
+        version: DURATION_OVERRIDE_STATE_VERSION,
         savedAt,
         workingHoursPerDay: HOURS_PER_DAY,
         workingDaysPerWeek: DAYS_PER_WEEK,
@@ -1441,6 +2023,9 @@ function persistCustomTaskEntries(state, customTasks, savedAt = new Date().toISO
         customTasks,
         solutionGroups: state?.solutionGroups && typeof state.solutionGroups === 'object'
             ? state.solutionGroups
+            : {},
+        taskOrders: state?.taskOrders && typeof state.taskOrders === 'object'
+            ? state.taskOrders
             : {}
     });
     return customTasks;
@@ -1464,13 +2049,14 @@ function hasSolutionGroupPayload(entry = {}) {
     return Boolean(entry && typeof entry === 'object' && (
         Object.prototype.hasOwnProperty.call(entry, 'startWeek')
         || Object.prototype.hasOwnProperty.call(entry, 'collapsed')
+        || Object.prototype.hasOwnProperty.call(entry, 'sizing')
     ));
 }
 
 function persistSolutionGroupEntries(state, solutionGroups, savedAt = new Date().toISOString()) {
     persistDurationOverrideState({
         ...state,
-        version: 4,
+        version: DURATION_OVERRIDE_STATE_VERSION,
         savedAt,
         workingHoursPerDay: HOURS_PER_DAY,
         workingDaysPerWeek: DAYS_PER_WEEK,
@@ -1480,17 +2066,21 @@ function persistSolutionGroupEntries(state, solutionGroups, savedAt = new Date()
         customTasks: state?.customTasks && typeof state.customTasks === 'object'
             ? state.customTasks
             : {},
-        solutionGroups
+        solutionGroups,
+        taskOrders: state?.taskOrders && typeof state.taskOrders === 'object'
+            ? state.taskOrders
+            : {}
     });
     return solutionGroups;
 }
 
-function readSolutionGroupState(solutionId = '', defaultStartWeek = START_WEEK_MIN, solutionName = '') {
+function readSolutionGroupState(solutionId = '', defaultStartWeek = START_WEEK_MIN, solutionName = '', defaultCollapsed = true) {
     const safeDefaultStartWeek = sanitizeStartWeekInputValue(defaultStartWeek);
     const entry = getDurationOverrideState().solutionGroups?.[solutionId];
     const hasStoredStartWeek = Boolean(entry) && Object.prototype.hasOwnProperty.call(entry, 'startWeek');
     const overrideStartWeek = sanitizeStartWeekInputValue(entry?.startWeek);
     const hasDirectStartWeekOverride = hasStoredStartWeek && Math.abs(overrideStartWeek - safeDefaultStartWeek) >= 0.0001;
+    const safeDefaultCollapsed = Boolean(defaultCollapsed);
 
     return {
         solutionId,
@@ -1498,17 +2088,21 @@ function readSolutionGroupState(solutionId = '', defaultStartWeek = START_WEEK_M
         defaultStartWeek: safeDefaultStartWeek,
         effectiveStartWeek: hasDirectStartWeekOverride ? overrideStartWeek : safeDefaultStartWeek,
         hasDirectStartWeekOverride,
+        defaultCollapsed: safeDefaultCollapsed,
         collapsed: entry && Object.prototype.hasOwnProperty.call(entry, 'collapsed')
             ? Boolean(entry.collapsed)
-            : true
+            : safeDefaultCollapsed
     };
 }
 
 function saveSolutionGroupState(solutionId = '', {
     solutionName = '',
     defaultStartWeek = START_WEEK_MIN,
+    defaultCollapsed = true,
     startWeek,
-    collapsed
+    collapsed,
+    sizing,
+    ownerSolutionId = ''
 } = {}) {
     if (!solutionId) return getSolutionGroupEntries();
 
@@ -1531,11 +2125,31 @@ function saveSolutionGroupState(solutionId = '', {
     }
 
     if (Object.prototype.hasOwnProperty.call(arguments[1] || {}, 'collapsed')) {
-        if (collapsed === true) {
+        const safeDefaultCollapsed = Boolean(defaultCollapsed);
+        const nextCollapsed = Boolean(collapsed);
+        if (nextCollapsed === safeDefaultCollapsed) {
             delete nextEntry.collapsed;
         } else {
-            nextEntry.collapsed = false;
+            nextEntry.collapsed = nextCollapsed;
         }
+    }
+
+    if (Object.prototype.hasOwnProperty.call(arguments[1] || {}, 'sizing')) {
+        if (sizing && typeof sizing === 'object') {
+            nextEntry.sizing = { ...sizing };
+            if (ownerSolutionId) {
+                nextEntry.ownerSolutionId = ownerSolutionId;
+            } else {
+                delete nextEntry.ownerSolutionId;
+            }
+        } else {
+            delete nextEntry.sizing;
+            delete nextEntry.ownerSolutionId;
+        }
+    }
+
+    if (!Object.prototype.hasOwnProperty.call(nextEntry, 'sizing')) {
+        delete nextEntry.ownerSolutionId;
     }
 
     if (hasSolutionGroupPayload(nextEntry)) {
@@ -1545,6 +2159,47 @@ function saveSolutionGroupState(solutionId = '', {
     }
 
     return persistSolutionGroupEntries(state, solutionGroups, updatedAt);
+}
+
+function getCapacitySnapshot(selectedSolutions = []) {
+    return buildCapacitySnapshot(selectedSolutions, getSolutionGroupEntries());
+}
+
+export function getConnectorCapacitySnapshot(selectedSolutions = []) {
+    return getCapacitySnapshot(selectedSolutions);
+}
+
+export function clearConnectorCriblIngestion() {
+    const nextSolutionGroups = clearCriblIngestionEntries(getSolutionGroupEntries());
+    persistSolutionGroupEntries(getDurationOverrideState(), nextSolutionGroups);
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('sentinelPlanner:capacity-changed', {
+            detail: {
+                solutionId: 'cribl-stream',
+                cleared: true
+            }
+        }));
+    }
+    return nextSolutionGroups;
+}
+
+export function saveConnectorCapacityValues(solution = {}, values = {}, { selectedSolutions = [], relation = '', targetPoolId = '' } = {}) {
+    const solutionGroups = updateConnectorCapacityEntries(getSolutionGroupEntries(), solution, values, {
+        selectedSolutions,
+        relation,
+        targetPoolId
+    });
+    const persistedGroups = persistSolutionGroupEntries(getDurationOverrideState(), solutionGroups);
+    if (typeof window !== 'undefined') {
+        window.dispatchEvent(new CustomEvent('sentinelPlanner:capacity-changed', {
+            detail: {
+                solutionId: solution?.id || '',
+                relation,
+                targetPoolId
+            }
+        }));
+    }
+    return persistedGroups;
 }
 
 function getSolutionGroupRowId(solutionId = '') {
@@ -1584,6 +2239,10 @@ function addCustomTask(row, options = {}) {
     const entry = createCustomTaskEntry(row, options);
     customTasks[entry.id] = entry;
     persistCustomTaskEntries(state, customTasks, entry.createdAt);
+    const scopeKey = entry.parentRowId
+        ? getSubtaskOrderScope(entry.parentRowId)
+        : getSolutionTaskOrderScope(entry.solutionId);
+    appendTaskToOrderScope(scopeKey, entry.id);
     return entry.id;
 }
 
@@ -1613,21 +2272,22 @@ function deleteCustomTask(taskId) {
 
     taskIdsToRemove.forEach((id) => delete customTasks[id]);
     removeTaskOverrideEntries(taskIdsToRemove);
+    removeTaskIdsFromTaskOrders(taskIdsToRemove);
     return persistCustomTaskEntries(getDurationOverrideState(), customTasks);
 }
 
 function applyRowDisplayOverrides(rows = [], durationOverrides = {}) {
-    return rows.map((row) => {
+    const appliedRows = [];
+    const appliedRowsById = new Map();
+
+    rows.forEach((row) => {
         const overrideEntry = durationOverrides?.[row.id];
         const hasStatusOverride = Boolean(overrideEntry) && Object.prototype.hasOwnProperty.call(overrideEntry, 'status');
         const hasImpactOverride = Boolean(overrideEntry) && Object.prototype.hasOwnProperty.call(overrideEntry, 'impact');
         const hasOwnerOverride = Boolean(overrideEntry) && Object.prototype.hasOwnProperty.call(overrideEntry, 'owner');
         const hasStepOverride = Boolean(overrideEntry) && Object.prototype.hasOwnProperty.call(overrideEntry, 'step');
         const hasDescriptionOverride = Boolean(overrideEntry) && Object.prototype.hasOwnProperty.call(overrideEntry, 'description');
-
-        if (!hasStatusOverride && !hasImpactOverride && !hasOwnerOverride && !hasStepOverride && !hasDescriptionOverride) {
-            return row;
-        }
+        const hasDependencyOverride = Boolean(overrideEntry) && Object.prototype.hasOwnProperty.call(overrideEntry, 'dependencies');
 
         const nextStatus = hasStatusOverride ? normalizeStatusLabel(overrideEntry.status) : row.status;
         const nextImpact = hasImpactOverride ? normalizeImpactLabel(overrideEntry.impact) : row.impact;
@@ -1640,19 +2300,27 @@ function applyRowDisplayOverrides(rows = [], durationOverrides = {}) {
         const nextDescription = hasDescriptionOverride
             ? String(overrideEntry.description || '').replace(/\s+/g, ' ').trim()
             : row.description;
+        const nextDependencies = hasDependencyOverride
+            ? [...new Set((Array.isArray(overrideEntry?.dependencies) ? overrideEntry.dependencies : [])
+                .map((dependencyId) => String(dependencyId || '').trim())
+                .filter((dependencyId) => dependencyId && dependencyId !== row.id))]
+            : [...(Array.isArray(row.dependencies) ? row.dependencies : [])];
 
-        return {
+        const nextRow = {
             ...row,
             status: nextStatus,
             impact: nextImpact,
             owner: nextOwner,
             step: nextStep,
             description: nextDescription,
+            dependencies: nextDependencies,
             hasDirectStatusOverride: hasStatusOverride,
+            statusWasManuallySet: hasStatusOverride,
             hasDirectImpactOverride: hasImpactOverride,
             hasDirectOwnerOverride: hasOwnerOverride,
             hasDirectStepOverride: hasStepOverride,
             hasDirectDescriptionOverride: hasDescriptionOverride,
+            hasDirectDependencyOverride: hasDependencyOverride,
             detailFields: {
                 ...row.detailFields,
                 Status: nextStatus,
@@ -1662,7 +2330,25 @@ function applyRowDisplayOverrides(rows = [], durationOverrides = {}) {
                 Description: nextDescription
             }
         };
+
+        if (!nextRow.isSolutionGroup && !nextRow.hasDirectStartWeekOverride && nextDependencies.length > 0) {
+            const dependencyDrivenStartWeek = sanitizeStartWeekInputValue(
+                getDependencyEndWeek(nextDependencies, appliedRowsById, nextRow.defaultStartWeek)
+            );
+            const hasDerivedDependencyShift = Math.abs(dependencyDrivenStartWeek - nextRow.defaultStartWeek) >= 0.0001;
+            nextRow.startWeek = dependencyDrivenStartWeek;
+            nextRow.endWeek = roundWeekPrecision(dependencyDrivenStartWeek + nextRow.durationWeeks);
+            nextRow.hasDerivedCustomStartWeek = Boolean(nextRow.hasDerivedCustomStartWeek || hasDerivedDependencyShift);
+            nextRow.isCustomStartWeek = Boolean(nextRow.hasDirectStartWeekOverride || nextRow.hasDerivedCustomStartWeek);
+            nextRow.hasDerivedCustomSchedule = Boolean(nextRow.hasDerivedCustomDuration || nextRow.hasDerivedCustomStartWeek);
+            nextRow.isCustomSchedule = Boolean(nextRow.hasDirectScheduleOverride || nextRow.hasDerivedCustomSchedule);
+        }
+
+        appliedRows.push(nextRow);
+        appliedRowsById.set(nextRow.id, nextRow);
     });
+
+    return appliedRows;
 }
 
 function getDurationHelperText(row = {}) {
@@ -1739,26 +2425,54 @@ function syncTaskBarLabel(wrapper, rect, task = {}) {
         barGroup.appendChild(label);
     }
 
+    const needsActionLabel = Boolean(task?.isSolutionGroup || task?.isSummary);
+    const actionLabelText = needsActionLabel ? getSolutionGroupActionLabel(Boolean(task?.isCollapsed)) : '';
+    const actionLabel = needsActionLabel
+        ? (wrapper.querySelector('.gantt-solution-group-action-label') || createSvgElement('text', 'gantt-solution-group-action-label'))
+        : wrapper.querySelector('.gantt-solution-group-action-label');
+    if (needsActionLabel && actionLabel && !actionLabel.isConnected) {
+        barGroup.appendChild(actionLabel);
+    }
+
+    if (actionLabel) {
+        if (!needsActionLabel) {
+            actionLabel.remove();
+        } else {
+            actionLabel.textContent = actionLabelText;
+            actionLabel.style.display = 'block';
+            actionLabel.setAttribute('text-anchor', 'start');
+            actionLabel.setAttribute('dominant-baseline', 'central');
+        }
+    }
+
+    const actionLabelWidth = actionLabelText && actionLabel && typeof actionLabel.getComputedTextLength === 'function'
+        ? actionLabel.getComputedTextLength()
+        : actionLabelText
+            ? 58
+            : 0;
+    const actionLabelGap = actionLabelText ? 8 : 0;
+
     const x = Number(rect.getAttribute('x')) || 0;
     const y = Number(rect.getAttribute('y')) || 0;
     const width = Number(rect.getAttribute('width')) || 0;
     const height = Number(rect.getAttribute('height')) || 0;
     const padding = Math.max(6, Math.min(GANTT_BAR_LABEL_PADDING, Math.max(width / 5, 6)));
-    const maxWidth = Math.max(0, width - (padding * 2));
+    const maxWidth = Math.max(0, width - (padding * 2) - actionLabelWidth - actionLabelGap);
     const taskLabel = String(task?.labelText || task?.name || '').replace(/\s+/g, ' ').trim();
     const insideTaskLabel = fitSvgLabelText(label, taskLabel, maxWidth);
     const insideVisibleTaskCharacters = insideTaskLabel.replace(/…/g, '').trim().length;
+    const preferOutsideLabel = Boolean(task?.isSolutionGroup || task?.isSummary);
 
     let nextLabelText = resolveBarLabelText(label, task, maxWidth);
     let labelX = x + padding;
     let activeMaxWidth = maxWidth;
     let isOutside = false;
 
-    if (taskLabel && (!insideTaskLabel || insideVisibleTaskCharacters < GANTT_BAR_LABEL_MIN_PRIMARY_CHARS)) {
+    if (taskLabel && (preferOutsideLabel || !insideTaskLabel || insideVisibleTaskCharacters < GANTT_BAR_LABEL_MIN_PRIMARY_CHARS)) {
         const svg = wrapper.closest('svg.gantt') || wrapper.ownerSVGElement;
         const svgWidth = Number(svg?.getAttribute('width')) || svg?.getBoundingClientRect().width || 0;
         const outsideX = x + width + 8;
-        const outsideMaxWidth = Math.max(0, svgWidth - outsideX - 8);
+        const outsideMaxWidth = Math.max(0, svgWidth - outsideX - 8 - actionLabelWidth - actionLabelGap);
         const outsideTaskLabel = fitSvgLabelText(label, taskLabel, outsideMaxWidth);
 
         if (outsideTaskLabel) {
@@ -1778,6 +2492,18 @@ function syncTaskBarLabel(wrapper, rect, task = {}) {
     label.setAttribute('dominant-baseline', 'central');
     label.dataset.fullLabel = taskLabel;
 
+    const tooltip = wrapper.querySelector('title') || createSvgElement('title');
+    if (!tooltip.isConnected) {
+        wrapper.insertBefore(tooltip, wrapper.firstChild);
+    }
+    tooltip.textContent = [
+        taskLabel,
+        task?.startDateLabel ? `Start: ${task.startDateLabel}` : '',
+        task?.dueDateLabel ? `End: ${task.dueDateLabel}` : '',
+        task?.durationLabel ? `Duration: ${task.durationLabel}` : '',
+        task?.status ? `Status: ${task.status}` : ''
+    ].filter(Boolean).join('\n');
+
     const shouldHideLabel = !nextLabelText || activeMaxWidth < GANTT_BAR_LABEL_MIN_TEXT_WIDTH;
     label.textContent = shouldHideLabel ? '' : nextLabelText;
     label.style.display = shouldHideLabel ? 'none' : 'block';
@@ -1785,6 +2511,22 @@ function syncTaskBarLabel(wrapper, rect, task = {}) {
         'aria-label',
         [taskLabel, task?.durationLabel || ''].filter(Boolean).join(' — ')
     );
+
+    if (needsActionLabel && actionLabel) {
+        const visibleLabelWidth = !shouldHideLabel && typeof label.getComputedTextLength === 'function'
+            ? label.getComputedTextLength()
+            : 0;
+        const canShowActionLabel = Boolean(actionLabelText)
+            && ((isOutside && activeMaxWidth >= Math.max(12, actionLabelWidth))
+                || (!isOutside && width >= actionLabelWidth + actionLabelGap + 24));
+        actionLabel.textContent = canShowActionLabel ? actionLabelText : '';
+        actionLabel.style.display = canShowActionLabel ? 'block' : 'none';
+        actionLabel.setAttribute('x', String(labelX + visibleLabelWidth + actionLabelGap));
+        actionLabel.setAttribute('y', String(y + (height / 2)));
+        actionLabel.dataset.toggleType = task?.isSolutionGroup ? 'solution-group' : 'summary';
+        actionLabel.dataset.toggleId = task.id || '';
+    }
+
     return label;
 }
 
@@ -1803,8 +2545,7 @@ function lightenHexColor(hexColor, amount = 0.22) {
 
 function getRowDisplayLabel(row, collapsedSummaryIds = new Set(), collapsedSolutionGroupIds = new Set()) {
     if (row.isSolutionGroup) {
-        const prefix = collapsedSolutionGroupIds.has(row.id) ? SOLUTION_GROUP_COLLAPSED_PREFIX : SOLUTION_GROUP_EXPANDED_PREFIX;
-        return `${prefix} ${row.solutionName || row.step}`;
+        return row.solutionName || row.step;
     }
 
     if (row.isSummary) {
@@ -1853,6 +2594,7 @@ function createRow({
     solutionName = '',
     solutionGroupId = '',
     solutionGroupShiftWeeks = 0,
+    capacityProfile = null,
     isDurationEditable = !isSummary && !isSolutionGroup,
     isStartWeekEditable = !isSummary && !isSolutionGroup,
     isUserAdded = false
@@ -1907,6 +2649,7 @@ function createRow({
         phase: phase.name,
         status,
         defaultStatus: normalizeStatusLabel(status),
+        statusWasManuallySet: false,
         impact: normalizeImpactLabel(impact),
         defaultImpact: normalizeImpactLabel(impact),
         step,
@@ -1935,6 +2678,7 @@ function createRow({
         durationHours: safeEffortHours,
         endWeek: safeEndWeek,
         dependencies,
+        defaultDependencies: [...dependencies],
         parentId,
         isSummary,
         isSolutionGroup,
@@ -1945,6 +2689,7 @@ function createRow({
         solutionName,
         solutionGroupId: solutionGroupId || (isSolutionGroup ? id : ''),
         solutionGroupShiftWeeks: Number(solutionGroupShiftWeeks) || 0,
+        capacityProfile,
         isDurationEditable: resolvedDurationState.isDurationEditable,
         isStartWeekEditable: resolvedStartWeekState.isStartWeekEditable,
         isScheduleEditable: Boolean(resolvedDurationState.isDurationEditable || resolvedStartWeekState.isStartWeekEditable),
@@ -1982,7 +2727,7 @@ function getNextNumber(counters) {
 }
 
 function getSubtaskNumber(parentNumber, index = 0) {
-    return `${parentNumber}${String.fromCharCode(97 + index)}`;
+    return `${parentNumber}.${index + 1}`;
 }
 
 function getCustomTaskDefaultDurationWeeks(customTask = {}) {
@@ -2150,14 +2895,17 @@ function createSolutionPlanRows({
     solution,
     phaseKey,
     counters,
+    solutionNumber = '',
     phaseStartWeek,
     defaultDependencies = [],
     durationOverrides = {},
-    customTaskEntries = {}
+    customTaskEntries = {},
+    capacitySnapshot = null
 }) {
     const orderedTasks = sortByOrder(solution?.planner?.setup_tasks || []);
     const ownerModel = getOwnerModel(solution);
     const category = getSolutionGroup(solution);
+    const capacityProfile = getSolutionCapacityProfile(solution, capacitySnapshot || getCapacitySnapshot([solution]));
     const solutionGoal = getGoal(solution);
     const solutionMilestone = getMilestone(solution);
     const difficulty = getDifficultyLabel(solution);
@@ -2172,6 +2920,7 @@ function createSolutionPlanRows({
         map.set(entry.parentRowId, existing);
         return map;
     }, new Map());
+    const baseSolutionNumber = String(solutionNumber || getNextNumber(counters));
 
     const idMap = new Map();
     const normalizedTasks = orderedTasks.map((task, index) => {
@@ -2196,14 +2945,19 @@ function createSolutionPlanRows({
     });
 
     const taskDurations = normalizedTasks.length > 0
-        ? allocateDurations(getDurationWeeks(solution), normalizedTasks, getTaskEffortHours)
+        ? resolvePlannedTaskDurations(
+            normalizedTasks,
+            getDurationWeeks(solution),
+            getTaskEffortHours,
+            (task) => getTaskPlannedDurationWeeks(task, solution, capacityProfile)
+        )
         : [];
     const builtRows = [];
     const rowById = new Map();
     let previousMainRowId = null;
 
     normalizedTasks.forEach((task, taskIndex) => {
-        const taskNumber = getNextNumber(counters, phaseKey);
+        const taskNumber = `${baseSolutionNumber}.${taskIndex + 1}`;
         const explicitParentDependencies = getResolvedDependencies(task?.depends_on, idMap);
         const parentDependencies = explicitParentDependencies.length > 0
             ? explicitParentDependencies
@@ -2214,10 +2968,16 @@ function createSolutionPlanRows({
             getDependencyEndWeek(parentDependencies, rowById, phaseStartWeek)
         );
         const defaultTaskDuration = taskDurations[taskIndex];
+        const taskPreferredDurationUnit = getTaskDurationPreferredUnit(task);
         const customSubtasks = task.customSubtasks || [];
 
         if (task.subtasks.length > 0) {
-            const subtaskDurations = allocateDurations(defaultTaskDuration, task.subtasks, getTaskEffortHours);
+            const subtaskDurations = resolvePlannedTaskDurations(
+                task.subtasks,
+                defaultTaskDuration,
+                getTaskEffortHours,
+                (subtask) => getTaskPlannedDurationWeeks(subtask, solution, capacityProfile)
+            );
             const subRows = [];
             let previousSubtaskRowId = null;
 
@@ -2234,6 +2994,7 @@ function createSolutionPlanRows({
                 const subtaskDurationState = buildDurationState({
                     taskId: subtask.rowId,
                     defaultDurationWeeks: subtaskDurations[subIndex],
+                    defaultDurationPreferredUnit: getTaskDurationPreferredUnit(subtask, taskPreferredDurationUnit),
                     durationOverrides
                 });
                 const subtaskStartWeekState = buildStartWeekState({
@@ -2241,19 +3002,26 @@ function createSolutionPlanRows({
                     defaultStartWeek: defaultSubtaskStartWeek,
                     durationOverrides
                 });
+                const subtaskDescription = getTaskDetailDescription(subtask, solution, [task?.description]);
+                const subtaskContent = resolveSizedTaskContent(
+                    subtask.task || `Subtask ${subIndex + 1}`,
+                    subtaskDescription,
+                    solution,
+                    capacityProfile
+                );
 
                 const subRow = createRow({
                     id: subtask.rowId,
                     phaseKey,
                     number: getSubtaskNumber(taskNumber, subIndex),
-                    step: subtask.task || `Subtask ${subIndex + 1}`,
+                    step: subtaskContent.taskName || subtask.task || `Subtask ${subIndex + 1}`,
                     milestone: solutionMilestone,
                     goal: task.task || solutionGoal,
                     owner: resolveTaskOwner(subtask, solution, ownerModel, [task?.task, task?.description]),
                     resourceType: ownerModel.resourceType,
                     impact: solutionImpact,
-                    task: `Subtask of ${task.task || solution.name}.`,
-                    description: getTaskDetailDescription(subtask, solution, [task?.description]),
+                    task: subtaskContent.description || subtaskContent.taskName || `Subtask of ${task.task || solution.name}.`,
+                    description: subtaskContent.description || subtaskDescription,
                     requiredRoles: getTaskRequiredRoles(subtask, getTaskRequiredRoles(task)),
                     startWeek: subtaskStartWeekState.effectiveStartWeek,
                     durationWeeks: subtaskDurationState.effectiveDuration.durationWeeks,
@@ -2274,6 +3042,7 @@ function createSolutionPlanRows({
                     parentId: task.rowId,
                     solutionId: solution.id,
                     solutionName: solution.name,
+                    capacityProfile,
                     taskType: 'Subtask'
                 });
 
@@ -2344,6 +3113,7 @@ function createSolutionPlanRows({
             const summaryDurationState = buildDurationState({
                 taskId: task.rowId,
                 defaultDurationWeeks: Math.max(MIN_TASK_DURATION_WEEKS, roundWeekPrecision(summaryEndWeek - summaryStartWeek)),
+                defaultDurationPreferredUnit: taskPreferredDurationUnit,
                 durationOverrides,
                 isDurationEditable: false,
                 isCustomInherited: hasInheritedCustomSchedule
@@ -2355,18 +3125,25 @@ function createSolutionPlanRows({
                 isStartWeekEditable: false,
                 isCustomInherited: hasInheritedCustomSchedule
             });
+            const summaryDescription = getTaskDetailDescription(task, solution);
+            const summaryContent = resolveSizedTaskContent(
+                task.task || solution.name,
+                summaryDescription,
+                solution,
+                capacityProfile
+            );
             const summaryRow = createRow({
                 id: task.rowId,
                 phaseKey,
                 number: taskNumber,
-                step: task.task || solution.name,
+                step: summaryContent.taskName || task.task || solution.name,
                 milestone: solutionMilestone,
                 goal: solutionGoal,
                 owner: resolveTaskOwner(task, solution, ownerModel),
                 resourceType: ownerModel.resourceType,
                 impact: solutionImpact,
-                task: `${solution.name} summary row for ${task.task || 'setup work'}.`,
-                description: getTaskDetailDescription(task, solution),
+                task: summaryContent.description || `${solution.name} summary row for ${task.task || 'setup work'}.`,
+                description: summaryContent.description || summaryDescription,
                 requiredRoles: getTaskRequiredRoles(task),
                 startWeek: summaryStartWeek,
                 durationWeeks: summaryDurationState.effectiveDuration.durationWeeks,
@@ -2386,6 +3163,7 @@ function createSolutionPlanRows({
                 isSummary: true,
                 solutionId: solution.id,
                 solutionName: solution.name,
+                capacityProfile,
                 taskType: 'Summary task'
             });
 
@@ -2398,6 +3176,7 @@ function createSolutionPlanRows({
         const taskDurationState = buildDurationState({
             taskId: task.rowId,
             defaultDurationWeeks: defaultTaskDuration,
+            defaultDurationPreferredUnit: taskPreferredDurationUnit,
             durationOverrides
         });
         const taskStartWeekState = buildStartWeekState({
@@ -2405,18 +3184,25 @@ function createSolutionPlanRows({
             defaultStartWeek: defaultParentStartWeek,
             durationOverrides
         });
+        const taskDescription = getTaskDetailDescription(task, solution);
+        const taskContent = resolveSizedTaskContent(
+            task.task || solution.name,
+            taskDescription,
+            solution,
+            capacityProfile
+        );
         const row = createRow({
             id: task.rowId,
             phaseKey,
             number: taskNumber,
-            step: task.task || solution.name,
+            step: taskContent.taskName || task.task || solution.name,
             milestone: solutionMilestone,
             goal: solutionGoal,
             owner: resolveTaskOwner(task, solution, ownerModel),
             resourceType: ownerModel.resourceType,
             impact: solutionImpact,
-            task: task.task || solutionGoal,
-            description: getTaskDetailDescription(task, solution),
+            task: taskContent.description || taskContent.taskName || solutionGoal,
+            description: taskContent.description || taskDescription,
             requiredRoles: getTaskRequiredRoles(task),
             startWeek: taskStartWeekState.effectiveStartWeek,
             durationWeeks: taskDurationState.effectiveDuration.durationWeeks,
@@ -2435,6 +3221,7 @@ function createSolutionPlanRows({
             },
             solutionId: solution.id,
             solutionName: solution.name,
+            capacityProfile,
             taskType: 'Main task'
         });
 
@@ -2489,6 +3276,7 @@ function createSolutionPlanRows({
             },
             solutionId: solution.id,
             solutionName: solution.name,
+            capacityProfile,
             taskType: 'Main task',
             isUserAdded: true
         });
@@ -2510,18 +3298,25 @@ function createSolutionPlanRows({
             defaultStartWeek: phaseStartWeek,
             durationOverrides
         });
+        const defaultTaskDescription = getTaskDetailDescription({}, solution);
+        const defaultTaskContent = resolveSizedTaskContent(
+            solution.name,
+            defaultTaskDescription,
+            solution,
+            capacityProfile
+        );
         const row = createRow({
             id: rowId,
             phaseKey,
-            number: getNextNumber(counters, phaseKey),
-            step: solution.name,
+            number: `${baseSolutionNumber}.1`,
+            step: defaultTaskContent.taskName || solution.name,
             milestone: solutionMilestone,
             goal: solutionGoal,
             owner: resolveTaskOwner({}, solution, ownerModel),
             resourceType: ownerModel.resourceType,
             impact: solutionImpact,
-            task: getTaskDescription(solution),
-            description: getTaskDetailDescription({}, solution),
+            task: defaultTaskContent.description || getTaskDescription(solution),
+            description: defaultTaskContent.description || defaultTaskDescription,
             startWeek: startWeekState.effectiveStartWeek,
             durationWeeks: durationState.effectiveDuration.durationWeeks,
             durationHours: getTaskEffortHours(solution?.planner?.setup_tasks?.[0]),
@@ -2537,6 +3332,7 @@ function createSolutionPlanRows({
             },
             solutionId: solution.id,
             solutionName: solution.name,
+            capacityProfile,
             taskType: 'Main task'
         });
 
@@ -2577,7 +3373,7 @@ function applySolutionGroupShift(rows = [], shiftWeeks = 0) {
     });
 }
 
-function estimateSolutionPlanDuration(solution, phaseKey, phaseStartWeek, customTaskEntries = {}) {
+function estimateSolutionPlanDuration(solution, phaseKey, phaseStartWeek, customTaskEntries = {}, capacitySnapshot = null) {
     const estimate = createSolutionPlanRows({
         solution,
         phaseKey,
@@ -2585,7 +3381,8 @@ function estimateSolutionPlanDuration(solution, phaseKey, phaseStartWeek, custom
         phaseStartWeek,
         defaultDependencies: [],
         durationOverrides: {},
-        customTaskEntries
+        customTaskEntries,
+        capacitySnapshot
     });
 
     return Math.max(MIN_TASK_DURATION_WEEKS, roundWeekPrecision((estimate.endWeek || phaseStartWeek) - phaseStartWeek));
@@ -2595,10 +3392,12 @@ function buildSolutionGroupRow({
     solution,
     phaseKey,
     counters,
+    number = '',
     startWeekState,
     durationWeeks,
     dependencies = [],
-    hasDerivedCustomSchedule = false
+    hasDerivedCustomSchedule = false,
+    capacityProfile = null
 }) {
     const ownerModel = getOwnerModel(solution);
     const category = getSolutionGroup(solution);
@@ -2614,11 +3413,18 @@ function buildSolutionGroupRow({
         isDurationEditable: false,
         isCustomInherited: hasDerivedCustomSchedule
     });
+    const groupDescription = getTaskDetailDescription({}, solution);
+    const groupTaskContent = resolveSizedTaskContent(
+        solution.name,
+        groupDescription,
+        solution,
+        capacityProfile
+    );
 
     return createRow({
         id: rowId,
         phaseKey,
-        number: '',
+        number: String(number || getNextNumber(counters)),
         status: 'Planned',
         impact: solutionImpact,
         step: solution.name,
@@ -2626,8 +3432,8 @@ function buildSolutionGroupRow({
         goal: solutionGoal,
         owner: resolveTaskOwner({}, solution, ownerModel),
         resourceType: ownerModel.resourceType,
-        task: getTaskDescription(solution),
-        description: getTaskDetailDescription({}, solution),
+        task: groupTaskContent.description || getTaskDescription(solution),
+        description: groupTaskContent.description || groupDescription,
         requiredRoles: [],
         startWeek: startWeekState.effectiveStartWeek,
         durationWeeks: durationState.effectiveDuration.durationWeeks,
@@ -2647,8 +3453,124 @@ function buildSolutionGroupRow({
         solutionId: solution.id,
         solutionName: solution.name,
         solutionGroupId: rowId,
+        capacityProfile,
         isDurationEditable: false,
         isStartWeekEditable: true
+    });
+}
+
+function applyTaskOrdersToRows(rows = [], taskOrders = {}) {
+    if (!Array.isArray(rows) || rows.length <= 1) {
+        return [...rows];
+    }
+
+    const rootBlocksByPhase = new Map(PHASE_SEQUENCE.map((phase) => [phase.key, []]));
+    let index = 0;
+
+    while (index < rows.length) {
+        const row = rows[index];
+        if (!row || row.parentId) {
+            index += 1;
+            continue;
+        }
+
+        if (row.isSolutionGroup) {
+            const solutionRows = [row];
+            index += 1;
+            while (index < rows.length) {
+                const candidate = rows[index];
+                if (!candidate || candidate.isSolutionGroup || candidate.solutionGroupId !== row.id) {
+                    break;
+                }
+                solutionRows.push(candidate);
+                index += 1;
+            }
+
+            const taskBlocks = [];
+            let childIndex = 1;
+            while (childIndex < solutionRows.length) {
+                const childRow = solutionRows[childIndex];
+                if (!childRow || childRow.parentId) {
+                    childIndex += 1;
+                    continue;
+                }
+
+                const blockRows = [childRow];
+                childIndex += 1;
+                if (childRow.isSummary) {
+                    while (childIndex < solutionRows.length && solutionRows[childIndex]?.parentId === childRow.id) {
+                        blockRows.push(solutionRows[childIndex]);
+                        childIndex += 1;
+                    }
+                }
+
+                if (blockRows.length > 1) {
+                    const [summaryRow, ...subtaskRows] = blockRows;
+                    const orderedSubtaskRows = applyScopedIdOrder(
+                        subtaskRows.map((subtaskRow) => ({ id: subtaskRow.id, row: subtaskRow })),
+                        getSubtaskOrderScope(summaryRow.id),
+                        taskOrders
+                    ).map(({ row: subtaskRow }) => subtaskRow);
+                    taskBlocks.push({ id: childRow.id, rows: [summaryRow, ...orderedSubtaskRows] });
+                } else {
+                    taskBlocks.push({ id: childRow.id, rows: blockRows });
+                }
+            }
+
+            const orderedTaskBlocks = applyScopedIdOrder(taskBlocks, getSolutionTaskOrderScope(row.solutionId), taskOrders);
+            rootBlocksByPhase.get(row.phaseKey)?.push({
+                id: row.id,
+                rows: [row, ...orderedTaskBlocks.flatMap((block) => block.rows)]
+            });
+            continue;
+        }
+
+        rootBlocksByPhase.get(row.phaseKey)?.push({ id: row.id, rows: [row] });
+        index += 1;
+    }
+
+    const orderedRows = [];
+    PHASE_SEQUENCE.forEach((phase) => {
+        const phaseBlocks = rootBlocksByPhase.get(phase.key) || [];
+        const orderedPhaseBlocks = applyScopedIdOrder(phaseBlocks, getPhaseRootOrderScope(phase.key), taskOrders);
+        orderedPhaseBlocks.forEach((block) => orderedRows.push(...block.rows));
+    });
+
+    return orderedRows;
+}
+
+function renumberOrderedRows(rows = []) {
+    let rootCounter = 0;
+    const numberById = new Map();
+    const solutionGroupNumbers = new Map();
+    const solutionGroupChildCounters = new Map();
+    const parentCounters = new Map();
+
+    return rows.map((row) => {
+        let nextNumber = row.number;
+
+        if (row.parentId) {
+            const parentNumber = numberById.get(row.parentId) || row.number;
+            const nextIndex = (parentCounters.get(row.parentId) || 0) + 1;
+            parentCounters.set(row.parentId, nextIndex);
+            nextNumber = `${parentNumber}.${nextIndex}`;
+        } else if (row.solutionId && !row.isSolutionGroup) {
+            const solutionGroupId = row.solutionGroupId || getSolutionGroupRowId(row.solutionId);
+            const parentNumber = solutionGroupNumbers.get(solutionGroupId) || row.number;
+            const nextIndex = (solutionGroupChildCounters.get(solutionGroupId) || 0) + 1;
+            solutionGroupChildCounters.set(solutionGroupId, nextIndex);
+            nextNumber = `${parentNumber}.${nextIndex}`;
+        } else {
+            rootCounter += 1;
+            nextNumber = String(rootCounter);
+            if (row.isSolutionGroup) {
+                solutionGroupNumbers.set(row.id, nextNumber);
+                solutionGroupChildCounters.set(row.id, 0);
+            }
+        }
+
+        numberById.set(row.id, nextNumber);
+        return { ...row, number: nextNumber };
     });
 }
 
@@ -2694,8 +3616,10 @@ function createVisiblePlanData(planData, collapsedSummaryIds = new Set(), collap
 
 export function buildGanttPlanData(selectedSolutions = [], options = {}) {
     const solutions = [...selectedSolutions];
+    const defaultSolutionGroupCollapsed = solutions.length > 2;
     const durationOverrides = options?.durationOverrides || getDurationOverrideEntries();
     const customTaskEntries = options?.customTaskEntries || getCustomTaskEntries();
+    const capacitySnapshot = options?.capacitySnapshot || getCapacitySnapshot(solutions);
     const rows = [];
     const counters = new Map();
 
@@ -2722,7 +3646,7 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
         const placements = [];
         let baselineCursor = sanitizeStartWeekInputValue(previousPhaseBaselineEnd);
         phaseSolutions.forEach((solution) => {
-            const estimatedDurationWeeks = estimateSolutionPlanDuration(solution, phaseKey, baselineCursor, customTaskEntries);
+            const estimatedDurationWeeks = estimateSolutionPlanDuration(solution, phaseKey, baselineCursor, customTaskEntries, capacitySnapshot);
             placements.push({
                 solution,
                 baselineStartWeek: baselineCursor,
@@ -2735,15 +3659,18 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
 
         const phaseTerminalIds = [];
         placements.forEach(({ solution, baselineStartWeek }) => {
-            const groupState = readSolutionGroupState(solution.id, baselineStartWeek, solution.name);
+            const groupState = readSolutionGroupState(solution.id, baselineStartWeek, solution.name, defaultSolutionGroupCollapsed);
+            const solutionNumber = getNextNumber(counters);
             const solutionPlan = createSolutionPlanRows({
                 solution,
                 phaseKey,
                 counters,
+                solutionNumber,
                 phaseStartWeek: baselineStartWeek,
                 defaultDependencies: [],
                 durationOverrides,
-                customTaskEntries
+                customTaskEntries,
+                capacitySnapshot
             });
             const groupRowId = getSolutionGroupRowId(solution.id);
             const shiftWeeks = roundWeekPrecision(groupState.effectiveStartWeek - baselineStartWeek);
@@ -2754,11 +3681,12 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
             const terminalRow = shiftedRows.find((row) => row.id === solutionPlan.terminalRowId) || shiftedRows[shiftedRows.length - 1];
             const groupDurationWeeks = terminalRow
                 ? Math.max(MIN_TASK_DURATION_WEEKS, roundWeekPrecision(terminalRow.endWeek - groupState.effectiveStartWeek))
-                : Math.max(MIN_TASK_DURATION_WEEKS, estimateSolutionPlanDuration(solution, phaseKey, groupState.effectiveStartWeek, customTaskEntries));
+                : Math.max(MIN_TASK_DURATION_WEEKS, estimateSolutionPlanDuration(solution, phaseKey, groupState.effectiveStartWeek, customTaskEntries, capacitySnapshot));
             const solutionGroupRow = buildSolutionGroupRow({
                 solution,
                 phaseKey,
                 counters,
+                number: solutionNumber,
                 startWeekState: {
                     defaultStartWeek: baselineStartWeek,
                     effectiveStartWeek: groupState.effectiveStartWeek,
@@ -2769,9 +3697,11 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
                 },
                 durationWeeks: groupDurationWeeks,
                 dependencies: [...previousPhaseTerminalIds],
-                hasDerivedCustomSchedule: shiftedRows.some((row) => row.isCustomSchedule)
+                hasDerivedCustomSchedule: shiftedRows.some((row) => row.isCustomSchedule),
+                capacityProfile: getSolutionCapacityProfile(solution, capacitySnapshot)
             });
             solutionGroupRow.solutionGroupId = solutionGroupRow.id;
+            solutionGroupRow.defaultGroupCollapsed = groupState.defaultCollapsed;
             solutionGroupRow.isGroupCollapsed = groupState.collapsed;
 
             rows.push(solutionGroupRow, ...shiftedRows);
@@ -2859,12 +3789,16 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
     rows.push(goLiveRow);
 
     const projectStartDate = getProjectStartDate();
-    const displayRows = enrichRowsForDisplay(applyRowDisplayOverrides(rows, durationOverrides), projectStartDate);
-    const tasks = displayRows.map((row) => createGanttTask(row, projectStartDate));
-    const latestEndWeek = displayRows.reduce((maxEnd, row) => Math.max(maxEnd, row.endWeek), START_WEEK_MIN);
+    const taskOrders = getTaskOrderEntries();
+    const orderedRows = renumberOrderedRows(applyTaskOrdersToRows(
+        enrichRowsForDisplay(applyRowDisplayOverrides(rows, durationOverrides), projectStartDate),
+        taskOrders
+    ));
+    const tasks = orderedRows.map((row) => createGanttTask(row, projectStartDate));
+    const latestEndWeek = orderedRows.reduce((maxEnd, row) => Math.max(maxEnd, row.endWeek), START_WEEK_MIN);
     const totalDurationWeeks = Math.max(0, roundWeekPrecision(latestEndWeek - START_WEEK_MIN));
     const phaseBreakdown = PHASE_SEQUENCE.map((phase) => {
-        const phaseRows = displayRows.filter((row) => row.phaseKey === phase.key && !row.isSolutionGroup);
+        const phaseRows = orderedRows.filter((row) => row.phaseKey === phase.key && !row.isSolutionGroup);
         const phaseEnd = phaseRows.reduce((maxEnd, row) => Math.max(maxEnd, row.endWeek), START_WEEK_MIN);
         const phaseStart = phaseRows.length > 0
             ? phaseRows.reduce((minStart, row) => Math.min(minStart, row.startWeek), phaseRows[0].startWeek)
@@ -2878,7 +3812,7 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
         };
     }).filter((phase) => phase.count > 0);
 
-    const exportRows = displayRows.map((row) => ({
+    const exportRows = orderedRows.map((row) => ({
         '#': row.number,
         Phase: row.phase,
         Status: row.status,
@@ -2898,12 +3832,12 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
         'Custom schedule': row.hasDirectScheduleOverride ? 'Yes' : row.hasDerivedCustomSchedule ? 'Derived' : 'No'
     }));
 
-    const customScheduleCount = displayRows.filter((row) => row.hasDirectScheduleOverride).length;
+    const customScheduleCount = orderedRows.filter((row) => row.hasDirectScheduleOverride).length;
 
     return {
         projectStartDate,
         tasks,
-        rows: displayRows,
+        rows: orderedRows,
         exportRows,
         totalDurationWeeks,
         totalTasks: rows.filter((row) => !row.isSolutionGroup).length,
@@ -2960,14 +3894,24 @@ function createViewModeToggles(ganttInstanceRef) {
         select.appendChild(option);
     });
 
+    const controls = {
+        field,
+        select,
+        setValue(nextValue) {
+            if (!nextValue) return;
+            select.value = nextValue;
+            ganttInstanceRef.viewMode = nextValue;
+            ganttInstanceRef.current?.change_view_mode(nextValue);
+        }
+    };
+
     select.value = ganttInstanceRef.viewMode || GANTT_VIEW_MODES[0].name;
     select.addEventListener('change', () => {
-        ganttInstanceRef.viewMode = select.value;
-        ganttInstanceRef.current?.change_view_mode(select.value);
+        controls.setValue(select.value);
     });
 
     field.append(label, select);
-    return field;
+    return controls;
 }
 
 function truncateText(value, limit = GANTT_TABLE_DESCRIPTION_LIMIT) {
@@ -2985,7 +3929,25 @@ function getTaskTableDescription(row = {}) {
 }
 
 function getTaskTableMeta(row = {}) {
-    return [row.phase, row.isSolutionGroup ? 'Connector group' : ''].filter(Boolean).join(' • ');
+    const capacitySummary = row.isSolutionGroup && row.capacityProfile?.hasSavedSizing
+        ? row.capacityProfile.summary
+        : '';
+    return [row.phase, row.isSolutionGroup ? 'Connector group' : '', capacitySummary].filter(Boolean).join(' • ');
+}
+
+function getRowCapacityBadgeLabel(row = {}) {
+    if (!row?.isSolutionGroup || !row?.capacityProfile?.hasSavedSizing) {
+        return '';
+    }
+    return row.capacityProfile.result?.badge || '';
+}
+
+function getRowCapacityBadgeClassName(row = {}) {
+    const classNames = ['gantt-table-badge', 'gantt-table-badge--sizing'];
+    if (row?.capacityProfile?.isDefault) {
+        classNames.push('is-estimate');
+    }
+    return classNames.join(' ');
 }
 
 function createStatusIndicator(status = 'Planned') {
@@ -3036,32 +3998,107 @@ function createTaskTable(
         onAddTopLevelTask,
         onAddSubtask,
         onDeleteTask,
+        onMoveTask,
         projectStartDate
     } = {}
 ) {
-    const panel = createElement('section', 'gantt-table-panel');
+    const panel = createElement('section', 'gantt-table-panel planner-table-panel');
     const header = createElement('div', 'gantt-table-header');
-    [
-        ['#', 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--number'],
-        ['Name', 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--task'],
-        ['Owner', 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--owner'],
-        ['Status', 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--status'],
-        ['Start date', 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--date'],
-        ['Due date', 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--date'],
-        ['Duration', 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--duration'],
-        ['Impact', 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--impact']
-    ].forEach(([label, className]) => {
-        header.appendChild(createText('div', label, className));
-    });
-
     const scroll = createElement('div', 'gantt-table-scroll');
     const surface = createElement('div', 'gantt-table-surface');
+    let columnWidths = getGanttTableColumnWidths();
+
+    const applyColumnLayout = () => {
+        const template = getGanttTableColumnTemplate(columnWidths);
+        const totalWidth = getGanttTableColumnPixelWidth(columnWidths);
+        panel.style.setProperty('--gantt-table-columns', template);
+        panel.style.setProperty('--gantt-table-width', `${totalWidth}px`);
+    };
+
+    const syncHeaderScroll = () => {
+        header.style.transform = `translateX(${-scroll.scrollLeft}px)`;
+    };
+
+    const startColumnResize = (event, column) => {
+        if (!column || window.matchMedia('(max-width: 1024px)').matches) return;
+        if (!event.isPrimary || event.button !== 0) return;
+
+        const resizeHandle = event.currentTarget instanceof Element ? event.currentTarget : null;
+        if (!resizeHandle) return;
+
+        event.preventDefault();
+        event.stopPropagation();
+
+        const startX = event.clientX;
+        const startWidth = Math.max(column.minWidth, Number(columnWidths?.[column.key]) || column.width);
+
+        startPointerDragSession(event, resizeHandle, {
+            onMove(pointerEvent) {
+                const delta = pointerEvent.clientX - startX;
+                const nextWidth = Math.max(column.minWidth, Math.round(startWidth + delta));
+                if (nextWidth === (Number(columnWidths?.[column.key]) || column.width)) {
+                    return;
+                }
+                columnWidths = {
+                    ...columnWidths,
+                    [column.key]: nextWidth
+                };
+                applyColumnLayout();
+                syncHeaderScroll();
+            },
+            onEnd() {
+                persistGanttTableColumnWidths(columnWidths);
+            }
+        });
+    };
+
+    GANTT_TABLE_COLUMNS.forEach((column) => {
+        const headerCell = createText('div', column.label, column.headerClassName);
+        headerCell.dataset.columnKey = column.key;
+        headerCell.setAttribute('role', 'columnheader');
+
+        const resizeHandle = createElement('button', 'gantt-table-column-resize-handle');
+        resizeHandle.type = 'button';
+        resizeHandle.tabIndex = -1;
+        resizeHandle.title = `Resize ${column.label} column`;
+        resizeHandle.setAttribute('aria-hidden', 'true');
+        resizeHandle.addEventListener('pointerdown', (resizeEvent) => startColumnResize(resizeEvent, column));
+        headerCell.appendChild(resizeHandle);
+        header.appendChild(headerCell);
+    });
+
+    applyColumnLayout();
+    scroll.addEventListener('scroll', syncHeaderScroll, { passive: true });
     scroll.appendChild(surface);
     panel.append(header, scroll);
 
     const rowElements = new Map();
+    const allRowsById = new Map(rows.map((row) => [row.id, row]));
     const inlineCellOpeners = new WeakMap();
     const inlineFieldOpeners = new Map();
+    const orderScopeRows = new Map();
+    const orderScopeIndexByRowId = new Map();
+    rows.forEach((row) => {
+        const scopeKey = getTaskOrderScopeKeyForRow(row);
+        if (!scopeKey) return;
+        const existing = orderScopeRows.get(scopeKey) || [];
+        existing.push(row.id);
+        orderScopeRows.set(scopeKey, existing);
+        orderScopeIndexByRowId.set(row.id, {
+            scopeKey,
+            index: existing.length - 1,
+            count: existing.length
+        });
+    });
+    orderScopeRows.forEach((ids, scopeKey) => {
+        ids.forEach((rowId, index) => {
+            orderScopeIndexByRowId.set(rowId, {
+                scopeKey,
+                index,
+                count: ids.length
+            });
+        });
+    });
     let activeInlineEditor = null;
     let pendingLayoutUpdate = null;
 
@@ -3082,9 +4119,8 @@ function createTaskTable(
             return;
         }
 
-        const deferredLayoutUpdate = pendingLayoutUpdate;
         pendingLayoutUpdate = null;
-        updateLayout(deferredLayoutUpdate.layoutMetrics, deferredLayoutUpdate.chartHeight);
+        updateLayout();
     };
 
     const closeInlineEditor = ({ restoreDisplay = true, flushPendingLayout = true } = {}) => {
@@ -3142,25 +4178,7 @@ function createTaskTable(
         } else if (content) {
             trigger.appendChild(content);
         }
-        let activatedRecently = false;
-        const handleActivation = (event) => {
-            event.preventDefault();
-            event.stopPropagation();
-            if (activatedRecently) return;
-            activatedRecently = true;
-            setTimeout(() => { activatedRecently = false; }, 200);
-            onOpen();
-        };
-        trigger.addEventListener('click', handleActivation);
-        trigger.addEventListener('mouseup', (event) => {
-            if (event.button === 0) handleActivation(event);
-        });
-        trigger.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter' || event.key === ' ') {
-                stopRowActivation(event);
-                onOpen();
-            }
-        });
+        bindPrimaryActivation(trigger, () => onOpen());
         return trigger;
     };
 
@@ -3361,7 +4379,14 @@ function createTaskTable(
             return applyDurationValue(sanitizedValue, unitSelect.value);
         };
 
-        cleanupOutside = createOutsidePointerHandler(editorShell, () => closeEditor());
+        cleanupOutside = createOutsidePointerHandler(editorShell, () => {
+            const hasTypedValue = String(numberInput.value || '').trim().length > 0;
+            if (!hasTypedValue) {
+                closeEditor();
+                return;
+            }
+            applyCustomDuration();
+        });
 
         numberInput.addEventListener('input', () => setInlineFieldValidity(numberInput, true));
         numberInput.addEventListener('keydown', (event) => {
@@ -3444,10 +4469,18 @@ function createTaskTable(
             }
         };
 
-        select.addEventListener('change', saveEditor);
-        let blurEnabled = false;
-        setTimeout(() => { blurEnabled = true; }, 300);
-        select.addEventListener('blur', () => { if (blurEnabled) saveEditor(); });
+        let hasCommitted = false;
+        select.addEventListener('change', () => {
+            hasCommitted = true;
+            saveEditor();
+        });
+        select.addEventListener('blur', () => {
+            window.setTimeout(() => {
+                if (isClosed || hasCommitted) return;
+                if (document.activeElement === select) return;
+                closeEditor();
+            }, 0);
+        });
         select.addEventListener('keydown', (event) => {
             if (event.key === 'Enter') {
                 event.preventDefault();
@@ -3886,17 +4919,31 @@ function createTaskTable(
         labelHost.replaceChildren();
 
         if (row.isSolutionGroup) {
-            labelHost.appendChild(createText('span', row.step, 'gantt-table-task-label'));
+            const solutionGroupLabel = createElement('span', 'gantt-solution-group-title-inline');
+            solutionGroupLabel.appendChild(createText('span', row.step, 'gantt-table-task-label'));
+
+            const actionButton = createElement('button', 'gantt-solution-group-action-button');
+            actionButton.type = 'button';
+            actionButton.textContent = getSolutionGroupActionLabel(collapsedSolutionGroupIds.has(row.id));
+            actionButton.title = `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`;
+            actionButton.setAttribute('aria-label', `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`);
+            actionButton.setAttribute('aria-expanded', collapsedSolutionGroupIds.has(row.id) ? 'false' : 'true');
+            bindPrimaryActivation(actionButton, () => onToggleSolutionGroup?.(row.id));
+            solutionGroupLabel.appendChild(actionButton);
+
+            labelHost.appendChild(solutionGroupLabel);
             inlineFieldOpeners.delete(`${row.id}:name`);
             return;
         }
 
-        const nameTrigger = createInlineTrigger({
-            className: 'gantt-table-task-name-trigger',
-            title: `Edit name for ${row.step}`,
-            ariaLabel: `Edit name for ${row.step}`,
-            onOpen: () => openInlineNameEditor(row, cell, labelHost, renderTaskNameDisplay),
-            content: createText('span', row.step, 'gantt-table-task-label')
+        const nameTrigger = createElement('button', 'gantt-table-task-name-trigger');
+        nameTrigger.type = 'button';
+        nameTrigger.title = `Open details for ${row.step}`;
+        nameTrigger.setAttribute('aria-label', `Open details for ${row.step}`);
+        nameTrigger.appendChild(createText('span', row.step, 'gantt-table-task-label'));
+        nameTrigger.addEventListener('click', (event) => {
+            stopRowActivation(event);
+            onSelect?.(row.id);
         });
         labelHost.appendChild(nameTrigger);
         inlineFieldOpeners.set(`${row.id}:name`, () => openInlineNameEditor(row, cell, labelHost, renderTaskNameDisplay));
@@ -4030,24 +5077,19 @@ function createTaskTable(
         cell.appendChild(trigger);
     };
 
-    const updateLayout = (layoutMetrics = [], chartHeight = 0) => {
+    const updateLayout = () => {
         if (activeInlineEditor) {
-            pendingLayoutUpdate = { layoutMetrics, chartHeight };
+            pendingLayoutUpdate = true;
             return;
         }
 
         pendingLayoutUpdate = null;
-        const metricsById = new Map((layoutMetrics || []).map((metric) => [metric.id, metric]));
-        const surfaceHeight = Math.max(Number(chartHeight) || 0, rows.length * GANTT_TABLE_ROW_FALLBACK_HEIGHT, 180);
-        surface.style.height = `${surfaceHeight}px`;
+        surface.style.height = 'auto';
         surface.replaceChildren();
         rowElements.clear();
         inlineFieldOpeners.clear();
 
         rows.forEach((row, index) => {
-            const metric = metricsById.get(row.id);
-            const top = Number.isFinite(metric?.top) ? metric.top : index * GANTT_TABLE_ROW_FALLBACK_HEIGHT;
-            const height = Math.max(38, Number.isFinite(metric?.height) ? metric.height : GANTT_TABLE_ROW_FALLBACK_HEIGHT);
             const previousRow = rows[index - 1];
             const nextRow = rows[index + 1];
             const isFirstSubtask = Boolean(row.parentId && previousRow?.parentId !== row.parentId);
@@ -4067,8 +5109,9 @@ function createTaskTable(
             if (row.hasDerivedCustomSchedule) rowElement.classList.add('has-derived-custom-duration');
             if (row.isUserAdded) rowElement.classList.add('is-user-added');
             rowElement.dataset.taskId = row.id;
-            rowElement.style.top = `${top}px`;
-            rowElement.style.height = `${height}px`;
+            rowElement.style.removeProperty('top');
+            rowElement.style.removeProperty('height');
+            rowElement.style.minHeight = `${row.isSolutionGroup ? 56 : row.isSummary ? 52 : 48}px`;
             rowElement.setAttribute('role', 'button');
             rowElement.tabIndex = 0;
             rowElement.setAttribute(
@@ -4092,28 +5135,14 @@ function createTaskTable(
 
             const titleRow = createElement('div', 'gantt-table-task-title-row');
             if (row.isSolutionGroup) {
-                const toggle = createElement('button', 'gantt-table-toggle gantt-table-toggle--solution-group');
-                toggle.type = 'button';
-                toggle.textContent = collapsedSolutionGroupIds.has(row.id) ? SOLUTION_GROUP_COLLAPSED_PREFIX : SOLUTION_GROUP_EXPANDED_PREFIX;
-                toggle.setAttribute('aria-label', `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`);
-                toggle.setAttribute('aria-expanded', collapsedSolutionGroupIds.has(row.id) ? 'false' : 'true');
-                toggle.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    onToggleSolutionGroup?.(row.id);
-                });
-                titleRow.appendChild(toggle);
+                titleRow.appendChild(createElement('span', 'gantt-table-toggle-spacer'));
             } else if (row.isSummary) {
                 const toggle = createElement('button', 'gantt-table-toggle');
                 toggle.type = 'button';
                 toggle.textContent = collapsedSummaryIds.has(row.id) ? SUMMARY_COLLAPSED_PREFIX : SUMMARY_EXPANDED_PREFIX;
                 toggle.setAttribute('aria-label', `${collapsedSummaryIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`);
                 toggle.setAttribute('aria-expanded', collapsedSummaryIds.has(row.id) ? 'false' : 'true');
-                toggle.addEventListener('click', (event) => {
-                    event.preventDefault();
-                    event.stopPropagation();
-                    onToggleSummary?.(row.id);
-                });
+                bindPrimaryActivation(toggle, () => onToggleSummary?.(row.id));
                 titleRow.appendChild(toggle);
             } else {
                 titleRow.appendChild(createElement('span', 'gantt-table-toggle-spacer'));
@@ -4135,6 +5164,34 @@ function createTaskTable(
             }
 
             const rowActions = createElement('div', 'gantt-table-row-actions');
+            const orderState = orderScopeIndexByRowId.get(row.id);
+            if (orderState) {
+                const moveUpButton = createElement('button', 'gantt-table-row-action gantt-table-row-action--move');
+                moveUpButton.type = 'button';
+                moveUpButton.textContent = '↑';
+                moveUpButton.setAttribute('aria-label', `Move ${row.step} up`);
+                moveUpButton.title = `Move ${row.step} up`;
+                moveUpButton.disabled = orderState.index === 0;
+                moveUpButton.addEventListener('click', (event) => {
+                    stopRowActivation(event);
+                    if (moveUpButton.disabled) return;
+                    onMoveTask?.(row.id, -1);
+                });
+                rowActions.appendChild(moveUpButton);
+
+                const moveDownButton = createElement('button', 'gantt-table-row-action gantt-table-row-action--move');
+                moveDownButton.type = 'button';
+                moveDownButton.textContent = '↓';
+                moveDownButton.setAttribute('aria-label', `Move ${row.step} down`);
+                moveDownButton.title = `Move ${row.step} down`;
+                moveDownButton.disabled = orderState.index >= orderState.count - 1;
+                moveDownButton.addEventListener('click', (event) => {
+                    stopRowActivation(event);
+                    if (moveDownButton.disabled) return;
+                    onMoveTask?.(row.id, 1);
+                });
+                rowActions.append(moveUpButton, moveDownButton);
+            }
             if (row.isSummary && row.solutionId) {
                 const addSubtaskButton = createElement('button', 'gantt-table-row-action gantt-table-row-action--add');
                 addSubtaskButton.type = 'button';
@@ -4159,17 +5216,27 @@ function createTaskTable(
                 });
                 rowActions.appendChild(deleteButton);
             }
+            const badgeLabel = getCustomDurationBadgeLabel(row);
+            const customBadge = badgeLabel
+                ? createText('span', badgeLabel, 'gantt-table-badge gantt-table-badge--custom')
+                : null;
+            const capacityBadgeLabel = getRowCapacityBadgeLabel(row);
+            const capacityBadge = capacityBadgeLabel
+                ? createText('span', capacityBadgeLabel, getRowCapacityBadgeClassName(row))
+                : null;
+            const titleExtras = [capacityBadge, customBadge].filter(Boolean);
             if (rowActions.childElementCount > 0) {
-                titleRow.append(titleStack, rowActions);
+                if (titleExtras.length > 0) {
+                    titleRow.append(titleStack, ...titleExtras, rowActions);
+                } else {
+                    titleRow.append(titleStack, rowActions);
+                }
+            } else if (titleExtras.length > 0) {
+                titleRow.append(titleStack, ...titleExtras);
             } else {
                 titleRow.appendChild(titleStack);
             }
             taskContent.appendChild(titleRow);
-
-            const badgeLabel = getCustomDurationBadgeLabel(row);
-            if (badgeLabel) {
-                taskContent.appendChild(createText('span', badgeLabel, 'gantt-table-badge gantt-table-badge--custom'));
-            }
             taskCell.appendChild(taskContent);
 
             const ownerCell = createElement('div', 'gantt-table-cell gantt-table-cell--owner');
@@ -4193,6 +5260,15 @@ function createTaskTable(
                     ariaLabel: `Status for ${row.step}`
                 })
             });
+
+            const durationCell = createElement('div', 'gantt-table-cell gantt-table-cell--duration');
+            renderInlineDurationDisplay(row, durationCell);
+            attachInlineCellLauncher(durationCell, {
+                title: `Edit duration for ${row.step}`,
+                isEnabled: row.isDurationEditable,
+                onOpen: () => openInlineDurationEditor(row, durationCell)
+            });
+
             const startCell = createElement('div', 'gantt-table-cell gantt-table-date');
             renderInlineDateDisplay(row, startCell, 'start');
             attachInlineCellLauncher(startCell, {
@@ -4214,63 +5290,36 @@ function createTaskTable(
                     }
                 })
             });
-            const dueCell = createElement('div', 'gantt-table-cell gantt-table-date');
-            renderInlineDateDisplay(row, dueCell, 'due');
-            attachInlineCellLauncher(dueCell, {
-                title: `Edit due date for ${row.step}`,
-                isEnabled: row.isDurationEditable,
-                onOpen: () => openInlineDateEditor(row, dueCell, {
-                    fieldKey: 'due',
-                    currentDate: row.dueDate || getRowCalendarDueDate(row, projectStartDate),
-                    renderDisplay: renderInlineDateDisplay,
-                    onSave: (nextValue) => {
-                        const nextBusinessDate = coerceToBusinessDay(nextValue);
-                        if (!nextBusinessDate) return;
 
-                        const currentStartDate = row.startDate || getRowCalendarStartDate(row, projectStartDate);
-                        const safeDueDate = nextBusinessDate < currentStartDate ? currentStartDate : nextBusinessDate;
-                        const sameDayAsStart = formatDateForInput(safeDueDate) === formatDateForInput(currentStartDate);
-                        const nextBusinessHours = sameDayAsStart
-                            ? Math.min(Math.max(Number(row.durationBusinessHours) || HOURS_PER_DAY, MIN_TASK_DURATION_WEEKS * HOURS_PER_WEEK), HOURS_PER_DAY)
-                            : getInclusiveBusinessDaySpan(currentStartDate, safeDueDate) * HOURS_PER_DAY;
-                        const nextDuration = createDurationPresentation({
-                            businessHours: nextBusinessHours,
-                            preferredUnit: row.durationUnit
-                        });
-                        onInlineScheduleSave?.(row.id, {
-                            value: nextDuration.value,
-                            unit: nextDuration.unit
-                        });
-                    }
-                })
-            });
-            const durationCell = createElement('div', 'gantt-table-cell gantt-table-cell--duration');
-            renderInlineDurationDisplay(row, durationCell);
-            attachInlineCellLauncher(durationCell, {
-                title: `Edit duration for ${row.step}`,
-                isEnabled: row.isDurationEditable,
-                onOpen: () => openInlineDurationEditor(row, durationCell)
-            });
+            const dependencyCell = createElement('div', 'gantt-table-cell gantt-table-cell--dependencies');
+            const dependencyLabel = row.isSolutionGroup ? '—' : formatDetailDependencyLabel(row, allRowsById);
+            renderReadonlyCellValue(
+                dependencyCell,
+                dependencyLabel === 'None' ? '—' : dependencyLabel,
+                'gantt-table-inline-value gantt-table-inline-value--readonly',
+                dependencyLabel === 'None' ? 'No dependencies' : dependencyLabel
+            );
+
             const impactCell = createElement('div', 'gantt-table-cell gantt-table-cell--impact');
             renderInlineImpactDisplay(row, impactCell);
             attachInlineCellLauncher(impactCell, {
-                title: `Edit impact for ${row.step}`,
+                title: `Edit priority for ${row.step}`,
                 isEnabled: !row.isSolutionGroup,
                 onOpen: () => openInlineSelectEditor(row, impactCell, {
                     currentValue: normalizeImpactLabel(row.impact),
                     options: IMPACT_OPTIONS,
                     renderDisplay: renderInlineImpactDisplay,
                     onSave: (nextValue) => onInlineFieldSave?.(row.id, { impact: nextValue }),
-                    ariaLabel: `Impact for ${row.step}`
+                    ariaLabel: `Priority for ${row.step}`
                 })
             });
 
-            rowElement.append(rowNumberCell, taskCell, ownerCell, statusCell, startCell, dueCell, durationCell, impactCell);
+            rowElement.append(rowNumberCell, taskCell, ownerCell, statusCell, durationCell, startCell, dependencyCell, impactCell);
 
             const activateRow = (event) => {
                 const targetElement = getEventElementTarget(event);
                 const activeEditorCell = activeInlineEditor?.cell;
-                if (targetElement?.closest?.('.gantt-table-inline-trigger, .gantt-table-task-name-trigger, .gantt-table-row-action, .gantt-table-toggle')) return;
+                if (targetElement?.closest?.('.gantt-table-inline-trigger, .gantt-table-task-name-trigger, .gantt-table-task-toggle-label, .gantt-solution-group-action-button, .gantt-table-row-action, .gantt-table-toggle, .gantt-table-add-button')) return;
                 if (targetElement?.closest?.('.gantt-table-cell.is-editing')) return;
                 if (activeEditorCell && targetElement && activeEditorCell.contains(targetElement)) return;
 
@@ -4322,43 +5371,47 @@ function createTaskTable(
     };
 }
 
-function enableSplitPaneResize(layout, divider) {
+function enableSplitPaneResize(layout, divider, options = {}) {
     if (!layout || !divider) return;
 
     ganttResizeCleanup?.();
 
+    const {
+        min = 420,
+        maxOffset = 360,
+        max = null,
+        preferredRatio = 0.42,
+        ariaLabel = 'Resize task table and timeline'
+    } = options;
+
     divider.tabIndex = 0;
     divider.setAttribute('role', 'separator');
-    divider.setAttribute('aria-label', 'Resize task table and timeline');
+    divider.setAttribute('aria-label', ariaLabel);
     divider.setAttribute('aria-orientation', 'vertical');
 
     const getBounds = () => {
         const width = layout.getBoundingClientRect().width;
         return {
-            min: 420,
-            max: Math.min(920, Math.max(560, width - 360))
+            min,
+            max: Math.min(Number.isFinite(max) ? max : Number.MAX_SAFE_INTEGER, Math.max(min + 80, width - maxOffset))
         };
     };
 
     const applyWidth = (nextWidth) => {
-        const { min, max } = getBounds();
-        const clampedWidth = Math.min(max, Math.max(min, nextWidth));
+        const { min: minWidth, max: maxWidth } = getBounds();
+        const clampedWidth = Math.min(maxWidth, Math.max(minWidth, nextWidth));
         layout.style.gridTemplateColumns = `${clampedWidth}px 12px minmax(0, 1fr)`;
-        divider.setAttribute('aria-valuemin', String(min));
-        divider.setAttribute('aria-valuemax', String(max));
+        divider.setAttribute('aria-valuemin', String(minWidth));
+        divider.setAttribute('aria-valuemax', String(maxWidth));
         divider.setAttribute('aria-valuenow', String(Math.round(clampedWidth)));
     };
 
     window.requestAnimationFrame(() => {
-        const measuredWidth = Math.round(layout.getBoundingClientRect().width * 0.42) || 540;
+        const measuredWidth = Math.round(layout.getBoundingClientRect().width * preferredRatio) || min;
         applyWidth(measuredWidth);
     });
 
-    const stopDrag = () => {
-        document.body.classList.remove('is-resizing-gantt');
-        window.removeEventListener('pointermove', handlePointerMove);
-        window.removeEventListener('pointerup', stopDrag);
-    };
+    let activeResizeSession = null;
 
     const handlePointerMove = (event) => {
         const bounds = layout.getBoundingClientRect();
@@ -4367,10 +5420,16 @@ function enableSplitPaneResize(layout, divider) {
 
     divider.addEventListener('pointerdown', (event) => {
         if (window.matchMedia('(max-width: 900px)').matches) return;
+        if (!event.isPrimary || event.button !== 0) return;
         event.preventDefault();
-        document.body.classList.add('is-resizing-gantt');
-        window.addEventListener('pointermove', handlePointerMove);
-        window.addEventListener('pointerup', stopDrag, { once: true });
+        event.stopPropagation();
+        activeResizeSession?.cleanup({ cancelled: true });
+        activeResizeSession = startPointerDragSession(event, divider, {
+            onMove: handlePointerMove,
+            onEnd() {
+                activeResizeSession = null;
+            }
+        });
     });
 
     divider.addEventListener('keydown', (event) => {
@@ -4393,8 +5452,8 @@ function enableSplitPaneResize(layout, divider) {
     window.addEventListener('resize', handleResize, { passive: true });
     ganttResizeCleanup = () => {
         document.body.classList.remove('is-resizing-gantt');
-        window.removeEventListener('pointermove', handlePointerMove);
-        window.removeEventListener('pointerup', stopDrag);
+        activeResizeSession?.cleanup({ cancelled: true });
+        activeResizeSession = null;
         window.removeEventListener('resize', handleResize);
     };
 }
@@ -4441,6 +5500,86 @@ function syncSplitPaneScroll(tableScroll, chartHost) {
     tableScroll.__scrollSyncCleanup = cleanup;
     chartHost.__ganttScrollSyncCleanup = cleanup;
     tableScroll.scrollTop = ganttContainer.scrollTop;
+}
+
+function bindGanttScrollGestureState(chartHost, { onScrollStart } = {}) {
+    if (!chartHost) return;
+
+    chartHost.__ganttScrollGestureCleanup?.();
+    chartHost.classList.remove('is-scroll-gesturing');
+
+    const ganttContainer = chartHost.querySelector('.gantt-container');
+    if (!ganttContainer) return;
+
+    let scrollGestureTimer = 0;
+    const clearScrollGestureState = () => {
+        if (scrollGestureTimer) {
+            window.clearTimeout(scrollGestureTimer);
+            scrollGestureTimer = 0;
+        }
+        chartHost.classList.remove('is-scroll-gesturing');
+    };
+
+    const handleScroll = () => {
+        if (!chartHost.classList.contains('is-scroll-gesturing')) {
+            onScrollStart?.();
+        }
+        chartHost.classList.add('is-scroll-gesturing');
+        if (scrollGestureTimer) {
+            window.clearTimeout(scrollGestureTimer);
+        }
+        scrollGestureTimer = window.setTimeout(() => {
+            scrollGestureTimer = 0;
+            chartHost.classList.remove('is-scroll-gesturing');
+        }, 140);
+    };
+
+    ganttContainer.addEventListener('scroll', handleScroll, { passive: true });
+    chartHost.__ganttScrollGestureCleanup = () => {
+        ganttContainer.removeEventListener('scroll', handleScroll);
+        clearScrollGestureState();
+    };
+}
+
+function bindGanttTaskSelection(chartHost, { onSelectTask } = {}) {
+    if (!chartHost) return;
+
+    chartHost.__ganttTaskSelectionCleanup?.();
+    if (typeof onSelectTask !== 'function') return;
+
+    let lastActivatedTaskId = '';
+    let activationTimer = 0;
+    const resetActivation = () => {
+        lastActivatedTaskId = '';
+        activationTimer = 0;
+    };
+
+    const handleClick = (event) => {
+        if (chartHost.classList.contains('is-scroll-gesturing')) return;
+        const target = event.target instanceof Element ? event.target : null;
+        if (!target) return;
+        if (target.closest('.gantt-solution-group-action-label')) return;
+
+        const wrapper = target.closest('.bar-wrapper');
+        const taskId = wrapper?.getAttribute('data-id') || '';
+        if (!taskId || taskId === lastActivatedTaskId) return;
+
+        lastActivatedTaskId = taskId;
+        if (activationTimer) {
+            window.clearTimeout(activationTimer);
+        }
+        activationTimer = window.setTimeout(resetActivation, 180);
+        onSelectTask(taskId);
+    };
+
+    chartHost.addEventListener('click', handleClick);
+    chartHost.__ganttTaskSelectionCleanup = () => {
+        chartHost.removeEventListener('click', handleClick);
+        if (activationTimer) {
+            window.clearTimeout(activationTimer);
+        }
+        resetActivation();
+    };
 }
 
 function getTimelineQuarterLabel(date) {
@@ -4502,6 +5641,7 @@ function syncGanttTimelineHeader(chartHost) {
     const lowerHeader = gantt.$lower_header;
     if (!header || !upperHeader || !lowerHeader) return;
 
+    const rangeHighlights = [...lowerHeader.querySelectorAll('.date-range-highlight')];
     const dateInfo = gantt.get_dates_to_draw();
     if (!Array.isArray(dateInfo) || dateInfo.length === 0) return;
 
@@ -4523,7 +5663,7 @@ function syncGanttTimelineHeader(chartHost) {
     header.dataset.timelineHeaderSig = signature;
     header.dataset.viewMode = viewModeName.toLowerCase();
     upperHeader.replaceChildren();
-    lowerHeader.replaceChildren();
+    lowerHeader.replaceChildren(...rangeHighlights);
     upperHeader.classList.add('gantt-custom-timeline-row', 'gantt-custom-timeline-row--upper');
     lowerHeader.classList.add('gantt-custom-timeline-row', 'gantt-custom-timeline-row--lower');
 
@@ -4692,55 +5832,48 @@ function stabilizeGanttRender(
             }
 
             if (label) {
-                const isSummaryToggle = Boolean(task?.isSummary && typeof onToggleSummary === 'function');
-                const isSolutionGroupToggle = Boolean(task?.isSolutionGroup && typeof onToggleSolutionGroup === 'function');
-                const isToggleLabel = isSummaryToggle || isSolutionGroupToggle;
-
-                label.classList.toggle('gantt-summary-toggle', isSummaryToggle);
-                label.classList.toggle('gantt-solution-group-toggle', isSolutionGroupToggle);
+                // Main bar label always opens sidebar — never acts as a collapse toggle
+                label.classList.remove('gantt-summary-toggle');
+                label.classList.remove('gantt-solution-group-toggle');
                 label.classList.toggle('gantt-subtask-label', Boolean(task?.isSubtask));
 
-                if (isToggleLabel) {
-                    label.setAttribute('role', 'button');
-                    label.setAttribute('tabindex', '0');
-                    label.setAttribute(
-                        'aria-expanded',
-                        isSummaryToggle
-                            ? (collapsedSummaryIds.has(task.id) ? 'false' : 'true')
-                            : (collapsedSolutionGroupIds.has(task.id) ? 'false' : 'true')
-                    );
-                    label.style.cursor = 'pointer';
-                    label.style.pointerEvents = 'auto';
-                    label.dataset.toggleType = isSummaryToggle ? 'summary' : 'solution-group';
-                    label.dataset.toggleId = task.id;
+                label.removeAttribute('role');
+                label.removeAttribute('tabindex');
+                label.removeAttribute('aria-expanded');
+                delete label.dataset.toggleType;
+                delete label.dataset.toggleId;
+                // Enable pointer-events so outside-right labels can bubble clicks to chartHost
+                label.style.cursor = label.textContent ? 'pointer' : 'default';
+                label.style.pointerEvents = 'auto';
 
-                    if (label.dataset.ganttToggleBound !== 'true') {
-                        const handleToggle = (event) => {
-                            event.preventDefault();
-                            event.stopPropagation();
-                            if (label.dataset.toggleType === 'summary') {
-                                onToggleSummary?.(label.dataset.toggleId || '');
-                                return;
-                            }
-                            onToggleSolutionGroup?.(label.dataset.toggleId || '');
-                        };
+                // Action label handles collapse for both solution groups and summary tasks
+                const taskActionLabel = (task?.isSolutionGroup || task?.isSummary)
+                    ? wrapper.querySelector('.gantt-solution-group-action-label')
+                    : null;
 
-                        label.addEventListener('click', handleToggle);
-                        label.addEventListener('keydown', (event) => {
-                            if (event.key === 'Enter' || event.key === ' ') {
-                                handleToggle(event);
+                if (taskActionLabel) {
+                    const isCollapsed = task?.isSolutionGroup
+                        ? collapsedSolutionGroupIds.has(task.id)
+                        : collapsedSummaryIds.has(task.id);
+                    taskActionLabel.setAttribute('role', 'button');
+                    taskActionLabel.setAttribute('tabindex', '0');
+                    taskActionLabel.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
+                    taskActionLabel.setAttribute('aria-label', `${isCollapsed ? 'Expand' : 'Collapse'} ${task?.name || task?.labelText || ''}`);
+                    taskActionLabel.style.cursor = 'pointer';
+                    taskActionLabel.style.pointerEvents = 'auto';
+                    taskActionLabel.dataset.toggleType = task?.isSolutionGroup ? 'solution-group' : 'summary';
+                    taskActionLabel.dataset.toggleId = task.id;
+
+                    if (taskActionLabel.dataset.ganttToggleBound !== 'true') {
+                        bindPrimaryActivation(taskActionLabel, () => {
+                            if (taskActionLabel.dataset.toggleType === 'solution-group') {
+                                onToggleSolutionGroup?.(taskActionLabel.dataset.toggleId || '');
+                            } else {
+                                onToggleSummary?.(taskActionLabel.dataset.toggleId || '');
                             }
                         });
-                        label.dataset.ganttToggleBound = 'true';
+                        taskActionLabel.dataset.ganttToggleBound = 'true';
                     }
-                } else {
-                    label.removeAttribute('role');
-                    label.removeAttribute('tabindex');
-                    label.removeAttribute('aria-expanded');
-                    delete label.dataset.toggleType;
-                    delete label.dataset.toggleId;
-                    label.style.cursor = 'default';
-                    label.style.pointerEvents = 'none';
                 }
             }
 
@@ -4808,13 +5941,6 @@ function stabilizeGanttRender(
         });
 
         const visibleBars = diagnostics.filter((entry) => (entry.width || 0) > 0 && (entry.height || 0) > 0).length;
-        console.debug('Gantt render summary', {
-            wrapperCount: wrappers.length,
-            visibleBars,
-            svgHeight,
-            containerHeight: container.getBoundingClientRect().height,
-            scrollHeight: container.scrollHeight
-        });
 
         if (wrappers.length > 0 && visibleBars === 0) {
             console.warn('Gantt bars rendered but remain invisible', {
@@ -4974,14 +6100,461 @@ function createDurationEditor(row, { onSaveDuration, onResetDuration } = {}) {
     return section;
 }
 
-function renderDetailPanel(
+function formatDetailDependencyLabel(row = {}, allRowsById = new Map()) {
+    const dependencyIds = Array.isArray(row?.dependencies) ? row.dependencies : [];
+    if (!dependencyIds.length) return 'None';
+    return dependencyIds.map((dependencyId) => {
+        const dependencyRow = allRowsById.get(dependencyId);
+        if (!dependencyRow) return String(dependencyId);
+        return [dependencyRow.number, dependencyRow.step].filter(Boolean).join(' ');
+    }).join(', ');
+}
+
+function buildDetailFieldEntries(row = {}, allRowsById = new Map()) {
+    const baseEntries = new Map([
+        ['Solution', row.detailFields?.Solution || row.solutionName || 'Shared onboarding plan'],
+        ['Task type', row.detailFields?.['Task type'] || row.taskType || 'Task'],
+        ['Owner', row.detailFields?.Owner || row.owner || '—'],
+        ['Status', row.status || row.detailFields?.Status || 'Planned'],
+        ['Phase', row.phase || row.detailFields?.Phase || '—'],
+        ['Resource Type', row.detailFields?.['Resource Type'] || row.resourceType || '—'],
+        ['Impact', row.impact || row.detailFields?.Impact || '—'],
+        ['Start week', row.startWeek],
+        ['Start date', row.detailFields?.['Start date'] || row.startDateLabel || '—'],
+        ['Due date', row.detailFields?.['Due date'] || row.dueDateLabel || '—'],
+        ['Duration', row.detailFields?.Duration || row.durationLabel || '—'],
+        ['Milestone', row.detailFields?.Milestone || row.milestone || '—'],
+        ['Goal', row.detailFields?.Goal || row.goal || '—'],
+        ['Connector type', row.detailFields?.['Connector type'] || '—'],
+        ['Difficulty', row.detailFields?.Difficulty || '—'],
+        ['Dependencies', formatDetailDependencyLabel(row, allRowsById)],
+        ['Required permissions', row.detailFields?.['Required permissions'] || 'None'],
+        ['Parent task', row.detailFields?.['Parent task'] || (row.parentId ? (allRowsById.get(row.parentId)?.step || row.parentId) : '—')],
+        ['Effort (hours)', row.detailFields?.['Effort (hours)'] ?? row.effortHours ?? '—'],
+        ['Optional', row.detailFields?.Optional || 'No']
+    ]);
+
+    Object.entries(row.detailFields || {}).forEach(([field, value]) => {
+        if (value === undefined || value === null || value === '') return;
+        if (!baseEntries.has(field)) {
+            baseEntries.set(field, value);
+        }
+    });
+
+    return DETAIL_FIELDS.concat(DETAIL_EXTRA_FIELDS)
+        .concat([...baseEntries.keys()].filter((field) => !DETAIL_FIELDS.includes(field) && !DETAIL_EXTRA_FIELDS.includes(field)))
+        .filter((field, index, array) => array.indexOf(field) === index)
+        .map((field) => [field, baseEntries.get(field)])
+        .filter(([, value]) => value !== undefined && value !== null && value !== '')
+        .map(([field, value]) => ({
+            field,
+            value: field === 'Start week'
+                ? `Week ${formatWeekOffset(value)}`
+                : String(value)
+        }));
+}
+
+function getDetailChildRows(row = {}, allRowsById = new Map()) {
+    return [...allRowsById.values()]
+        .filter((candidate) => {
+            if (!candidate?.id || candidate.id === row.id) return false;
+            if (candidate.parentId === row.id) return true;
+            if (row.isSolutionGroup) {
+                return candidate.solutionGroupId === row.id && !candidate.parentId;
+            }
+            return false;
+        })
+        .sort((left, right) => {
+            const startDelta = (left.startWeek || 0) - (right.startWeek || 0);
+            if (startDelta !== 0) return startDelta;
+            return String(left.number || '').localeCompare(String(right.number || ''))
+                || String(left.step || '').localeCompare(String(right.step || ''));
+        });
+}
+
+function createSizingEditor(row, { onSaveSizing } = {}) {
+    const profile = row?.capacityProfile;
+    if (!row?.isSolutionGroup || !profile?.requiresSizing) {
+        return null;
+    }
+
+    const section = document.createElement('details');
+    section.className = 'gantt-detail-collapsible gantt-detail-sizing';
+    section.open = !profile.hasSavedSizing;
+
+    const summary = createElement('summary', 'gantt-detail-collapsible__summary');
+    summary.append(
+        createText('span', 'Sizing', 'gantt-detail-collapsible__title'),
+        createText(
+            'span',
+            profile.hasSavedSizing ? (profile.result?.badge || profile.summary) : 'Sizing needed',
+            profile.isDefault
+                ? 'gantt-detail-collapsible__badge is-estimate'
+                : 'gantt-detail-collapsible__badge'
+        )
+    );
+    section.appendChild(summary);
+
+    const body = createElement('div', 'gantt-detail-collapsible__body');
+    const intro = createText(
+        'p',
+        profile.type === 'windows'
+            ? profile.populationKind === 'wec'
+                ? 'Windows Forwarded Events always uses a dedicated WEC server pool.'
+                : 'Update the Windows server pool here to refresh related plan rows immediately.'
+            : 'Per-site firewall sizing. Update EPS here to refresh VM recommendations and task text.',
+        'gantt-detail-sizing__intro'
+    );
+    body.appendChild(intro);
+
+    const note = createText('p', '', 'gantt-detail-sizing__note');
+    body.appendChild(note);
+
+    const relationOptions = profile.type === 'windows' && profile.hasRelationChoice
+        ? profile.availableSharedPools || []
+        : [];
+    const draft = profile.values
+        ? { ...profile.values }
+        : createDefaultSizingDraft(profile.type);
+    let activeRelationMode = profile.hasRelationChoice
+        ? (profile.relation === 'additional' ? 'additional' : 'same')
+        : profile.relation || 'standalone';
+    let selectedSharedPoolId = profile.selectedSharedPoolId || relationOptions[0]?.poolId || '';
+    const sharedPoolDrafts = new Map(relationOptions.map((option) => [option.poolId, { ...option.values }]));
+    if (profile.poolId && activeRelationMode === 'same' && draft && Object.keys(draft).length > 0) {
+        sharedPoolDrafts.set(profile.poolId, { ...draft });
+    }
+    let additionalDraft = profile.additionalPoolDraft?.values
+        ? { ...profile.additionalPoolDraft.values }
+        : { ...draft };
+
+    const grid = createElement('div', 'gantt-detail-sizing__grid');
+    const messages = createElement('div', 'gantt-detail-sizing__messages');
+    const preview = createElement('div', 'gantt-detail-sizing__preview');
+    const docLink = document.createElement('a');
+    docLink.className = 'gantt-detail-sizing__doc-link';
+    docLink.target = '_blank';
+    docLink.rel = 'noopener noreferrer';
+
+    const fieldRefs = {};
+    const buildField = (labelText, input, helperText = '') => {
+        const field = createElement('label', 'gantt-detail-sizing__field');
+        field.appendChild(createText('span', labelText, 'gantt-detail-label'));
+        field.appendChild(input);
+        const helper = createText('span', helperText, 'gantt-detail-sizing__helper');
+        field.appendChild(helper);
+        return { field, helper };
+    };
+
+    const collectDraft = () => profile.type === 'windows'
+        ? {
+            servers: fieldRefs.servers?.value,
+            onPremPercent: fieldRefs.onPremPercent?.value,
+            isDefault: false
+        }
+        : {
+            eps: fieldRefs.eps?.value,
+            isDefault: false
+        };
+
+    const writeDraftToFields = (nextDraft = {}) => {
+        if (profile.type === 'windows') {
+            if (fieldRefs.servers instanceof HTMLInputElement) {
+                fieldRefs.servers.value = String(nextDraft?.servers ?? '');
+            }
+            if (fieldRefs.onPremPercent instanceof HTMLInputElement) {
+                fieldRefs.onPremPercent.value = String(nextDraft?.onPremPercent ?? '');
+            }
+            return;
+        }
+        if (fieldRefs.eps instanceof HTMLInputElement) {
+            fieldRefs.eps.value = String(nextDraft?.eps ?? '');
+        }
+    };
+
+    const getSelectedSharedOption = () => relationOptions.find((option) => option.poolId === selectedSharedPoolId) || relationOptions[0] || null;
+    const updateNoteText = () => {
+        if (profile.type !== 'windows') {
+            note.textContent = 'This sizing is specific to this firewall connector instance.';
+            return;
+        }
+        if (profile.populationKind === 'wec') {
+            note.textContent = 'WEC sizing never merges with Windows AMA host counts.';
+            return;
+        }
+        if (!profile.hasRelationChoice) {
+            note.textContent = 'Only one AMA connector is selected, so this connector owns its current server pool.';
+            return;
+        }
+        if (activeRelationMode === 'same') {
+            const sharedOption = getSelectedSharedOption();
+            const memberNames = sharedOption?.memberNames || profile.sharedWithNames || [];
+            note.textContent = memberNames.length > 0
+                ? `This connector shares the same AMA server pool as ${memberNames.join(', ')}.`
+                : 'This connector will reuse an existing AMA server pool.';
+            return;
+        }
+        note.textContent = 'This connector uses an additional AMA server pool. Switching back later keeps this separate draft available.';
+    };
+
+    let renderMessages = () => ({ isValid: false, result: null, fieldErrors: {}, warnings: [], advisories: [] });
+
+    if (profile.type === 'windows') {
+        if (profile.hasRelationChoice) {
+            const relationFieldset = document.createElement('fieldset');
+            relationFieldset.className = 'gantt-detail-sizing__relation';
+            const legend = createText('legend', relationOptions.length > 1 ? 'AMA server relationship' : 'Server relationship', 'gantt-detail-label');
+            relationFieldset.appendChild(legend);
+
+            const relationChoices = createElement('div', 'gantt-detail-sizing__relation-choices');
+            const sameLabelText = relationOptions.length > 1 ? 'Use existing AMA pool' : 'Same servers';
+            const additionalLabelText = 'Additional servers';
+
+            const createRelationChoice = (value, title, description) => {
+                const label = createElement('label', 'gantt-detail-sizing__relation-option');
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = `gantt-sizing-relation-${row.id}`;
+                input.value = value;
+                input.checked = activeRelationMode === value;
+                const copy = createElement('span', 'gantt-detail-sizing__relation-copy');
+                copy.append(
+                    createText('strong', title),
+                    createText('small', description)
+                );
+                label.append(input, copy);
+                relationChoices.appendChild(label);
+                return input;
+            };
+
+            const sameInput = createRelationChoice('same', sameLabelText, 'Reuse the same Windows AMA host estate.');
+            const additionalInput = createRelationChoice('additional', additionalLabelText, 'Track a separate host estate for this connector.');
+            relationFieldset.appendChild(relationChoices);
+
+            let sharedPoolField = null;
+            let sharedPoolSelect = null;
+            if (relationOptions.length > 1) {
+                sharedPoolSelect = createElement('select', 'gantt-detail-text-input gantt-detail-sizing__select');
+                relationOptions.forEach((option) => {
+                    const optionNode = document.createElement('option');
+                    optionNode.value = option.poolId;
+                    optionNode.textContent = option.label;
+                    sharedPoolSelect.appendChild(optionNode);
+                });
+                sharedPoolSelect.value = selectedSharedPoolId;
+                const sharedPoolFieldParts = buildField('Which AMA pool?', sharedPoolSelect, 'Choose the existing host pool this connector should share.');
+                sharedPoolField = sharedPoolFieldParts.field;
+                sharedPoolField.classList.add('gantt-detail-sizing__field--wide');
+                relationFieldset.appendChild(sharedPoolField);
+            }
+
+            const switchRelationMode = (nextMode) => {
+                if (nextMode === activeRelationMode) {
+                    updateNoteText();
+                    return;
+                }
+                const currentDraft = collectDraft();
+                if (activeRelationMode === 'same') {
+                    const currentPoolId = selectedSharedPoolId || getSelectedSharedOption()?.poolId;
+                    if (currentPoolId) {
+                        sharedPoolDrafts.set(currentPoolId, currentDraft);
+                    }
+                } else {
+                    additionalDraft = currentDraft;
+                }
+
+                activeRelationMode = nextMode;
+                if (activeRelationMode === 'same') {
+                    const sharedOption = getSelectedSharedOption();
+                    if (sharedOption?.poolId) {
+                        selectedSharedPoolId = sharedOption.poolId;
+                    }
+                    writeDraftToFields(sharedPoolDrafts.get(selectedSharedPoolId) || sharedOption?.values || draft);
+                } else {
+                    writeDraftToFields(additionalDraft || draft);
+                }
+                if (sharedPoolField instanceof HTMLElement) {
+                    sharedPoolField.hidden = activeRelationMode !== 'same';
+                }
+                if (sharedPoolSelect instanceof HTMLSelectElement) {
+                    sharedPoolSelect.value = selectedSharedPoolId;
+                }
+                updateNoteText();
+                renderMessages(collectDraft());
+            };
+
+            sameInput.addEventListener('change', () => {
+                if (sameInput.checked) {
+                    switchRelationMode('same');
+                }
+            });
+            additionalInput.addEventListener('change', () => {
+                if (additionalInput.checked) {
+                    switchRelationMode('additional');
+                }
+            });
+            if (sharedPoolSelect instanceof HTMLSelectElement) {
+                sharedPoolSelect.addEventListener('change', () => {
+                    if (activeRelationMode === 'same') {
+                        const previousPoolId = selectedSharedPoolId;
+                        if (previousPoolId) {
+                            sharedPoolDrafts.set(previousPoolId, collectDraft());
+                        }
+                    }
+                    selectedSharedPoolId = sharedPoolSelect.value;
+                    const sharedOption = getSelectedSharedOption();
+                    writeDraftToFields(sharedPoolDrafts.get(selectedSharedPoolId) || sharedOption?.values || draft);
+                    updateNoteText();
+                    renderMessages(collectDraft());
+                });
+                sharedPoolField.hidden = activeRelationMode !== 'same';
+            }
+
+            body.appendChild(relationFieldset);
+        }
+
+        const serversInput = createElement('input', 'gantt-detail-text-input gantt-detail-sizing__input');
+        serversInput.type = 'number';
+        serversInput.min = '0';
+        serversInput.step = '1';
+        serversInput.inputMode = 'numeric';
+        serversInput.value = String(draft.servers ?? '');
+        const splitInput = createElement('input', 'gantt-detail-text-input gantt-detail-sizing__input');
+        splitInput.type = 'number';
+        splitInput.min = '0';
+        splitInput.max = '100';
+        splitInput.step = '1';
+        splitInput.inputMode = 'numeric';
+        splitInput.value = String(draft.onPremPercent ?? '');
+        const serversField = buildField(profile.serverCountLabel || 'How many Windows servers?', serversInput);
+        const splitField = buildField('What split — on-prem vs. Azure?', splitInput, `Azure: ${Math.max(0, 100 - (Number(draft.onPremPercent) || 0))}%`);
+        fieldRefs.servers = serversInput;
+        fieldRefs.onPremPercent = splitInput;
+        fieldRefs.onPremHelper = splitField.helper;
+        grid.append(serversField.field, splitField.field);
+    } else {
+        const epsInput = createElement('input', 'gantt-detail-text-input gantt-detail-sizing__input');
+        epsInput.type = 'number';
+        epsInput.min = '0';
+        epsInput.step = '100';
+        epsInput.inputMode = 'numeric';
+        epsInput.value = String(draft.eps ?? '');
+        const epsField = buildField('What is the expected EPS for this firewall?', epsInput, 'Per site / connector instance');
+        fieldRefs.eps = epsInput;
+        grid.appendChild(epsField.field);
+    }
+
+    body.append(grid, messages, preview, docLink);
+
+    const actions = createElement('div', 'gantt-detail-editor-actions');
+    const saveButton = createElement('button', 'app-button app-button--accent gantt-detail-action-button');
+    saveButton.type = 'button';
+    saveButton.textContent = 'Save sizing';
+    const defaultsButton = createElement('button', 'app-button app-button--subtle gantt-detail-action-button');
+    defaultsButton.type = 'button';
+    defaultsButton.textContent = "I don't know — use defaults";
+    actions.append(saveButton, defaultsButton);
+    body.appendChild(actions);
+    section.appendChild(body);
+
+    let debounceHandle = 0;
+    renderMessages = (nextDraft) => {
+        const sizingMessages = getSizingResultMessages(profile.type, nextDraft, { populationKind: profile.populationKind });
+        messages.replaceChildren();
+        preview.replaceChildren();
+
+        Object.entries(fieldRefs).forEach(([fieldKey, field]) => {
+            if (!(field instanceof HTMLInputElement)) return;
+            const isFieldValid = !sizingMessages.fieldErrors[fieldKey];
+            field.classList.toggle('is-invalid', !isFieldValid);
+            field.setAttribute('aria-invalid', isFieldValid ? 'false' : 'true');
+        });
+
+        if (fieldRefs.onPremHelper) {
+            const onPremPercent = Number(nextDraft.onPremPercent) || 0;
+            fieldRefs.onPremHelper.textContent = `Azure: ${Math.max(0, 100 - onPremPercent)}%`;
+        }
+
+        if (Object.keys(sizingMessages.fieldErrors).length > 0) {
+            Object.values(sizingMessages.fieldErrors).forEach((message) => {
+                messages.appendChild(createText('p', message, 'gantt-detail-sizing__message is-error'));
+            });
+            docLink.hidden = true;
+            return sizingMessages;
+        }
+
+        sizingMessages.warnings.forEach((message) => {
+            messages.appendChild(createText('p', message, 'gantt-detail-sizing__message is-warning'));
+        });
+        sizingMessages.advisories.forEach((message) => {
+            messages.appendChild(createText('p', message, 'gantt-detail-sizing__message is-advisory'));
+        });
+
+        const detailLines = getSizingDetailLines({ ...profile, result: sizingMessages.result });
+        detailLines.forEach((line, index) => {
+            preview.appendChild(createText(index === 0 ? 'strong' : 'p', line, index === 0 ? 'gantt-detail-sizing__result' : 'gantt-detail-sizing__line'));
+        });
+
+        docLink.href = sizingMessages.result?.docUrl || '#';
+        docLink.textContent = sizingMessages.result?.docLabel || 'Sizing guidance';
+        docLink.hidden = !sizingMessages.result?.docUrl;
+        return sizingMessages;
+    };
+
+    const schedulePreviewRefresh = () => {
+        window.clearTimeout(debounceHandle);
+        debounceHandle = window.setTimeout(() => {
+            renderMessages(collectDraft());
+        }, 300);
+    };
+
+    const submitDraft = (nextDraft) => {
+        const sizingMessages = renderMessages(nextDraft);
+        if (!sizingMessages.isValid || !sizingMessages.result) {
+            return;
+        }
+        onSaveSizing?.(row, profile.type, nextDraft, {
+            relation: profile.hasRelationChoice
+                ? (activeRelationMode === 'additional' ? 'additional' : 'same')
+                : profile.relation,
+            targetPoolId: profile.hasRelationChoice && activeRelationMode === 'same'
+                ? selectedSharedPoolId
+                : ''
+        });
+    };
+
+    Object.values(fieldRefs).forEach((field) => {
+        if (!(field instanceof HTMLInputElement)) return;
+        field.addEventListener('input', schedulePreviewRefresh);
+        field.addEventListener('change', schedulePreviewRefresh);
+        field.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter') {
+                event.preventDefault();
+                submitDraft(collectDraft());
+            }
+        });
+    });
+
+    saveButton.addEventListener('click', () => submitDraft(collectDraft()));
+    defaultsButton.addEventListener('click', () => {
+        const defaultDraft = createDefaultSizingDraft(profile.type);
+        writeDraftToFields(defaultDraft);
+        submitDraft(defaultDraft);
+    });
+
+    updateNoteText();
+    renderMessages(draft);
+    return section;
+}function renderDetailPanel(
     target,
     row,
     {
+        allRowsById = new Map(),
         onClose,
         onSaveDuration,
         onResetDuration,
         onSaveField,
+        onSaveSizing,
         onAddTopLevelTask,
         onAddSubtask,
         onDeleteTask,
@@ -5011,31 +6584,35 @@ function renderDetailPanel(
             ? 'gantt-detail-pill gantt-detail-pill--custom'
             : 'gantt-detail-pill gantt-detail-pill--default'
     ));
+    if (row.capacityProfile?.hasSavedSizing) {
+        meta.appendChild(createText(
+            'span',
+            row.capacityProfile.result?.badge || row.capacityProfile.summary,
+            row.capacityProfile.isDefault
+                ? 'gantt-detail-pill gantt-detail-pill--default gantt-detail-pill--italic'
+                : 'gantt-detail-pill'
+        ));
+    }
 
     const header = createElement('div', 'gantt-detail-header');
     header.append(
         meta,
         createText('h3', [row.number, row.step].filter(Boolean).join(' '), 'gantt-detail-title'),
-        createText('p', row.task, 'gantt-detail-description')
+        createText('p', row.description || row.task, 'gantt-detail-description')
     );
 
+    const detailFieldEntries = buildDetailFieldEntries(row, allRowsById);
     const fieldGrid = createElement('div', 'gantt-detail-fields');
-    DETAIL_FIELDS.forEach((field) => {
-        const rawValue = row.detailFields[field];
-        const formattedValue = field === 'Duration'
-            ? String(rawValue)
-            : field === 'Start week'
-                ? `Week ${formatWeekOffset(rawValue)}`
-                : rawValue;
+    detailFieldEntries.forEach(({ field, value }) => {
         const fieldCard = createElement(
             'div',
-            ['Milestone', 'Goal'].includes(field)
+            ['Milestone', 'Goal', 'Required permissions', 'Dependencies'].includes(field)
                 ? 'gantt-detail-field gantt-detail-field--wide'
                 : 'gantt-detail-field'
         );
         fieldCard.append(
             createText('span', field, 'gantt-detail-label'),
-            createText('span', String(formattedValue), 'gantt-detail-value')
+            createText('span', String(value), 'gantt-detail-value')
         );
         fieldGrid.appendChild(fieldCard);
     });
@@ -5070,37 +6647,183 @@ function renderDetailPanel(
         actionBar.appendChild(skipButton);
     }
 
-    const descriptionEditor = createElement('section', 'gantt-detail-editor');
-    descriptionEditor.appendChild(createText('h4', 'Description', 'gantt-detail-extra-title'));
+    const isTaskFieldEditingEnabled = !row.isSolutionGroup;
+    const dependencyOptions = [...allRowsById.values()]
+        .filter((candidate) => candidate?.id && candidate.id !== row.id && !candidate.isSolutionGroup)
+        .sort((left, right) => {
+            const startDelta = (left.startWeek || 0) - (right.startWeek || 0);
+            if (startDelta !== 0) return startDelta;
+            return String(left.number || '').localeCompare(String(right.number || ''))
+                || String(left.step || '').localeCompare(String(right.step || ''));
+        });
+    const selectedDependencyIds = new Set(Array.isArray(row.dependencies) ? row.dependencies : []);
+    const childRows = getDetailChildRows(row, allRowsById);
+
+    const fieldEditor = createElement('section', 'gantt-detail-editor gantt-detail-editor--form');
+    fieldEditor.appendChild(createText('h4', isTaskFieldEditingEnabled ? 'Edit task' : 'Edit details', 'gantt-detail-extra-title'));
+
+    const formGrid = createElement('div', 'gantt-detail-form-grid');
+
+    const nameGroup = createElement('label', 'gantt-detail-form-field gantt-detail-form-field--wide');
+    nameGroup.appendChild(createText('span', 'Name', 'gantt-detail-label'));
+    const nameField = createElement('input', 'gantt-detail-text-input');
+    nameField.type = 'text';
+    nameField.maxLength = '120';
+    nameField.value = row.step || '';
+    nameField.placeholder = 'Task name';
+    nameField.setAttribute('aria-label', `Task name for ${row.step}`);
+    nameGroup.appendChild(nameField);
+    formGrid.appendChild(nameGroup);
+
+    const ownerGroup = createElement('label', 'gantt-detail-form-field');
+    ownerGroup.appendChild(createText('span', 'Assigned to', 'gantt-detail-label'));
+    const ownerField = createElement('input', 'gantt-detail-text-input');
+    ownerField.type = 'text';
+    ownerField.value = normalizeOwnerLabel(row.owner, { allowEmpty: true, preserveCustom: true });
+    ownerField.placeholder = 'Assigned owner';
+    ownerField.disabled = !isTaskFieldEditingEnabled;
+    ownerField.setAttribute('aria-label', `Assigned owner for ${row.step}`);
+    const ownerListId = `gantt-detail-owner-options-${String(row.id || 'task').replace(/[^a-zA-Z0-9_-]/g, '-')}`;
+    ownerField.setAttribute('list', ownerListId);
+    ownerGroup.appendChild(ownerField);
+    const ownerDatalist = document.createElement('datalist');
+    ownerDatalist.id = ownerListId;
+    OWNER_OPTIONS.forEach((ownerOption) => {
+        const option = document.createElement('option');
+        option.value = ownerOption;
+        ownerDatalist.appendChild(option);
+    });
+    ownerGroup.appendChild(ownerDatalist);
+    formGrid.appendChild(ownerGroup);
+
+    const statusGroup = createElement('label', 'gantt-detail-form-field');
+    statusGroup.appendChild(createText('span', 'Status', 'gantt-detail-label'));
+    const statusField = createElement('select', 'gantt-detail-text-input gantt-detail-select');
+    statusField.disabled = !isTaskFieldEditingEnabled;
+    statusField.setAttribute('aria-label', `Status for ${row.step}`);
+    STATUS_OPTIONS.forEach((statusOption) => {
+        const option = document.createElement('option');
+        option.value = statusOption;
+        option.textContent = statusOption;
+        option.selected = normalizeStatusLabel(row.status) === statusOption;
+        statusField.appendChild(option);
+    });
+    statusGroup.appendChild(statusField);
+    formGrid.appendChild(statusGroup);
+
+    const dependencyGroup = createElement('div', 'gantt-detail-form-field gantt-detail-form-field--wide');
+    dependencyGroup.appendChild(createText('span', 'Dependencies', 'gantt-detail-label'));
+    const dependencyHint = createText(
+        'p',
+        isTaskFieldEditingEnabled
+            ? (dependencyOptions.length > 0
+                ? 'Select predecessor tasks. Update dates separately if you want to move the schedule.'
+                : 'No other task rows are available to use as dependencies yet.')
+            : 'Dependencies can be edited on task rows.',
+        'gantt-detail-input-hint'
+    );
+    dependencyGroup.appendChild(dependencyHint);
+    const dependencyList = createElement('div', 'gantt-detail-checkbox-list');
+    if (dependencyOptions.length > 0) {
+        dependencyOptions.forEach((dependencyRow) => {
+            const dependencyLabel = createElement('label', 'gantt-detail-checkbox');
+            const dependencyInput = document.createElement('input');
+            dependencyInput.type = 'checkbox';
+            dependencyInput.value = dependencyRow.id;
+            dependencyInput.checked = selectedDependencyIds.has(dependencyRow.id);
+            dependencyInput.disabled = !isTaskFieldEditingEnabled;
+            dependencyInput.setAttribute('aria-label', `Dependency ${dependencyRow.step}`);
+            dependencyLabel.append(
+                dependencyInput,
+                createText('span', [dependencyRow.number, dependencyRow.step].filter(Boolean).join(' '), 'gantt-detail-checkbox-label')
+            );
+            dependencyList.appendChild(dependencyLabel);
+        });
+    }
+    dependencyGroup.appendChild(dependencyList);
+    formGrid.appendChild(dependencyGroup);
+
+    const descriptionGroup = createElement('label', 'gantt-detail-form-field gantt-detail-form-field--wide');
+    descriptionGroup.appendChild(createText('span', 'Description', 'gantt-detail-label'));
     const descriptionField = createElement('textarea', 'gantt-detail-textarea');
     descriptionField.rows = 5;
     descriptionField.placeholder = 'Add implementation notes, context, or customer-specific details.';
     descriptionField.value = row.description || '';
     descriptionField.setAttribute('aria-label', `Description for ${row.step}`);
-    descriptionEditor.appendChild(descriptionField);
+    descriptionGroup.appendChild(descriptionField);
+    formGrid.appendChild(descriptionGroup);
 
-    const descriptionActions = createElement('div', 'gantt-detail-editor-actions');
-    const saveDescriptionButton = createElement('button', 'app-button app-button--subtle gantt-detail-action-button');
-    saveDescriptionButton.type = 'button';
-    saveDescriptionButton.textContent = 'Save description';
-    saveDescriptionButton.addEventListener('click', () => {
-        onSaveField?.(row.id, { description: descriptionField.value });
-    });
-    const resetDescriptionButton = createElement('button', 'app-button app-button--subtle gantt-detail-action-button');
-    resetDescriptionButton.type = 'button';
-    resetDescriptionButton.textContent = 'Reset description';
-    resetDescriptionButton.addEventListener('click', () => {
+    fieldEditor.appendChild(formGrid);
+
+    const collectFieldPayload = ({ resetToDefaults = false } = {}) => {
+        const payload = {
+            step: resetToDefaults ? (row.defaultStep || row.step || '') : nameField.value,
+            description: resetToDefaults ? (row.defaultDescription || '') : descriptionField.value
+        };
+
+        if (isTaskFieldEditingEnabled) {
+            payload.owner = resetToDefaults
+                ? normalizeOwnerLabel(row.defaultOwner, { allowEmpty: true, preserveCustom: true })
+                : ownerField.value;
+            payload.status = resetToDefaults
+                ? normalizeStatusLabel(row.defaultStatus || 'Planned')
+                : statusField.value;
+            payload.dependencies = resetToDefaults
+                ? [...(Array.isArray(row.defaultDependencies) ? row.defaultDependencies : [])]
+                : [...dependencyList.querySelectorAll('input[type="checkbox"]:checked')].map((input) => input.value);
+        }
+
+        return payload;
+    };
+
+    const fieldActions = createElement('div', 'gantt-detail-editor-actions');
+    const saveFieldButton = createElement('button', 'app-button app-button--subtle gantt-detail-action-button');
+    saveFieldButton.type = 'button';
+    saveFieldButton.textContent = 'Save changes';
+    saveFieldButton.addEventListener('click', () => onSaveField?.(row.id, collectFieldPayload()));
+    const resetFieldButton = createElement('button', 'app-button app-button--subtle gantt-detail-action-button');
+    resetFieldButton.type = 'button';
+    resetFieldButton.textContent = 'Reset fields';
+    resetFieldButton.addEventListener('click', () => {
+        nameField.value = row.defaultStep || row.step || '';
         descriptionField.value = row.defaultDescription || '';
-        onSaveField?.(row.id, { description: row.defaultDescription || '' });
+        if (isTaskFieldEditingEnabled) {
+            ownerField.value = normalizeOwnerLabel(row.defaultOwner, { allowEmpty: true, preserveCustom: true });
+            statusField.value = normalizeStatusLabel(row.defaultStatus || 'Planned');
+            const defaultDependencyIds = new Set(Array.isArray(row.defaultDependencies) ? row.defaultDependencies : []);
+            dependencyList.querySelectorAll('input[type="checkbox"]').forEach((input) => {
+                input.checked = defaultDependencyIds.has(input.value);
+            });
+        }
+        onSaveField?.(row.id, collectFieldPayload({ resetToDefaults: true }));
     });
-    descriptionActions.append(saveDescriptionButton, resetDescriptionButton);
-    descriptionEditor.appendChild(descriptionActions);
+    fieldActions.append(saveFieldButton, resetFieldButton);
+    fieldEditor.appendChild(fieldActions);
 
     const extra = createElement('div', 'gantt-detail-extra');
     if (actionBar.childElementCount > 0) {
         extra.appendChild(actionBar);
     }
-    extra.appendChild(descriptionEditor);
+    if (childRows.length) {
+        const childSection = createElement('div', 'gantt-detail-extra-section');
+        childSection.appendChild(createText('h4', row.isSolutionGroup ? 'Tasks in this solution' : 'Subtasks', 'gantt-detail-extra-title'));
+        const childList = createElement('div', 'gantt-detail-subtask-list');
+        childRows.forEach((childRow) => {
+            const item = createElement('div', 'gantt-detail-subtask-item');
+            item.append(
+                createText('strong', [childRow.number, childRow.step].filter(Boolean).join(' '), 'gantt-detail-subtask-title'),
+                createText('span', `${childRow.startDateLabel} → ${childRow.dueDateLabel} · ${childRow.status}`, 'gantt-detail-subtask-meta')
+            );
+            childList.appendChild(item);
+        });
+        childSection.appendChild(childList);
+        extra.appendChild(childSection);
+    }
+    const sizingEditor = createSizingEditor(row, { onSaveSizing });
+    if (sizingEditor) {
+        extra.appendChild(sizingEditor);
+    }
+    extra.appendChild(fieldEditor);
     if (row.requiredRoles?.length) {
         const rolesSection = createElement('div', 'gantt-detail-extra-section');
         const rolesList = createElement('ul', 'gantt-detail-role-list');
@@ -5113,13 +6836,13 @@ function renderDetailPanel(
         );
         extra.appendChild(rolesSection);
     }
-    DETAIL_EXTRA_FIELDS
-        .filter((field) => row.detailFields[field] !== undefined && row.detailFields[field] !== '')
-        .forEach((field) => {
+    Object.entries(row.detailFields || {})
+        .filter(([field, value]) => value !== undefined && value !== null && value !== '' && !DETAIL_FIELDS.includes(field) && !DETAIL_EXTRA_FIELDS.includes(field))
+        .forEach(([field, value]) => {
             const section = createElement('div', 'gantt-detail-extra-section');
             section.append(
                 createText('h4', field, 'gantt-detail-extra-title'),
-                createText('p', String(row.detailFields[field]), 'gantt-detail-extra-copy')
+                createText('p', String(value), 'gantt-detail-extra-copy')
             );
             extra.appendChild(section);
         });
@@ -5160,12 +6883,31 @@ function createMobileList(rows, onSelect, { collapsedSummaryIds = new Set(), col
         if (row.isSummary) {
             button.setAttribute('aria-expanded', collapsedSummaryIds.has(row.id) ? 'false' : 'true');
         }
-        if (row.isSolutionGroup) {
-            button.setAttribute('aria-expanded', collapsedSolutionGroupIds.has(row.id) ? 'false' : 'true');
-        }
 
         const titleRow = createElement('span', 'gantt-mobile-item-title-row');
-        titleRow.appendChild(createText('span', getRowDisplayLabel(row, collapsedSummaryIds, collapsedSolutionGroupIds), 'gantt-mobile-item-title'));
+        if (row.isSolutionGroup) {
+            const solutionGroupLabel = createElement('span', 'gantt-solution-group-title-inline');
+            solutionGroupLabel.appendChild(createText('span', getRowDisplayLabel(row, collapsedSummaryIds, collapsedSolutionGroupIds), 'gantt-mobile-item-title'));
+
+            const actionButton = createElement('button', 'gantt-solution-group-action-button gantt-solution-group-action-button--mobile');
+            actionButton.type = 'button';
+            actionButton.textContent = getSolutionGroupActionLabel(collapsedSolutionGroupIds.has(row.id));
+            actionButton.title = `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`;
+            actionButton.setAttribute('aria-label', `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`);
+            actionButton.setAttribute('aria-expanded', collapsedSolutionGroupIds.has(row.id) ? 'false' : 'true');
+            bindPrimaryActivation(actionButton, () => {
+                setActiveTask('');
+                onToggleSolutionGroup?.(row.id);
+            });
+            solutionGroupLabel.appendChild(actionButton);
+            titleRow.appendChild(solutionGroupLabel);
+        } else {
+            titleRow.appendChild(createText('span', getRowDisplayLabel(row, collapsedSummaryIds, collapsedSolutionGroupIds), 'gantt-mobile-item-title'));
+        }
+        const capacityBadgeLabel = getRowCapacityBadgeLabel(row);
+        if (capacityBadgeLabel) {
+            titleRow.appendChild(createText('span', capacityBadgeLabel, getRowCapacityBadgeClassName(row).replace('gantt-table-badge', 'gantt-mobile-custom-badge')));
+        }
         const badgeLabel = getCustomDurationBadgeLabel(row);
         if (badgeLabel) {
             titleRow.appendChild(createText('span', badgeLabel, 'gantt-mobile-custom-badge'));
@@ -5177,11 +6919,6 @@ function createMobileList(rows, onSelect, { collapsedSummaryIds = new Set(), col
         );
 
         button.addEventListener('click', () => {
-            if (row.isSolutionGroup && typeof onToggleSolutionGroup === 'function') {
-                setActiveTask('');
-                onToggleSolutionGroup(row.id);
-                return;
-            }
             if (row.isSummary && typeof onToggleSummary === 'function') {
                 setActiveTask('');
                 onToggleSummary(row.id);
@@ -5195,6 +6932,153 @@ function createMobileList(rows, onSelect, { collapsedSummaryIds = new Set(), col
     });
 
     return { list, setActiveTask };
+}
+
+function createGanttSidebar(
+    rows,
+    onSelect,
+    {
+        collapsedSummaryIds = new Set(),
+        collapsedSolutionGroupIds = new Set(),
+        onToggleSummary,
+        onToggleSolutionGroup,
+        onHoverTask
+    } = {}
+) {
+    const panel = createElement('section', 'gantt-sidebar-panel');
+    const header = createElement('div', 'gantt-sidebar-header');
+    header.append(
+        createText('div', 'Task', 'gantt-sidebar-cell gantt-sidebar-header-cell gantt-sidebar-header-cell--task'),
+        createText('div', 'Dates', 'gantt-sidebar-cell gantt-sidebar-header-cell gantt-sidebar-header-cell--dates')
+    );
+    const scroll = createElement('div', 'gantt-sidebar-scroll');
+    const surface = createElement('div', 'gantt-sidebar-surface');
+    scroll.appendChild(surface);
+    panel.append(header, scroll);
+
+    const rowElements = new Map();
+    const getEventElementTarget = (event) => {
+        if (event?.target instanceof Element) {
+            return event.target;
+        }
+        return event?.target?.parentElement || null;
+    };
+
+    const updateLayout = (layoutMetrics = [], chartHeight = 0) => {
+        const metricsById = new Map((layoutMetrics || []).map((metric) => [metric.id, metric]));
+        const surfaceHeight = Math.max(Number(chartHeight) || 0, rows.length * GANTT_TABLE_ROW_FALLBACK_HEIGHT, 180);
+        surface.style.height = `${surfaceHeight}px`;
+        surface.replaceChildren();
+        rowElements.clear();
+
+        rows.forEach((row, index) => {
+            const metric = metricsById.get(row.id);
+            const top = Number.isFinite(metric?.top) ? metric.top : index * GANTT_TABLE_ROW_FALLBACK_HEIGHT;
+            const height = Math.max(38, Number.isFinite(metric?.height) ? metric.height : GANTT_TABLE_ROW_FALLBACK_HEIGHT);
+            const previousRow = rows[index - 1];
+            const nextRow = rows[index + 1];
+            const isFirstSubtask = Boolean(row.parentId && previousRow?.parentId !== row.parentId);
+            const isLastSubtask = Boolean(row.parentId && nextRow?.parentId !== row.parentId);
+
+            const rowElement = createElement('div', 'gantt-sidebar-row');
+            if (row.isSummary) rowElement.classList.add('gantt-sidebar-row--summary');
+            if (row.isSolutionGroup) rowElement.classList.add('gantt-sidebar-row--solution-group');
+            if (row.parentId) {
+                rowElement.classList.add('gantt-sidebar-row--subtask');
+                rowElement.dataset.parentId = row.parentId;
+                if (isFirstSubtask) rowElement.classList.add('gantt-sidebar-row--subtask-first');
+                if (isLastSubtask) rowElement.classList.add('gantt-sidebar-row--subtask-last');
+            }
+            if ((row.isSummary && collapsedSummaryIds.has(row.id)) || (row.isSolutionGroup && collapsedSolutionGroupIds.has(row.id))) {
+                rowElement.classList.add('is-collapsed');
+            }
+            rowElement.dataset.taskId = row.id;
+            rowElement.style.top = `${top}px`;
+            rowElement.style.height = `${height}px`;
+            rowElement.tabIndex = 0;
+            rowElement.setAttribute('role', 'button');
+            rowElement.setAttribute('aria-label', `Open details for ${row.step}`);
+
+            const taskCell = createElement('div', 'gantt-sidebar-cell gantt-sidebar-cell--task');
+            const titleRow = createElement('div', 'gantt-sidebar-title-row');
+            if (row.isSolutionGroup) {
+                const toggle = createElement('button', 'gantt-sidebar-toggle gantt-sidebar-toggle--group');
+                toggle.type = 'button';
+                toggle.textContent = collapsedSolutionGroupIds.has(row.id) ? SOLUTION_GROUP_COLLAPSED_PREFIX : SOLUTION_GROUP_EXPANDED_PREFIX;
+                toggle.setAttribute('aria-label', `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`);
+                bindPrimaryActivation(toggle, () => onToggleSolutionGroup?.(row.id));
+                titleRow.appendChild(toggle);
+            } else if (row.isSummary) {
+                const toggle = createElement('button', 'gantt-sidebar-toggle');
+                toggle.type = 'button';
+                toggle.textContent = collapsedSummaryIds.has(row.id) ? SUMMARY_COLLAPSED_PREFIX : SUMMARY_EXPANDED_PREFIX;
+                toggle.setAttribute('aria-label', `${collapsedSummaryIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`);
+                bindPrimaryActivation(toggle, () => onToggleSummary?.(row.id));
+                titleRow.appendChild(toggle);
+            } else {
+                titleRow.appendChild(createElement('span', 'gantt-sidebar-toggle-spacer'));
+            }
+
+            const titleStack = createElement('div', 'gantt-sidebar-title-stack');
+            titleStack.append(
+                createText('span', row.number, 'gantt-sidebar-row-number'),
+                createText('span', row.step, 'gantt-sidebar-task-label')
+            );
+            titleRow.appendChild(titleStack);
+            taskCell.appendChild(titleRow);
+
+            const datesCell = createElement('div', 'gantt-sidebar-cell gantt-sidebar-cell--dates');
+            datesCell.append(
+                createText('span', row.startDateLabel, 'gantt-sidebar-date gantt-sidebar-date--start'),
+                createText('span', '→', 'gantt-sidebar-date-separator'),
+                createText('span', row.dueDateLabel, 'gantt-sidebar-date gantt-sidebar-date--due')
+            );
+
+            rowElement.append(taskCell, datesCell);
+
+            const activateRow = (event) => {
+                const targetElement = getEventElementTarget(event);
+                if (targetElement?.closest?.('.gantt-sidebar-toggle')) {
+                    return;
+                }
+                onSelect?.(row.id);
+            };
+
+            rowElement.addEventListener('click', activateRow);
+            rowElement.addEventListener('keydown', (event) => {
+                if (event.key === 'Enter' || event.key === ' ') {
+                    event.preventDefault();
+                    activateRow(event);
+                }
+            });
+            rowElement.addEventListener('mouseenter', () => onHoverTask?.(row.id, true));
+            rowElement.addEventListener('mouseleave', () => onHoverTask?.(row.id, false));
+            rowElement.addEventListener('focus', () => onHoverTask?.(row.id, true));
+            rowElement.addEventListener('blur', () => onHoverTask?.(row.id, false));
+
+            rowElements.set(row.id, rowElement);
+            surface.appendChild(rowElement);
+        });
+    };
+
+    updateLayout();
+
+    return {
+        panel,
+        scroll,
+        updateLayout,
+        setActiveTask(taskId = '') {
+            rowElements.forEach((rowElement, rowId) => {
+                rowElement.classList.toggle('is-active', rowId === taskId);
+            });
+        },
+        setHoveredTask(taskId = '', isHovered = false) {
+            const rowElement = rowElements.get(taskId);
+            if (rowElement) {
+                rowElement.classList.toggle('is-hovered', Boolean(isHovered));
+            }
+        }
+    };
 }
 
 function createTabButton(id, label, isActive) {
@@ -5219,10 +7103,11 @@ function createTabPanel(id, isActive) {
     return panel;
 }
 
-function renderGanttTab(panel, solutions) {
+function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
     let planData = buildGanttPlanData(solutions);
     let taskMap = new Map(planData.rows.map((row) => [row.id, row]));
     currentGanttPlanData = planData;
+
     const collapsedSummaryIds = new Set();
     const collapsedSolutionGroupIds = new Set(
         planData.rows
@@ -5230,41 +7115,53 @@ function renderGanttTab(panel, solutions) {
             .map((row) => row.id)
     );
     const ganttInstanceRef = { current: null, viewMode: GANTT_VIEW_MODES[0].name };
+    let activeTaskId = '';
+    let activeTab = getStoredPlannerActiveTab();
+    const viewsReady = { table: false, gantt: false };
+    const viewDirty = { table: true, gantt: true };
 
-    const shell = createElement('div', 'gantt-planner-shell');
-    const summaryHost = createElement('div', 'gantt-summary-host');
-    shell.appendChild(summaryHost);
+    const tabShell = createElement('div', 'planner-tabs');
+    const tabList = createElement('div', 'planner-tab-list');
+    tabList.setAttribute('role', 'tablist');
+    tabList.setAttribute('aria-label', 'Planner views');
 
-    const controls = createElement('div', 'gantt-toolbar');
-    const toolbarCopy = createText(
-        'p',
-        'Click any task name, owner, duration, status, date, or impact value to edit it inline. Use + Add task for connector-level work, the row + action for subtasks, and the detail panel to update descriptions.',
-        'gantt-toolbar-copy'
-    );
-    const toolbarActions = createElement('div', 'gantt-toolbar-actions');
-    const addTaskButton = createElement('button', 'app-button app-button--subtle gantt-toolbar-add');
-    addTaskButton.type = 'button';
-    addTaskButton.textContent = '+ Add task';
-    const toolbarStatus = createElement('span', 'gantt-toolbar-status');
-    const resetAllButton = createElement('button', 'app-button gantt-toolbar-reset');
-    resetAllButton.type = 'button';
-    resetAllButton.textContent = 'Reset all custom schedule';
-    toolbarActions.append(addTaskButton, toolbarStatus, resetAllButton, createViewModeToggles(ganttInstanceRef));
-    controls.append(toolbarCopy, toolbarActions);
-    shell.appendChild(controls);
+    const tableTabButton = createTabButton('planner-table-panel', '📋 Table', activeTab === 'table');
+    const ganttTabButton = createTabButton('planner-gantt-panel', '📊 Gantt', activeTab === 'gantt');
+    tabList.append(tableTabButton, ganttTabButton);
 
-    const body = createElement('div', 'gantt-layout');
-    const tableHost = createElement('div', 'gantt-table-column-host');
-    const divider = createElement('div', 'gantt-split-divider');
+    const tablePanel = createTabPanel('planner-table-panel', activeTab === 'table');
+    const ganttPanel = createTabPanel('planner-gantt-panel', activeTab === 'gantt');
+
+    const tableShell = createElement('div', 'planner-table-shell');
+    const tableSummaryHost = createElement('div', 'gantt-summary-host');
+    const tableHelper = createText('p', 'Spreadsheet view for quick edits. Click any task row to open the detail panel, edit owners and status inline, or use the toolbar + Add task action to add connector-level work.', 'gantt-toolbar-copy');
+    const tableHost = createElement('div', 'planner-table-host');
+    tableShell.append(tableSummaryHost, tableHelper, tableHost);
+    tablePanel.appendChild(tableShell);
+
+    const ganttShell = createElement('div', 'gantt-planner-shell gantt-planner-shell--timeline');
+    const ganttSummaryHost = createElement('div', 'gantt-summary-host');
+    const ganttControls = createElement('div', 'gantt-toolbar');
+    const ganttToolbarCopy = createText('p', 'Timeline-only view with dependency arrows and headers. Click any bar to open the task detail panel on the right.', 'gantt-toolbar-copy');
+    const ganttToolbarActions = createElement('div', 'gantt-toolbar-actions');
+    const zoomControls = createViewModeToggles(ganttInstanceRef);
+    const autoFitButton = createElement('button', 'app-button app-button--subtle gantt-toolbar-fit');
+    autoFitButton.type = 'button';
+    autoFitButton.textContent = 'Auto-fit';
+    ganttToolbarActions.append(zoomControls.field, autoFitButton);
+    ganttControls.append(ganttToolbarCopy, ganttToolbarActions);
+
+    const ganttBody = createElement('div', 'gantt-layout gantt-layout--timeline-only');
+    const sidebarHost = createElement('div', 'gantt-sidebar-column');
     const chartColumn = createElement('div', 'gantt-chart-column');
     const chartScroll = createElement('div', 'gantt-chart-scroll');
     const chartHost = createElement('div', 'gantt-chart-host');
     const mobileListHost = createElement('div', 'gantt-mobile-list-host');
     chartScroll.appendChild(chartHost);
     chartColumn.append(chartScroll, mobileListHost);
-    body.append(tableHost, divider, chartColumn);
-    shell.appendChild(body);
-    enableSplitPaneResize(body, divider);
+    ganttBody.append(chartColumn);
+    ganttShell.append(ganttSummaryHost, ganttControls, ganttBody);
+    ganttPanel.appendChild(ganttShell);
 
     const detailOverlay = createElement('div', 'gantt-detail-overlay');
     detailOverlay.hidden = true;
@@ -5279,23 +7176,14 @@ function renderGanttTab(panel, solutions) {
     detailHost.setAttribute('aria-modal', 'true');
     detailHost.setAttribute('aria-label', 'Task details');
     detailHost.tabIndex = -1;
+    detailOverlay.append(detailBackdrop, detailHost);
 
-    let activeTaskId = '';
-    let tableController;
-    let mobileListController;
+    tabShell.append(tabList, tablePanel, ganttPanel, detailOverlay);
+    container.appendChild(tabShell);
 
-    const getActiveSolutionTask = () => {
-        const activeRow = taskMap.get(activeTaskId);
-        return activeRow?.solutionId ? activeRow : null;
-    };
-
-    const syncToolbarActions = () => {
-        const activeRow = getActiveSolutionTask();
-        addTaskButton.disabled = !activeRow;
-        addTaskButton.title = activeRow
-            ? `Add a top-level task to ${activeRow.solutionName || activeRow.step}`
-            : 'Open a connector task to add a new task';
-    };
+    let tableController = null;
+    let sidebarController = null;
+    let mobileListController = null;
 
     const syncCollapsedSolutionGroups = () => {
         collapsedSolutionGroupIds.clear();
@@ -5304,17 +7192,38 @@ function renderGanttTab(panel, solutions) {
             .forEach((row) => collapsedSolutionGroupIds.add(row.id));
     };
 
-    const refreshPlanChrome = () => {
-        summaryHost.replaceChildren(createSummaryHeader(planData));
-        const customCount = planData.customScheduleCount || 0;
-        const persistenceLabel = durationOverridesPersistToStorage ? 'saved to this browser' : 'saved only for this session';
-        toolbarStatus.textContent = customCount > 0
-            ? `${customCount} custom schedule${customCount === 1 ? '' : 's'} ${persistenceLabel}`
-            : durationOverridesPersistToStorage
-                ? 'Using default schedule proposal'
-                : 'Using default schedule proposal (session only)';
-        resetAllButton.disabled = customCount === 0;
-        syncToolbarActions();
+    const resolveAddTaskTarget = (preferredTaskId = activeTaskId) => {
+        const preferredRow = taskMap.get(preferredTaskId);
+        if (preferredRow?.solutionId) {
+            return preferredRow;
+        }
+        return [...taskMap.values()].reverse().find((row) => row.isSolutionGroup && row.solutionId) || null;
+    };
+
+    const syncToolbarState = () => {
+        const targetRow = resolveAddTaskTarget();
+        if (toolbarRefs.addTaskButton) {
+            toolbarRefs.addTaskButton.disabled = !targetRow;
+            toolbarRefs.addTaskButton.title = targetRow
+                ? `Add a top-level task to ${targetRow.solutionName || targetRow.step}`
+                : 'Select at least one solution to add a task';
+        }
+        if (toolbarRefs.resetButton) {
+            toolbarRefs.resetButton.disabled = !(planData.customScheduleCount > 0);
+        }
+        if (toolbarRefs.statusLabel) {
+            const customCount = planData.customScheduleCount || 0;
+            const persistenceLabel = durationOverridesPersistToStorage ? 'saved in this browser' : 'saved only for this session';
+            toolbarRefs.statusLabel.textContent = customCount > 0
+                ? `${customCount} custom schedule${customCount === 1 ? '' : 's'} ${persistenceLabel}`
+                : 'Using the default onboarding schedule';
+        }
+    };
+
+    const refreshSummaryHeaders = () => {
+        tableSummaryHost.replaceChildren(createSummaryHeader(planData));
+        ganttSummaryHost.replaceChildren(createSummaryHeader(planData));
+        syncToolbarState();
     };
 
     const rebuildPlanData = () => {
@@ -5323,20 +7232,25 @@ function renderGanttTab(panel, solutions) {
         currentGanttPlanData = planData;
         syncCollapsedSolutionGroups();
         syncExportButtonState(Boolean(planData?.rows?.length));
-        refreshPlanChrome();
+        viewDirty.table = true;
+        viewDirty.gantt = true;
+        refreshSummaryHeaders();
     };
 
     const syncActiveTaskState = () => {
         tableController?.setActiveTask(activeTaskId);
+        sidebarController?.setActiveTask(activeTaskId);
+        mobileListController?.setActiveTask(activeTaskId);
         chartHost.querySelectorAll('.bar-wrapper').forEach((wrapper) => {
             wrapper.classList.toggle('is-active', wrapper.getAttribute('data-id') === activeTaskId);
         });
-        syncToolbarActions();
+        syncToolbarState();
     };
 
     const setHoveredTask = (taskId, isHovered) => {
         if (!taskId) return;
         tableController?.setHoveredTask(taskId, isHovered);
+        sidebarController?.setHoveredTask(taskId, isHovered);
         chartHost.querySelectorAll('.bar-wrapper').forEach((wrapper) => {
             if (wrapper.getAttribute('data-id') === taskId) {
                 wrapper.classList.toggle('is-hovered', Boolean(isHovered));
@@ -5346,6 +7260,7 @@ function renderGanttTab(panel, solutions) {
 
     const clearHoveredTasks = () => {
         tableHost.querySelectorAll('.gantt-table-row.is-hovered').forEach((rowElement) => rowElement.classList.remove('is-hovered'));
+        sidebarHost.querySelectorAll('.gantt-sidebar-row.is-hovered').forEach((rowElement) => rowElement.classList.remove('is-hovered'));
         chartHost.querySelectorAll('.bar-wrapper.is-hovered').forEach((wrapper) => wrapper.classList.remove('is-hovered'));
     };
 
@@ -5353,7 +7268,6 @@ function renderGanttTab(panel, solutions) {
         activeTaskId = '';
         syncActiveTaskState();
         setDetailOverlayState(detailOverlay, false);
-        mobileListController?.setActiveTask('');
     };
 
     const openTaskDetail = (taskId, { focusPanel = true } = {}) => {
@@ -5361,12 +7275,13 @@ function renderGanttTab(panel, solutions) {
         if (!row) return;
         activeTaskId = taskId;
         syncActiveTaskState();
-        mobileListController?.setActiveTask(taskId);
         renderDetailPanel(detailHost, row, {
+            allRowsById: taskMap,
             onClose: closeDetail,
             onSaveDuration: handleDurationSave,
             onResetDuration: handleDurationReset,
             onSaveField: handleDetailFieldSave,
+            onSaveSizing: handleSizingSave,
             onAddTopLevelTask: handleAddTopLevelTask,
             onAddSubtask: handleAddSubtask,
             onDeleteTask: handleDeleteTask,
@@ -5378,19 +7293,209 @@ function renderGanttTab(panel, solutions) {
         }
     };
 
+    const buildVisiblePlan = () => createVisiblePlanData(planData, collapsedSummaryIds, collapsedSolutionGroupIds);
+
+    const renderTableView = ({ focusInlineField } = {}) => {
+        const visiblePlan = buildVisiblePlan();
+        tableController = createTaskTable(visiblePlan.rows, (taskId) => openTaskDetail(taskId), {
+            collapsedSummaryIds,
+            collapsedSolutionGroupIds,
+            onToggleSummary: toggleSummary,
+            onToggleSolutionGroup: toggleSolutionGroup,
+            onHoverTask: setHoveredTask,
+            onInlineScheduleSave: handleInlineScheduleSave,
+            onInlineSolutionGroupStartSave: handleSolutionGroupStartSave,
+            onInlineFieldSave: handleInlineFieldSave,
+            onAddTopLevelTask: handleAddTopLevelTask,
+            onAddSubtask: handleAddSubtask,
+            onDeleteTask: handleDeleteTask,
+            onMoveTask: handleMoveTask,
+            projectStartDate: planData.projectStartDate
+        });
+        tableHost.replaceChildren(tableController.panel);
+        viewDirty.table = false;
+        viewsReady.table = true;
+        syncActiveTaskState();
+        if (focusInlineField?.taskId) {
+            window.requestAnimationFrame(() => {
+                tableController?.openInlineField(focusInlineField.taskId, focusInlineField.fieldKey || 'name');
+            });
+        }
+    };
+
+    const clearRenderedGanttView = () => {
+        chartHost.__ganttObserver?.disconnect?.();
+        chartHost.__ganttScrollSyncCleanup?.();
+        chartHost.__ganttScrollGestureCleanup?.();
+        chartHost.__ganttTaskSelectionCleanup?.();
+        sidebarController?.scroll?.__scrollSyncCleanup?.();
+        ganttInstanceRef.current = null;
+        chartHost.__ganttInstance = null;
+        delete chartHost.dataset.timelineHeaderSig;
+        chartHost.replaceChildren();
+        sidebarController = null;
+        sidebarHost.replaceChildren();
+        mobileListController = null;
+        mobileListHost.replaceChildren();
+        viewsReady.gantt = false;
+    };
+
+    const renderGanttView = () => {
+        const visiblePlan = buildVisiblePlan();
+        clearRenderedGanttView();
+
+        mobileListController = createMobileList(visiblePlan.rows, (taskId) => openTaskDetail(taskId), {
+            collapsedSummaryIds,
+            collapsedSolutionGroupIds,
+            onToggleSummary: toggleSummary,
+            onToggleSolutionGroup: toggleSolutionGroup
+        });
+        mobileListHost.replaceChildren(mobileListController.list);
+        mobileListController.setActiveTask(activeTaskId);
+
+        zoomControls.select.value = ganttInstanceRef.viewMode || GANTT_VIEW_MODES[0].name;
+
+        if (typeof window.Gantt === 'function') {
+            try {
+                const visibleRowMap = new Map(visiblePlan.rows.map((row) => [row.id, row]));
+                ganttInstanceRef.current = new window.Gantt(chartHost, visiblePlan.tasks, {
+                    view_mode: ganttInstanceRef.viewMode || GANTT_VIEW_MODES[0].name,
+                    view_modes: GANTT_VIEW_MODES,
+                    readonly: true,
+                    today_button: false,
+                    upper_header_height: 28,
+                    lower_header_height: 28,
+                    bar_height: 18,
+                    padding: 14,
+                    language: 'en',
+                    // Keep timeline scrolling fully native on touchpads; Frappe's infinite padding adds a wheel listener that re-renders mid-gesture.
+                    infinite_padding: false,
+                    auto_move_label: false,
+                    popup: (ctx) => {
+                        if (chartHost.classList.contains('is-scroll-gesturing')) {
+                            return false;
+                        }
+
+                        const row = visibleRowMap.get(ctx.task.id);
+                        if (!row) return false;
+
+                        ctx.set_title(escapeHtml(row.step));
+                        ctx.set_subtitle(escapeHtml(`${row.phase} · ${row.status}`));
+                        ctx.set_details([
+                            `Start: ${row.startDateLabel}`,
+                            `Due: ${row.dueDateLabel}`,
+                            `Duration: ${row.durationLabel}`,
+                            `Owner: ${row.owner}`,
+                            `Priority: ${row.impact}`
+                        ].map((line) => escapeHtml(line)).join('<br/>'));
+                    }
+                });
+                chartHost.__ganttInstance = ganttInstanceRef.current;
+                bindGanttScrollGestureState(chartHost, {
+                    onScrollStart: clearHoveredTasks
+                });
+                bindGanttTaskSelection(chartHost, {
+                    onSelectTask: (taskId) => openTaskDetail(taskId)
+                });
+                stabilizeGanttRender(chartHost, visiblePlan.tasks, {
+                    collapsedSummaryIds,
+                    collapsedSolutionGroupIds,
+                    onToggleSummary: toggleSummary,
+                    onToggleSolutionGroup: toggleSolutionGroup,
+                    onHoverTask: setHoveredTask,
+                    onLayoutChange: ({ rowMetrics, svgHeight, scrollTop }) => {
+                        sidebarController?.updateLayout(rowMetrics, svgHeight);
+                        syncSplitPaneScroll(sidebarController?.scroll, chartHost);
+                        if (sidebarController?.scroll) {
+                            sidebarController.scroll.scrollTop = scrollTop;
+                        }
+                        syncActiveTaskState();
+                    }
+                });
+                viewDirty.gantt = false;
+                viewsReady.gantt = true;
+                syncActiveTaskState();
+                return;
+            } catch (error) {
+                console.error('Failed to initialize Gantt chart:', error);
+            }
+        }
+
+        mobileListController.list.classList.add('is-fallback-visible');
+        chartHost.appendChild(createText('p', 'The Gantt chart could not be rendered. Use the compact plan list below for the same project details.', 'helper-text'));
+        viewDirty.gantt = false;
+        viewsReady.gantt = true;
+    };
+
+    const renderActiveView = ({ focusInlineField } = {}) => {
+        const visiblePlan = buildVisiblePlan();
+        if (activeTaskId && !visiblePlan.rows.some((row) => row.id === activeTaskId)) {
+            activeTaskId = '';
+            setDetailOverlayState(detailOverlay, false);
+        }
+
+        if (activeTab === 'table') {
+            renderTableView({ focusInlineField });
+            return;
+        }
+
+        renderGanttView();
+    };
+
+    const refreshPlannerViewsAfterDataChange = ({ focusInlineField } = {}) => {
+        renderTableView({ focusInlineField });
+        if (activeTab === 'gantt') {
+            renderGanttView();
+            return;
+        }
+        clearRenderedGanttView();
+    };
+
+    const ensureViewRendered = (viewName, options = {}) => {
+        if (viewName === 'table') {
+            if (viewDirty.table || !viewsReady.table || options.force) {
+                renderTableView(options);
+            }
+            return;
+        }
+        if (viewDirty.gantt || !viewsReady.gantt || options.force) {
+            renderGanttView();
+        } else {
+            window.requestAnimationFrame(() => {
+                syncSplitPaneScroll(sidebarController?.scroll, chartHost);
+                syncActiveTaskState();
+            });
+        }
+    };
+
+    const activateTab = (target) => {
+        activeTab = persistPlannerActiveTab(target);
+        [
+            [tableTabButton, tablePanel, activeTab === 'table'],
+            [ganttTabButton, ganttPanel, activeTab === 'gantt']
+        ].forEach(([button, panel, isActive]) => {
+            button.classList.toggle('active', isActive);
+            button.setAttribute('aria-selected', isActive ? 'true' : 'false');
+            panel.hidden = !isActive;
+            panel.classList.toggle('active', isActive);
+        });
+
+        ensureViewRendered(activeTab);
+    };
+
     const handleDurationSave = (taskId, nextSchedule) => {
         const row = taskMap.get(taskId);
         if (!row?.isScheduleEditable) return;
         saveTaskDurationOverride(row, nextSchedule);
         rebuildPlanData();
-        renderVisiblePlan();
+        refreshPlannerViewsAfterDataChange();
         openTaskDetail(taskId, { focusPanel: false });
     };
 
     const handleDurationReset = (taskId) => {
         resetTaskDurationOverride(taskId);
         rebuildPlanData();
-        renderVisiblePlan();
+        refreshPlannerViewsAfterDataChange();
         openTaskDetail(taskId, { focusPanel: false });
     };
 
@@ -5399,7 +7504,7 @@ function renderGanttTab(panel, solutions) {
         if (!row?.isScheduleEditable) return;
         saveTaskDurationOverride(row, nextSchedule);
         rebuildPlanData();
-        renderVisiblePlan();
+        refreshPlannerViewsAfterDataChange();
         if (activeTaskId === taskId) {
             openTaskDetail(taskId, { focusPanel: false });
         }
@@ -5411,13 +7516,30 @@ function renderGanttTab(panel, solutions) {
         saveSolutionGroupState(row.solutionId, {
             solutionName: row.solutionName || row.step,
             defaultStartWeek: row.defaultStartWeek,
+            defaultCollapsed: row.defaultGroupCollapsed,
             startWeek: nextStartWeek,
             collapsed: collapsedSolutionGroupIds.has(groupRowId)
         });
         rebuildPlanData();
-        renderVisiblePlan();
+        refreshPlannerViewsAfterDataChange();
         if (activeTaskId === groupRowId) {
             openTaskDetail(groupRowId, { focusPanel: false });
+        }
+    };
+
+    const handleSizingSave = (row, connectorType, nextValues, { relation = '', targetPoolId = '' } = {}) => {
+        const solutionId = row?.solutionId;
+        const solution = solutions.find((candidate) => candidate.id === solutionId);
+        if (!solution || connectorType === 'none') return;
+        saveConnectorCapacityValues(solution, nextValues, {
+            selectedSolutions: solutions,
+            relation,
+            targetPoolId
+        });
+        rebuildPlanData();
+        refreshPlannerViewsAfterDataChange();
+        if (row?.id) {
+            openTaskDetail(row.id, { focusPanel: false });
         }
     };
 
@@ -5426,7 +7548,7 @@ function renderGanttTab(panel, solutions) {
         if (!row) return;
         saveTaskFieldOverride(row, nextFields);
         rebuildPlanData();
-        renderVisiblePlan();
+        refreshPlannerViewsAfterDataChange();
         if (activeTaskId === taskId) {
             openTaskDetail(taskId, { focusPanel: false });
         }
@@ -5437,12 +7559,12 @@ function renderGanttTab(panel, solutions) {
         if (!row) return;
         saveTaskFieldOverride(row, nextFields);
         rebuildPlanData();
-        renderVisiblePlan();
+        refreshPlannerViewsAfterDataChange();
         openTaskDetail(taskId, { focusPanel: false });
     };
 
     const handleAddTopLevelTask = (taskId = activeTaskId) => {
-        const row = taskMap.get(taskId);
+        const row = resolveAddTaskTarget(taskId);
         if (!row?.solutionId) return;
 
         const solutionGroupId = row.isSolutionGroup ? row.id : row.solutionGroupId;
@@ -5451,6 +7573,7 @@ function renderGanttTab(panel, solutions) {
             saveSolutionGroupState(solutionGroupRow.solutionId, {
                 solutionName: solutionGroupRow.solutionName || solutionGroupRow.step,
                 defaultStartWeek: solutionGroupRow.defaultStartWeek,
+                defaultCollapsed: solutionGroupRow.defaultGroupCollapsed,
                 collapsed: false
             });
         }
@@ -5459,7 +7582,10 @@ function renderGanttTab(panel, solutions) {
         closeDetail();
         clearHoveredTasks();
         rebuildPlanData();
-        renderVisiblePlan({ focusInlineField: { taskId: newTaskId, fieldKey: 'name' } });
+        if (activeTab !== 'table') {
+            activateTab('table');
+        }
+        renderTableView({ focusInlineField: { taskId: newTaskId, fieldKey: 'name' } });
     };
 
     const handleAddSubtask = (taskId) => {
@@ -5470,7 +7596,33 @@ function renderGanttTab(panel, solutions) {
         closeDetail();
         clearHoveredTasks();
         rebuildPlanData();
-        renderVisiblePlan({ focusInlineField: { taskId: newTaskId, fieldKey: 'name' } });
+        if (activeTab !== 'table') {
+            activateTab('table');
+        }
+        renderTableView({ focusInlineField: { taskId: newTaskId, fieldKey: 'name' } });
+    };
+
+    const handleMoveTask = (taskId, direction = 0) => {
+        const row = taskMap.get(taskId);
+        if (!row) return;
+
+        const scopeKey = getTaskOrderScopeKeyForRow(row);
+        const scopeRows = planData.rows.filter((candidate) => getTaskOrderScopeKeyForRow(candidate) === scopeKey);
+        if (scopeRows.length <= 1) return;
+
+        const orderedIds = getOrderedScopeIds(scopeKey, scopeRows.map((candidate) => candidate.id), getTaskOrderEntries());
+        const currentIndex = orderedIds.indexOf(taskId);
+        const targetIndex = currentIndex + Number(direction || 0);
+        if (currentIndex < 0 || targetIndex < 0 || targetIndex >= orderedIds.length) return;
+
+        const nextOrderedIds = [...orderedIds];
+        [nextOrderedIds[currentIndex], nextOrderedIds[targetIndex]] = [nextOrderedIds[targetIndex], nextOrderedIds[currentIndex]];
+        saveTaskOrderScope(scopeKey, nextOrderedIds);
+        rebuildPlanData();
+        refreshPlannerViewsAfterDataChange();
+        if (activeTaskId === taskId) {
+            openTaskDetail(taskId, { focusPanel: false });
+        }
     };
 
     const handleDeleteTask = (taskId) => {
@@ -5486,7 +7638,7 @@ function renderGanttTab(panel, solutions) {
         clearHoveredTasks();
         deleteCustomTask(taskId);
         rebuildPlanData();
-        renderVisiblePlan();
+        refreshPlannerViewsAfterDataChange();
     };
 
     const handleSkipTask = (taskId) => {
@@ -5498,7 +7650,7 @@ function renderGanttTab(panel, solutions) {
         if (!confirmed) return;
         saveTaskFieldOverride(row, { status: 'Skipped' });
         rebuildPlanData();
-        renderVisiblePlan();
+        refreshPlannerViewsAfterDataChange();
         openTaskDetail(taskId, { focusPanel: false });
     };
 
@@ -5508,7 +7660,7 @@ function renderGanttTab(panel, solutions) {
         closeDetail();
         clearHoveredTasks();
         rebuildPlanData();
-        renderVisiblePlan();
+        refreshPlannerViewsAfterDataChange();
     };
 
     let subtaskToggleTimer = 0;
@@ -5519,6 +7671,7 @@ function renderGanttTab(panel, solutions) {
         const selectorValue = escapeAttributeSelectorValue(taskId);
         return [
             ...tableHost.querySelectorAll(`.gantt-table-row[data-parent-id="${selectorValue}"]`),
+            ...sidebarHost.querySelectorAll(`.gantt-sidebar-row[data-parent-id="${selectorValue}"]`),
             ...chartHost.querySelectorAll(`.bar-wrapper[data-parent-id="${selectorValue}"]`)
         ];
     };
@@ -5554,7 +7707,9 @@ function renderGanttTab(panel, solutions) {
             collapsedSummaryIds.add(taskId);
         }
 
-        renderVisiblePlan();
+        viewDirty.table = true;
+        viewDirty.gantt = true;
+        renderActiveView();
         if (collapsedSummaryIds.has(taskId)) {
             releaseSubtaskToggleLock(0);
             return;
@@ -5598,133 +7753,71 @@ function renderGanttTab(panel, solutions) {
         saveSolutionGroupState(row.solutionId, {
             solutionName: row.solutionName || row.step,
             defaultStartWeek: row.defaultStartWeek,
+            defaultCollapsed: row.defaultGroupCollapsed,
             collapsed: nextCollapsed
         });
         rebuildPlanData();
-        renderVisiblePlan();
+        renderActiveView();
     };
 
     detailBackdrop.addEventListener('click', closeDetail);
-    detailOverlay.addEventListener('keydown', (event) => {
-        if (event.key === 'Escape') closeDetail();
-    });
-    detailOverlay.append(detailBackdrop, detailHost);
-    addTaskButton.addEventListener('click', () => handleAddTopLevelTask());
-    resetAllButton.addEventListener('click', handleResetAllDurations);
 
-    shell.append(detailOverlay);
-    panel.appendChild(shell);
-
-    const renderVisiblePlan = ({ focusInlineField } = {}) => {
-        const visiblePlan = createVisiblePlanData(planData, collapsedSummaryIds, collapsedSolutionGroupIds);
-
-        if (activeTaskId && !visiblePlan.rows.some((row) => row.id === activeTaskId)) {
-            activeTaskId = '';
-            setDetailOverlayState(detailOverlay, false);
-        }
-
-        chartHost.__ganttObserver?.disconnect?.();
-        chartHost.__ganttScrollSyncCleanup?.();
-        tableController?.scroll?.__scrollSyncCleanup?.();
-        chartHost.__ganttInstance = null;
-        delete chartHost.dataset.timelineHeaderSig;
-        chartHost.replaceChildren();
-
-        tableController = createTaskTable(visiblePlan.rows, (taskId) => openTaskDetail(taskId), {
-            collapsedSummaryIds,
-            collapsedSolutionGroupIds,
-            onToggleSummary: toggleSummary,
-            onToggleSolutionGroup: toggleSolutionGroup,
-            onHoverTask: setHoveredTask,
-            onInlineScheduleSave: handleInlineScheduleSave,
-            onInlineSolutionGroupStartSave: handleSolutionGroupStartSave,
-            onInlineFieldSave: handleInlineFieldSave,
-            onAddTopLevelTask: handleAddTopLevelTask,
-            onAddSubtask: handleAddSubtask,
-            onDeleteTask: handleDeleteTask,
-            projectStartDate: planData.projectStartDate
-        });
-        tableHost.replaceChildren(tableController.panel);
-        if (focusInlineField?.taskId) {
-            window.requestAnimationFrame(() => {
-                tableController?.openInlineField(focusInlineField.taskId, focusInlineField.fieldKey || 'name');
-            });
-        }
-
-        mobileListController = createMobileList(visiblePlan.rows, (taskId) => openTaskDetail(taskId), {
-            collapsedSummaryIds,
-            collapsedSolutionGroupIds,
-            onToggleSummary: toggleSummary,
-            onToggleSolutionGroup: toggleSolutionGroup
-        });
-        mobileListHost.replaceChildren(mobileListController.list);
-        mobileListController?.setActiveTask(activeTaskId);
-
-        if (typeof window.Gantt === 'function') {
-            try {
-                const visibleRowMap = new Map(visiblePlan.rows.map((row) => [row.id, row]));
-                ganttInstanceRef.current = new window.Gantt(chartHost, visiblePlan.tasks, {
-                    view_mode: ganttInstanceRef.viewMode || GANTT_VIEW_MODES[0].name,
-                    view_modes: GANTT_VIEW_MODES,
-                    readonly: true,
-                    today_button: false,
-                    upper_header_height: 28,
-                    lower_header_height: 28,
-                    bar_height: 18,
-                    padding: 14,
-                    language: 'en',
-                    popup: (ctx) => {
-                        const row = visibleRowMap.get(ctx.task.id);
-                        if (!row) return false;
-
-                        ctx.set_title(escapeHtml(row.step));
-                        ctx.set_subtitle(escapeHtml(`${row.phase} · ${row.status}`));
-                        ctx.set_details([
-                            `Start: ${row.startDateLabel}`,
-                            `Due: ${row.dueDateLabel}`,
-                            `Duration: ${row.durationLabel}`,
-                            `Owner: ${row.owner}`,
-                            `Impact: ${row.impact}`
-                        ].map((line) => escapeHtml(line)).join('<br/>'));
-                    },
-                    on_click: (task) => {
-                        const row = visibleRowMap.get(task?.id);
-                        if (!row) return;
-                        openTaskDetail(row.id);
-                    }
-                });
-                chartHost.__ganttInstance = ganttInstanceRef.current;
-                stabilizeGanttRender(chartHost, visiblePlan.tasks, {
-                    collapsedSummaryIds,
-                    collapsedSolutionGroupIds,
-                    onToggleSummary: toggleSummary,
-                    onToggleSolutionGroup: toggleSolutionGroup,
-                    onHoverTask: setHoveredTask,
-                    onLayoutChange: ({ rowMetrics, svgHeight, scrollTop }) => {
-                        tableController?.updateLayout(rowMetrics, svgHeight);
-                        syncSplitPaneScroll(tableController?.scroll, chartHost);
-                        if (tableController?.scroll) {
-                            tableController.scroll.scrollTop = scrollTop;
-                        }
-                        syncActiveTaskState();
-                    }
-                });
-            } catch (error) {
-                console.error('Failed to initialize Gantt chart:', error);
-                mobileListController.list.classList.add('is-fallback-visible');
-                chartHost.appendChild(createText('p', 'The Gantt chart could not be rendered. Use the compact plan list below.', 'helper-text'));
-            }
-            return;
-        }
-
-        mobileListController.list.classList.add('is-fallback-visible');
-        chartHost.appendChild(createText('p', 'The Gantt library did not load. Use the compact plan list below for the same project details.', 'helper-text'));
+    container.__plannerDetailKeydownCleanup?.();
+    const handleDetailEscapeKey = (event) => {
+        if (event.key !== 'Escape' || detailOverlay.hidden) return;
+        closeDetail();
+    };
+    document.addEventListener('keydown', handleDetailEscapeKey, true);
+    container.__plannerDetailKeydownCleanup = () => {
+        document.removeEventListener('keydown', handleDetailEscapeKey, true);
     };
 
-    refreshPlanChrome();
-    syncToolbarActions();
-    renderVisiblePlan();
+    container.__plannerDetailPointerCleanup?.();
+    const handleDetailPointerDown = (event) => {
+        if (detailOverlay.hidden) return;
+        if (!(event.target instanceof Node)) return;
+        if (detailHost.contains(event.target)) return;
+        closeDetail();
+    };
+    document.addEventListener('pointerdown', handleDetailPointerDown, true);
+    container.__plannerDetailPointerCleanup = () => {
+        document.removeEventListener('pointerdown', handleDetailPointerDown, true);
+    };
+
+    if (toolbarRefs.addTaskButton) {
+        toolbarRefs.addTaskButton.onclick = () => handleAddTopLevelTask();
+    }
+    if (toolbarRefs.resetButton) {
+        toolbarRefs.resetButton.onclick = handleResetAllDurations;
+    }
+
+    autoFitButton.addEventListener('click', () => {
+        const fitMode = getPlannerAutoFitViewMode(planData.totalDurationWeeks);
+        zoomControls.setValue(fitMode);
+        window.requestAnimationFrame(() => scrollGanttToLeadingEdge(chartHost));
+    });
+
+    tableTabButton.addEventListener('click', () => activateTab('table'));
+    ganttTabButton.addEventListener('click', () => activateTab('gantt'));
+
+    refreshSummaryHeaders();
+    syncToolbarState();
+    ensureViewRendered(activeTab);
     return planData;
+}
+
+function resetPlannerToolbar(toolbarRefs = {}) {
+    if (toolbarRefs.addTaskButton) {
+        toolbarRefs.addTaskButton.disabled = true;
+        toolbarRefs.addTaskButton.onclick = null;
+    }
+    if (toolbarRefs.resetButton) {
+        toolbarRefs.resetButton.disabled = true;
+        toolbarRefs.resetButton.onclick = null;
+    }
+    if (toolbarRefs.statusLabel) {
+        toolbarRefs.statusLabel.textContent = '';
+    }
 }
 
 function syncExportButtonState(isEnabled) {
@@ -5739,12 +7832,20 @@ function syncExportButtonState(isEnabled) {
 export function initGanttPlanner(solutions = []) {
     getPreferredDateFormat();
     const container = document.getElementById('plannerView');
+    const toolbarRefs = {
+        addTaskButton: document.getElementById('plannerAddTaskButton'),
+        resetButton: document.getElementById('plannerResetButton'),
+        statusLabel: document.getElementById('plannerToolbarStatus')
+    };
     currentGanttPlanData = null;
     syncExportButtonState(false);
     ensurePlannerWideLayoutObserver();
     if (!container) return null;
 
+    container.__plannerDetailKeydownCleanup?.();
+    container.__plannerDetailPointerCleanup?.();
     container.replaceChildren();
+    resetPlannerToolbar(toolbarRefs);
 
     if (solutions.length === 0) {
         const empty = createElement('div', 'planner-empty-state');
@@ -5757,56 +7858,9 @@ export function initGanttPlanner(solutions = []) {
         return null;
     }
 
-    const tabShell = createElement('div', 'planner-tabs');
-    const tabList = createElement('div', 'planner-tab-list');
-    tabList.setAttribute('role', 'tablist');
-    tabList.setAttribute('aria-label', 'Planner views');
-
-    const ganttTabButton = createTabButton('planner-gantt-panel', 'Gantt Chart', true);
-    const cardTabButton = createTabButton('planner-cards-panel', 'Task Cards', false);
-    tabList.append(ganttTabButton, cardTabButton);
-
-    const ganttPanel = createTabPanel('planner-gantt-panel', true);
-    const cardPanel = createTabPanel('planner-cards-panel', false);
-
-    tabShell.append(tabList, ganttPanel, cardPanel);
-    container.appendChild(tabShell);
-
-    const planData = renderGanttTab(ganttPanel, solutions);
+    const planData = renderPlannerWorkspace(container, solutions, toolbarRefs);
     currentGanttPlanData = planData;
     syncExportButtonState(Boolean(planData?.rows?.length));
-
-    let cardsRendered = false;
-    const activateTab = (target) => {
-        [
-            [ganttTabButton, ganttPanel, target === 'gantt'],
-            [cardTabButton, cardPanel, target === 'cards']
-        ].forEach(([button, panel, isActive]) => {
-            button.classList.toggle('active', isActive);
-            button.setAttribute('aria-selected', isActive ? 'true' : 'false');
-            panel.hidden = !isActive;
-            panel.classList.toggle('active', isActive);
-        });
-
-        if (target !== 'gantt') {
-            const detailOverlay = ganttPanel.querySelector('.gantt-detail-overlay');
-            if (detailOverlay) {
-                detailOverlay.hidden = true;
-                detailOverlay.classList.remove('is-open');
-                detailOverlay.setAttribute('aria-hidden', 'true');
-            }
-            ganttPanel.querySelectorAll('.gantt-mobile-item.active').forEach((item) => item.classList.remove('active'));
-        }
-
-        if (target === 'cards' && !cardsRendered) {
-            initPlannerView(solutions, { container: cardPanel });
-            cardsRendered = true;
-        }
-    };
-
-    ganttTabButton.addEventListener('click', () => activateTab('gantt'));
-    cardTabButton.addEventListener('click', () => activateTab('cards'));
-
     return planData;
 }
 

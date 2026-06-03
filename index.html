@@ -103,8 +103,9 @@
                         </div>
                     </div>
 
-                    <div class="cta-section">
+                    <div class="cta-section cta-section--stacked">
                         <button type="button" class="app-button app-button--accent" data-next>Start planning →</button>
+                        <button type="button" class="app-button app-button--subtle cta-resume-button" id="resumeProgressButton" hidden>Resume saved progress</button>
                     </div>
                 </div>
             </section>
@@ -116,170 +117,248 @@
 
                     <div class="category-grid vendor-grid">
                         <div class="category-card vendor-card" data-vendor="azure">
-                            <div class="category-icon">☁️</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/gilbarbara/logos/main/logos/microsoft-azure.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>☁️</span>
+                            </div>
                             <h3>Azure</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="microsoft365">
-                            <div class="category-icon">🛡️</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Workbooks/Images/Logos/office365_logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🛡️</span>
+                            </div>
                             <h3>Microsoft 365</h3>
                             <div class="category-check">✓</div>
                         </div>
+                        <div class="category-card vendor-card" data-vendor="cribl">
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/Cribl-Logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🔀</span>
+                            </div>
+                            <h3>Cribl</h3>
+                            <div class="category-check">✓</div>
+                        </div>
                         <div class="category-card vendor-card" data-vendor="windows">
-                            <div class="category-icon">🖥️</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/gilbarbara/logos/main/logos/microsoft-windows-icon.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🖥️</span>
+                            </div>
                             <h3>Windows</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="linux">
-                            <div class="category-icon">🐧</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/torvalds/linux/master/Documentation/images/logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🐧</span>
+                            </div>
                             <h3>Linux</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="aws">
-                            <div class="category-icon">☁️</div>
+                            <div class="category-icon vendor-logo vendor-logo--light-surface" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/Aws.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>☁️</span>
+                            </div>
                             <h3>AWS</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="gcp">
-                            <div class="category-icon">☁️</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/google_logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>☁️</span>
+                            </div>
                             <h3>GCP</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="crowdstrike">
-                            <div class="category-icon">🛡️</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Solutions/CrowdStrike%20Falcon%20Endpoint%20Protection/Data%20Connectors/Logo/crowdstrike.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🛡️</span>
+                            </div>
                             <h3>CrowdStrike</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="paloalto">
-                            <div class="category-icon">🔥</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/CortexXDR_Logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🔥</span>
+                            </div>
                             <h3>Palo Alto</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="cisco">
-                            <div class="category-icon">🌐</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/cisco-logo-72px.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🌐</span>
+                            </div>
                             <h3>Cisco</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="checkpoint">
-                            <div class="category-icon">🔥</div>
+                            <div class="category-icon vendor-logo vendor-logo--light-surface" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/checkpoint.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🔥</span>
+                            </div>
                             <h3>Check Point</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="fortinet">
-                            <div class="category-icon">🔥</div>
+                            <div class="category-icon vendor-logo vendor-logo--light-surface" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/fortinet_logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🔥</span>
+                            </div>
                             <h3>Fortinet</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="zscaler">
-                            <div class="category-icon">🌐</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/ZscalerLogo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🌐</span>
+                            </div>
                             <h3>Zscaler</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="okta">
-                            <div class="category-icon">🔑</div>
+                            <div class="category-icon vendor-logo vendor-logo--light-surface" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/okta_logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🔑</span>
+                            </div>
                             <h3>Okta</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="trendmicro">
-                            <div class="category-icon">🧪</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/Trend_Micro_Logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🧪</span>
+                            </div>
                             <h3>Trend Micro</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="cyberark">
-                            <div class="category-icon">🔐</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/CyberArk_Logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🔐</span>
+                            </div>
                             <h3>CyberArk</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="pingidentity">
-                            <div class="category-icon">🪪</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Workbooks/Images/Logos/PingIdentity.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🪪</span>
+                            </div>
                             <h3>Ping Identity</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="alibabacloud">
-                            <div class="category-icon">☁️</div>
+                            <div class="category-icon vendor-logo vendor-logo--light-surface" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/simple-icons/simple-icons/develop/icons/alibabacloud.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>☁️</span>
+                            </div>
                             <h3>Alibaba Cloud</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="atlassian">
-                            <div class="category-icon">🔧</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/atlassian.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🔧</span>
+                            </div>
                             <h3>Atlassian</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="barracuda">
-                            <div class="category-icon">🔒</div>
+                            <div class="category-icon vendor-logo vendor-logo--light-surface" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Workbooks/Images/Logos/barracuda_logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🔒</span>
+                            </div>
                             <h3>Barracuda</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="citrix">
-                            <div class="category-icon">💻</div>
+                            <div class="category-icon vendor-logo vendor-logo--light-surface" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/citrix_logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>💻</span>
+                            </div>
                             <h3>Citrix</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="cloudflare">
-                            <div class="category-icon">☁️</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Workbooks/Images/Logos/cloudflare.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>☁️</span>
+                            </div>
                             <h3>Cloudflare</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="cyfirma">
-                            <div class="category-icon">🔍</div>
+                            <div class="category-icon vendor-logo vendor-logo--light-surface" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/Cyfirma_logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🔍</span>
+                            </div>
                             <h3>cyFIRMA</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="extrahop">
-                            <div class="category-icon">📡</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/ExtraHop.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>📡</span>
+                            </div>
                             <h3>ExtraHop</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="f5">
-                            <div class="category-icon">🔥</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Solutions/F5%20BIG-IP/Workbooks/Images/Logo/f5_logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🔥</span>
+                            </div>
                             <h3>F5</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="forcepoint">
-                            <div class="category-icon">🛡️</div>
+                            <div class="category-icon vendor-logo vendor-logo--light-surface" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/Forcepoint_new_logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🛡️</span>
+                            </div>
                             <h3>Forcepoint</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="github">
-                            <div class="category-icon">🐙</div>
+                            <div class="category-icon vendor-logo vendor-logo--light-surface" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/gilbarbara/logos/main/logos/github-icon.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🐙</span>
+                            </div>
                             <h3>GitHub</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="infoblox">
-                            <div class="category-icon">🌐</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/infoblox_logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🌐</span>
+                            </div>
                             <h3>Infoblox</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="nxlog">
-                            <div class="category-icon">📋</div>
+                            <div class="category-icon vendor-logo" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/NXLog.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>📋</span>
+                            </div>
                             <h3>NXLog</h3>
                             <div class="category-check">✓</div>
                         </div>
                         <div class="category-card vendor-card" data-vendor="symantec">
-                            <div class="category-icon">🛡️</div>
+                            <div class="category-icon vendor-logo vendor-logo--light-surface" data-logo-wrapper>
+                                <img data-remote-logo src="https://raw.githubusercontent.com/Azure/Azure-Sentinel/master/Logos/symantec_logo.svg" alt="" aria-hidden="true">
+                                <span class="vendor-logo-fallback" data-logo-fallback aria-hidden="true" hidden>🛡️</span>
+                            </div>
                             <h3>Symantec</h3>
                             <div class="category-check">✓</div>
                         </div>
                     </div>
 
                     <p class="helper-text">You can still search for additional third-party solutions in the next step.</p>
-
-                    <div class="environment-size-card">
-                        <div>
-                            <h3>Optional server split</h3>
-                            <p class="environment-size-description">Capture how many servers are already in Azure versus on-premises or other clouds so you can pick up where you left off later.</p>
-                        </div>
-                        <div class="environment-size-grid">
-                            <label class="environment-size-field" for="azureServerCount">
-                                <span>Azure servers</span>
-                                <input type="number" id="azureServerCount" min="0" step="1" inputmode="numeric" placeholder="0">
-                            </label>
-                            <label class="environment-size-field" for="onPremServerCount">
-                                <span>On-prem / other cloud servers</span>
-                                <input type="number" id="onPremServerCount" min="0" step="1" inputmode="numeric" placeholder="0">
-                            </label>
-                        </div>
-                    </div>
 
                     <div class="nav-buttons">
                         <button type="button" class="app-button" data-prev>← Back</button>
@@ -300,16 +379,21 @@
 
                     <div class="nlp-input-section" id="nlpSection" hidden>
                         <div class="nlp-container">
-                            <label for="nlpInput">Search third-party solutions by keyword</label>
+                            <label for="nlpInput">Search solutions by keyword</label>
                             <div class="nlp-input-wrapper">
                                 <input type="text" id="nlpInput" placeholder="e.g., firewall, endpoint, email security, aws, identity">
-                                <button type="button" class="app-button app-button--accent" id="nlpSearchButton">Find matches</button>
                             </div>
                             <div class="nlp-suggestions" id="nlpSuggestions"></div>
                         </div>
                     </div>
 
-                    <div id="solutionPanels"></div>
+                    <div class="solutions-workspace" id="solutionsWorkspace">
+                        <div id="solutionPanels" class="solution-panels-host"></div>
+                        <div class="solution-sizing-drawer-shell" id="solutionSizingDrawerShell" hidden aria-hidden="true">
+                            <button type="button" class="solution-sizing-drawer-backdrop" id="solutionSizingDrawerBackdrop" aria-label="Close connector sizing panel"></button>
+                            <aside class="solution-sizing-drawer-panel" id="solutionSizingDrawerPanel" aria-live="polite" aria-label="Connector sizing panel"></aside>
+                        </div>
+                    </div>
 
                     <div class="nav-buttons">
                         <button type="button" class="app-button" data-prev>← Back</button>
@@ -343,10 +427,15 @@
             <section class="wizard-step" id="step5">
                 <div class="step-content">
                     <h2>Planner View</h2>
-                    <p class="step-description">Review the Gantt chart, switch to task cards for detail, and export the onboarding plan to Excel.</p>
+                    <p class="step-description">Review the onboarding plan in a spreadsheet-style table or a dedicated Gantt timeline, fine-tune tasks, and export to Excel.</p>
 
                     <div class="planner-action-bar">
-                        <button type="button" class="app-button app-button--accent" id="exportExcelButton">Export to Excel</button>
+                        <div class="planner-action-bar__controls">
+                            <button type="button" class="app-button app-button--subtle" id="plannerAddTaskButton">+ Add task</button>
+                            <button type="button" class="app-button" id="plannerResetButton">Reset schedule</button>
+                            <button type="button" class="app-button app-button--accent" id="exportExcelButton">Export to Excel</button>
+                        </div>
+                        <span id="plannerToolbarStatus" class="planner-action-status" aria-live="polite"></span>
                     </div>
 
                     <div id="plannerView"></div>
@@ -367,3 +456,4 @@
     <script type="module" src="js/app.js"></script>
 </body>
 </html>
+
