@@ -257,3 +257,42 @@ The filtering behavior is core planner state, while the suggestion container is 
 - Surface the same relation choices in both Step 3 and Step 5 so planner edits and wizard edits stay behaviorally aligned.
 - Preserve detached AMA pool drafts when a connector rejoins a shared pool, so toggling back to `Additional servers` restores the prior values instead of resetting the form.
 
+## 2026-06-10
+
+### Maria — Topology Layer Boxes
+
+- **Date:** 2026-06-10T12:17:00+02:00
+- **Owner:** Maria
+- **Scope:** Topology visualization structure
+
+**Decision**
+Each logical layer in the topology should have its own uber box:
+1. **Sources** (top) — data-generating devices (firewalls, servers, SaaS)
+2. **Collection Layer** — intermediaries that receive/aggregate data (Cribl, collector VMs, Linux forwarders)
+3. **Transformation Layer** — DCRs/DCEs that define transformation and routing rules
+4. **Workspace** (bottom) — Microsoft Sentinel
+
+Every component must belong to exactly one layer box — no floating/orphaned nodes.
+
+**Why**
+Structural clarity — every node has a named home, reinforces the strict vertical hierarchy.
+
+---
+
+### Maria — Topology fix prioritization
+
+**Date:** 2026-06-10T12:47:00+02:00  
+**By:** Maria (via Squad)  
+**Scope:** Topology spec compliance audit
+
+**What**
+Prioritized topology spec compliance fixes in dependency order:
+- **P0:** Add 4-layer uber boxes (foundational — Sources/Collection/Transformation/Workspace)
+- **P1:** Refactor Cribl into Collection Layer (bug-cribl-001, high risk)
+- **P2:** Sentinel weighted centering (constraint #10, isolated)
+- **P3:** Stabilize layout across filter changes (constraint #9)
+- **P4:** Fix discovered VM banding (minor, follows P0)
+
+**Why**
+Audit revealed structural non-compliance with topology-spec.md. P0 is foundational — all other fixes depend on the layer model existing.
+
