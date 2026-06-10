@@ -1,4 +1,4 @@
-﻿{
+{
   "categories": {
     "azure": {
       "label": "Azure",
@@ -2104,7 +2104,8 @@
           "is_connector": true,
           "category": "azure",
           "isFeatured": false,
-          "cribl_eligible": true
+          "cribl_eligible": true,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "microsoft-windows-sql-server-database-audit",
@@ -4947,7 +4948,16 @@
           },
           "is_connector": true,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef",
+          "ganttTaskOverrides": {
+            "sourceConfigSubtasks": [
+              "Create syslog server profile in PAN-OS/Panorama",
+              "Select log types: Traffic, Threat, URL Filtering, WildFire",
+              "Assign profile to security policy",
+              "Set format to CEF"
+            ]
+          }
         },
         {
           "id": "better-mobile-threat-defense-mtd",
@@ -5178,7 +5188,8 @@
           },
           "is_connector": false,
           "category": "endpoint-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "broadcom-symantec-dlp",
@@ -5298,7 +5309,8 @@
           },
           "is_connector": false,
           "category": "endpoint-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "crowdstrike",
@@ -5744,7 +5756,8 @@
           },
           "is_connector": false,
           "category": "endpoint-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "mc-afee-e-policy-orchestrator",
@@ -5864,7 +5877,8 @@
           },
           "is_connector": false,
           "category": "endpoint-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "sentinelone",
@@ -6527,7 +6541,8 @@
           },
           "is_connector": false,
           "category": "endpoint-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "trend-micro-vision-one",
@@ -6746,7 +6761,8 @@
           "permissions": {},
           "is_connector": true,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "arista-awake-security",
@@ -6867,7 +6883,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "armis",
@@ -7099,7 +7116,8 @@
           "is_connector": false,
           "category": "firewalls",
           "isFeatured": false,
-          "cribl_eligible": true
+          "cribl_eligible": true,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "barracuda-waf",
@@ -7219,7 +7237,8 @@
           },
           "is_connector": true,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "bitglass",
@@ -7575,7 +7594,8 @@
           },
           "is_connector": false,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "cisco-aci",
@@ -7695,7 +7715,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "cisco-asa-2",
@@ -7819,7 +7840,15 @@
           },
           "is_connector": true,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef",
+          "ganttTaskOverrides": {
+            "sourceConfigSubtasks": [
+              "Configure ASA: logging host <forwarder-IP> 6514",
+              "Set logging level: informational or above",
+              "Test with: show logging"
+            ]
+          }
         },
         {
           "id": "cisco-firepower-e-streamer",
@@ -7929,7 +7958,8 @@
           "permissions": {},
           "is_connector": true,
           "category": "endpoint-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "cisco-ise",
@@ -8049,7 +8079,8 @@
           },
           "is_connector": false,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "cisco-meraki-events-via-rest-api",
@@ -8283,7 +8314,8 @@
           },
           "is_connector": true,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "cisco-secure-cloud-analytics",
@@ -8405,7 +8437,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "cisco-secure-endpoint",
@@ -8639,7 +8672,8 @@
           },
           "is_connector": false,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "citrix-adc",
@@ -8759,7 +8793,8 @@
           },
           "is_connector": false,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "citrix-web-app-firewall",
@@ -8886,7 +8921,8 @@
           "is_connector": false,
           "category": "firewalls",
           "isFeatured": false,
-          "cribl_eligible": true
+          "cribl_eligible": true,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "cloudflare",
@@ -10336,7 +10372,15 @@
           "permissions": {},
           "is_connector": true,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef",
+          "ganttTaskOverrides": {
+            "sourceConfigSubtasks": [
+              "Configure F5 BIG-IP remote syslog destination",
+              "Set log level and facility",
+              "Test connectivity to forwarder"
+            ]
+          }
         },
         {
           "id": "fire-eye-network-security",
@@ -10457,7 +10501,8 @@
           },
           "is_connector": false,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "forcepoint-ngfw",
@@ -10581,7 +10626,8 @@
           },
           "is_connector": false,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "forescout-legacy",
@@ -11052,7 +11098,8 @@
           "is_connector": false,
           "category": "firewalls",
           "isFeatured": false,
-          "cribl_eligible": true
+          "cribl_eligible": true,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "fortinet-forti-web-cloud-waf-as-a-service-connector-for-microsoft-sentinel",
@@ -11179,7 +11226,8 @@
           },
           "is_connector": true,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "gigamon-connector",
@@ -11412,7 +11460,8 @@
           },
           "is_connector": true,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "illusive-platform",
@@ -11518,7 +11567,8 @@
           "permissions": {},
           "is_connector": true,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "imperva-cloud-waf",
@@ -11872,7 +11922,8 @@
           },
           "is_connector": false,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "iron-net-iron-defense",
@@ -11994,7 +12045,8 @@
           },
           "is_connector": true,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "isc-bind",
@@ -12116,7 +12168,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "juniper-idp",
@@ -12344,7 +12397,8 @@
           },
           "is_connector": false,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "mc-afee-network-security-platform",
@@ -12467,7 +12521,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "mimecast-audit",
@@ -13777,7 +13832,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "open-vpn",
@@ -13898,7 +13954,8 @@
           },
           "is_connector": false,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "palo-alto-cortex-xdr-ccp",
@@ -14489,7 +14546,8 @@
           },
           "is_connector": true,
           "category": "threat-intelligence",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "ama-custom-logs"
         },
         {
           "id": "security-scorecard-cybersecurity-ratings",
@@ -15175,7 +15233,8 @@
           "is_connector": false,
           "category": "firewalls",
           "isFeatured": false,
-          "cribl_eligible": true
+          "cribl_eligible": true,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "sophos",
@@ -15297,7 +15356,8 @@
           "is_connector": false,
           "category": "firewalls",
           "isFeatured": false,
-          "cribl_eligible": true
+          "cribl_eligible": true,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "squid-proxy",
@@ -15540,7 +15600,8 @@
           },
           "is_connector": false,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "symantec-vip",
@@ -15662,7 +15723,8 @@
           },
           "is_connector": false,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "tanium",
@@ -16005,7 +16067,8 @@
           "permissions": {},
           "is_connector": true,
           "category": "threat-intelligence",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "v-mware-sase",
@@ -16132,7 +16195,8 @@
           },
           "is_connector": true,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "varonis-purview",
@@ -16462,7 +16526,8 @@
           "permissions": {},
           "is_connector": true,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "ama-custom-logs"
         },
         {
           "id": "watchguard-firebox",
@@ -16584,7 +16649,8 @@
           },
           "is_connector": true,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "web-session-essentials",
@@ -16823,7 +16889,8 @@
           "is_connector": true,
           "category": "firewalls",
           "isFeatured": false,
-          "cribl_eligible": true
+          "cribl_eligible": true,
+          "fieldPack": "ama-custom-logs"
         },
         {
           "id": "windows-server-dns",
@@ -16921,7 +16988,8 @@
           "permissions": {},
           "is_connector": true,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "windows-ama"
         },
         {
           "id": "wire-x-network-forensics-platform",
@@ -17028,7 +17096,8 @@
           "permissions": {},
           "is_connector": true,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "zero-networks",
@@ -17245,7 +17314,8 @@
           "permissions": {},
           "is_connector": true,
           "category": "email-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "zscaler-private-access-zpa",
@@ -17597,7 +17667,8 @@
           },
           "is_connector": false,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "alibaba-cloud",
@@ -21089,7 +21160,8 @@
           "permissions": {},
           "is_connector": true,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "forcepoint-casb",
@@ -21210,7 +21282,8 @@
           },
           "is_connector": false,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "forcepoint-csg",
@@ -21333,7 +21406,8 @@
           },
           "is_connector": false,
           "category": "email-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "fortinet-forti-ndr-cloud",
@@ -24577,7 +24651,8 @@
           },
           "is_connector": false,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "palo-alto-prisma-cloud-2",
@@ -26338,7 +26413,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "vectra-xdr",
@@ -27465,7 +27541,8 @@
           },
           "is_connector": false,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "delinea-secret-server",
@@ -27569,7 +27646,8 @@
           "permissions": {},
           "is_connector": true,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "entrust-identity-as-service",
@@ -27800,7 +27878,8 @@
           "is_connector": true,
           "category": "identity-access",
           "isFeatured": false,
-          "cribl_eligible": true
+          "cribl_eligible": true,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "keeper-security",
@@ -28149,7 +28228,8 @@
           },
           "is_connector": true,
           "category": "endpoint-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "one-login-iam",
@@ -28375,7 +28455,8 @@
           },
           "is_connector": false,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "ping-one",
@@ -28718,7 +28799,8 @@
           },
           "is_connector": false,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "sail-point-identity-now",
@@ -29056,7 +29138,8 @@
           },
           "is_connector": true,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "trend-micro-tipping-point",
@@ -29178,7 +29261,8 @@
           },
           "is_connector": false,
           "category": "endpoint-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "abnormal-security",
@@ -29752,7 +29836,8 @@
           },
           "is_connector": false,
           "category": "email-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "mail-risk",
@@ -31044,7 +31129,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "google-apigee",
@@ -35317,7 +35403,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "infoblox-soc-insights",
@@ -35415,7 +35502,8 @@
           "permissions": {},
           "is_connector": true,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "ip-quality-score",
@@ -39178,7 +39266,8 @@
           },
           "is_connector": true,
           "category": "threat-intelligence",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "zero-fox",
@@ -40554,7 +40643,8 @@
           },
           "is_connector": false,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "atlassian-confluence-audit",
@@ -41609,7 +41699,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "claroty",
@@ -41728,7 +41819,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "cognni",
@@ -41949,7 +42041,15 @@
           "capacity_type": "eps",
           "cribl_eligible": true,
           "ama_only": true,
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef",
+          "ganttTaskOverrides": {
+            "sourceConfigSubtasks": [
+              "Point CEF-emitting sources to forwarder/Cribl",
+              "Verify CEF header format: CEF:0|Vendor|Product|Version|...",
+              "Confirm no format mismatch"
+            ]
+          }
         },
         {
           "id": "commvault-security-iq",
@@ -42399,7 +42499,8 @@
           "permissions": {},
           "is_connector": true,
           "category": "endpoint-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "cybersecurity-maturity-model-certification-cmmc-2-0",
@@ -43457,7 +43558,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "doppel",
@@ -44494,7 +44596,8 @@
           },
           "is_connector": true,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "esetprotect",
@@ -44619,7 +44722,8 @@
           },
           "is_connector": true,
           "category": "endpoint-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "feedly",
@@ -45309,7 +45413,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "halcyon",
@@ -45886,7 +45991,8 @@
           },
           "is_connector": false,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "illumio-insight",
@@ -48158,7 +48264,8 @@
           },
           "is_connector": false,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "nc-protect-data-connector",
@@ -48614,7 +48721,8 @@
           },
           "is_connector": false,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "noname-api-security-solution-for-microsoft-sentinel",
@@ -48843,7 +48951,8 @@
           },
           "is_connector": true,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "one-trust",
@@ -49323,7 +49432,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "oracle-web-logic-server",
@@ -49562,7 +49672,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "pci-dss-compliance",
@@ -50025,7 +50136,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "pure-storage",
@@ -50477,7 +50589,8 @@
           },
           "is_connector": true,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "ama-custom-logs"
         },
         {
           "id": "rapid7-insightvm",
@@ -50705,7 +50818,8 @@
           },
           "is_connector": true,
           "category": "threat-intelligence",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "salem-cyber",
@@ -52509,7 +52623,8 @@
           "category": "servers",
           "ama_only": true,
           "isFeatured": false,
-          "cribl_eligible": true
+          "cribl_eligible": true,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "talon",
@@ -53326,7 +53441,8 @@
           },
           "is_connector": false,
           "category": "endpoint-security",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "trend-micro-cloud-app-security",
@@ -54476,7 +54592,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "watchlists-utilities",
@@ -55156,7 +55273,15 @@
             }
           ],
           "isFeatured": false,
-          "cribl_eligible": true
+          "cribl_eligible": true,
+          "fieldPack": "wec-wef",
+          "ganttTaskOverrides": {
+            "sourceConfigSubtasks": [
+              "Design WEF subscription scope (source-initiated vs collector-initiated)",
+              "Configure FQDN targeting",
+              "Validate subscription status on WEC"
+            ]
+          }
         },
         {
           "id": "windows-security-events",
@@ -55490,7 +55615,15 @@
             "azure-arc"
           ],
           "isFeatured": false,
-          "cribl_eligible": true
+          "cribl_eligible": true,
+          "fieldPack": "windows-ama",
+          "ganttTaskOverrides": {
+            "sourceConfigSubtasks": [
+              "Configure Group Policy Security Audit settings",
+              "Select Event IDs (4624, 4625, 4648, 4672, 4688)",
+              "Confirm policy applied to target machines"
+            ]
+          }
         },
         {
           "id": "windows-forwarded-events-via-ama",
@@ -55951,7 +56084,8 @@
           "is_connector": true,
           "category": "cloud",
           "ama_only": true,
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "wec-wef"
         },
         {
           "id": "windows-firewall-via-ama",
@@ -56382,7 +56516,8 @@
           "is_connector": true,
           "category": "firewalls",
           "ama_only": true,
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "ama-custom-logs"
         },
         {
           "id": "windows-dns-events-via-ama",
@@ -56812,7 +56947,8 @@
           "is_connector": true,
           "category": "servers",
           "ama_only": true,
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "windows-ama"
         },
         {
           "id": "sysmon-via-ama",
@@ -57283,7 +57419,15 @@
           "is_connector": true,
           "category": "endpoint-security",
           "ama_only": true,
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "windows-ama",
+          "ganttTaskOverrides": {
+            "sourceConfigSubtasks": [
+              "Deploy Sysmon with config XML on target hosts",
+              "Validate Sysmon events in Event Viewer",
+              "Configure DCR for both Sysmon Windows Events and Linux Syslog"
+            ]
+          }
         },
         {
           "id": "with-secure-elements-via-connector",
@@ -57408,7 +57552,8 @@
           },
           "is_connector": true,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "syslog-cef"
         },
         {
           "id": "with-secure-elements-via-function",
@@ -58034,7 +58179,8 @@
             "maturity": "ga",
             "detection_areas": [],
             "dependencies": []
-          }
+          },
+          "fieldPack": "cribl-intermediary"
         }
       ]
     }

@@ -29,6 +29,18 @@ const MAX_PER_SOLUTION = 10;
 const SOLUTION_FETCH_BATCH_SIZE = 5;
 const mitreCoverageCache = new Map();
 
+let prebakedDataPromise = null;
+
+/** Fetch and cache the pre-baked mitre-coverage.json. */
+function loadPrebakedData() {
+    if (!prebakedDataPromise) {
+        prebakedDataPromise = fetch('./data/mitre-coverage.json')
+            .then(r => r.ok ? r.json() : null)
+            .catch(() => null);
+    }
+    return prebakedDataPromise;
+}
+
 /**
  * Derive the GitHub folder name for a solution.
  * Uses the tail segment of github_url when available, otherwise falls back to name.
@@ -201,7 +213,15 @@ async function getMitreCoverageData(solutions) {
             }
         }
 
-        return { tacticCounts, techniqueSets, perConnector, totalRulesParsed };
+        // If every live fetch failed (rate-limited or network error), fall back to pre-baked data
+        if (totalRulesParsed === 0) {
+            const prebaked = await loadPrebakedData();
+            if (prebaked && prebaked.solutions) {
+                return buildFromPrebaked(solutions, prebaked);
+            }
+        }
+
+        return { tacticCounts, techniqueSets, perConnector, totalRulesParsed, usingFallback: false };
     })();
 
     mitreCoverageCache.set(cacheKey, coveragePromise);
@@ -212,6 +232,50 @@ async function getMitreCoverageData(solutions) {
         mitreCoverageCache.delete(cacheKey);
         throw error;
     }
+}
+
+/** Build coverage result from pre-baked JSON, filtered to the selected solutions. */
+function buildFromPrebaked(solutions, prebaked) {
+    const tacticCounts  = createTacticCounts();
+    const techniqueSets = createTechniqueSets();
+    const perConnector  = [];
+    let totalRulesParsed = 0;
+
+    for (const sol of solutions) {
+        const folder = getSolutionFolder(sol);
+        const data   = prebaked.solutions[folder];
+        if (!data || data.rulesParsed === 0) continue;
+
+        const connTactics    = createTacticCounts();
+        const connTechniques = createTechniqueSets();
+
+        for (const [tactic, count] of Object.entries(data.tactics || {})) {
+            if (tacticCounts[tactic] !== undefined) {
+                tacticCounts[tactic] += count;
+                connTactics[tactic]   = count;
+            }
+        }
+
+        for (const [tactic, techs] of Object.entries(data.techniques || {})) {
+            if (techniqueSets[tactic]) {
+                techs.forEach(t => {
+                    techniqueSets[tactic].add(t);
+                    connTechniques[tactic].add(t);
+                });
+            }
+        }
+
+        totalRulesParsed += data.rulesParsed;
+        perConnector.push({
+            name:        sol.name,
+            rulesParsed: data.rulesParsed,
+            totalRules:  data.totalRules,
+            tactics:     connTactics,
+            techniques:  connTechniques
+        });
+    }
+
+    return { tacticCounts, techniqueSets, perConnector, totalRulesParsed, usingFallback: true };
 }
 
 /**
@@ -234,11 +298,21 @@ export async function renderMitreCoverage(solutions) {
         <p class="mitre-subtitle">Analyzing analytic rules to determine your detection coverage across MITRE ATT&amp;CK tactics…</p>
         <div class="mitre-loading">⏳ Fetching analytic rules from GitHub… (sampling up to ${MAX_PER_SOLUTION} rules per solution)</div>`;
 
-    const coverageData = await getMitreCoverageData(solutions);
+    let coverageData;
+    try {
+        coverageData = await getMitreCoverageData(solutions);
+    } catch (err) {
+        container.innerHTML = `
+            <h3>🎯 MITRE ATT&amp;CK Coverage</h3>
+            <p style="color:var(--warning);font-size:0.85rem;">⚠️ MITRE: Failed to fetch coverage data. Check your network connection and try again.</p>`;
+        console.error('[renderMitreCoverage] getMitreCoverageData failed:', err);
+        return;
+    }
     const tacticCounts = coverageData.tacticCounts;
     const techniqueSets = coverageData.techniqueSets;
     const perConnector = coverageData.perConnector.slice();
     const totalRulesParsed = coverageData.totalRulesParsed;
+    const usingFallback = coverageData.usingFallback === true;
 
     if (totalRulesParsed === 0) {
         container.innerHTML = `
@@ -341,6 +415,7 @@ export async function renderMitreCoverage(solutions) {
 
     container.innerHTML = `
         <h3>🎯 MITRE ATT&amp;CK Coverage</h3>
+        ${usingFallback ? `<p class="mitre-fallback-note">ℹ️ Using cached coverage data (live API unavailable)</p>` : ''}
         <p class="mitre-subtitle">Based on ${totalRulesParsed} analytic rules sampled from your selected solutions.</p>
         <div class="mitre-summary-bar">
             <div class="mitre-summary-stat">

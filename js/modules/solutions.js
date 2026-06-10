@@ -1,4 +1,4 @@
-import { clearConnectorCriblIngestion, getConnectorCapacitySnapshot, saveConnectorCapacityValues } from '../gantt-planner.js?v=9';
+import { clearConnectorCriblIngestion, getConnectorCapacitySnapshot, saveConnectorCapacityValues } from '../gantt-planner.js?v=16';
 import {
     createDefaultSizingDraft,
     estimateWecServersForSourceComputers,
@@ -16,7 +16,7 @@ import {
     WEC_RECOMMENDED_RAM_GB,
     WEC_TYPICAL_CLIENTS_MAX,
     WEC_TYPICAL_CLIENTS_MIN
-} from './capacity.js?v=9';
+} from './capacity.js?v=16';
 
 const INTEGER_FORMATTER = new Intl.NumberFormat('en-US');
 

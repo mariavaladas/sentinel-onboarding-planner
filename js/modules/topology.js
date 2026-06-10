@@ -79,7 +79,9 @@ const LINUX_SERVER_IDS = new Set(['linux-syslog', 'microsoft-sysmon-for-linux'])
 const CRIBL_SOLUTION_ID = 'cribl-stream';
 const ROUTE_STANDARD = 'standard';
 const ROUTE_CRIBL = 'cribl';
-const CRIBL_NODE_ID = 'shared-cribl-node';
+const CRIBL_NODE_ID = 'shared-cribl-node'; // deprecated — use band-scoped IDs below
+const CRIBL_NODE_ID_TOP = 'shared-cribl-node-top';
+const CRIBL_NODE_ID_BOTTOM = 'shared-cribl-node-bottom';
 const FLOW_BAND_ORDER = {
     windows_events: 0,
     syslog_cef: 1,
@@ -796,7 +798,10 @@ export function renderTopology(selectedSolutions, containerEl) {
 
     const allSelectedSolutions = Array.isArray(selectedSolutions) ? selectedSolutions : [];
     const hasStandaloneCriblSelection = allSelectedSolutions.some((solution) => String(solution?.id || '').trim().toLowerCase() === CRIBL_SOLUTION_ID);
-    const topologySolutions = allSelectedSolutions.filter((solution) => String(solution?.id || '').trim().toLowerCase() !== CRIBL_SOLUTION_ID);
+    const topologySolutions = allSelectedSolutions.filter((solution) =>
+        String(solution?.id || '').trim().toLowerCase() !== CRIBL_SOLUTION_ID
+        && (solution?.connectors ?? 1) > 0
+    );
     const groups = {};
     topologySolutions.forEach((sol) => {
         const type = classifySolution(sol);
@@ -1030,11 +1035,11 @@ export function renderTopology(selectedSolutions, containerEl) {
   const sentinelNodeWidth = 220;
   const sentinelNodeHeight = 132;
   const criblSentinelGapX = 88;
-  const topIntermediaryOffsetY = 72;
-  const intermediaryLayerGapY = 152;
-  const topSentinelGapY = 96;
-  const bottomSentinelGapY = 96;
-  const bottomSourceGapY = 88;
+  const topIntermediaryOffsetY = 280;
+  const intermediaryLayerGapY = 200;
+  const topSentinelGapY = 250;
+  const bottomSentinelGapY = 250;
+  const bottomSourceGapY = 260;
   const dcrSpreadGapX = dcrNodeWidth + 36;
   const zoneInnerPaddingX = 24;
   const zoneInternalRowGap = 32;
@@ -1102,7 +1107,6 @@ export function renderTopology(selectedSolutions, containerEl) {
   };
 
   const shouldPlaceCollectorInZone = (entry = {}) => entry.type === 'syslog_cef'
-      && (entry.route || ROUTE_STANDARD) !== ROUTE_CRIBL
       && entry.zone === collectorPlacementZone;
   const splitSolutionsByRoute = (type, solutions = []) => {
       const allSolutions = Array.isArray(solutions) ? solutions : [];
@@ -1480,18 +1484,18 @@ export function renderTopology(selectedSolutions, containerEl) {
       top: criblRoutedRows.some((row) => row.band === 'top'),
       bottom: criblRoutedRows.some((row) => row.band === 'bottom')
   };
+  const criblTopRows = criblRoutedRows.filter((row) => row.band === 'top');
+  const criblBottomRows = criblRoutedRows.filter((row) => row.band === 'bottom');
+  const getCriblNodeId = (band) => band === 'bottom' ? CRIBL_NODE_ID_BOTTOM : CRIBL_NODE_ID_TOP;
   const layoutSentinelCenterX = getLayoutCenterX({ topBandLayout, bottomBandLayout, zoneLayouts });
   const sentinelX = layoutSentinelCenterX - (sentinelNodeWidth / 2);
   const sentinelCenterX = sentinelX + (sentinelNodeWidth / 2);
-  const criblX = sentinelX + sentinelNodeWidth + criblSentinelGapX;
-
   const diagramLeftX = zoneLayouts.length
       ? Math.min(...zoneLayouts.map((layout) => layout.zoneStartX))
       : sourceStartX;
   const diagramRightX = Math.max(
       topBandLayout.bandRightX,
-      bottomBandLayout.bandRightX,
-      criblSourceIds.length ? criblX + pathNodeWidth : sourceStartX
+      bottomBandLayout.bandRightX
   );
   const clampNodeX = (x, width) => Math.max(diagramLeftX, Math.min(diagramRightX - width, x));
   const getRowCenterX = (row) => row.x + (row.width / 2);
@@ -1646,31 +1650,100 @@ export function renderTopology(selectedSolutions, containerEl) {
       });
   });
 
-  if (criblSourceIds.length > 0) {
+  if (criblIngress.top) {
+      const criblTopCenterX = average(criblTopRows.map((row) => getRowCenterX(row)));
       nodes.push({
-          id: CRIBL_NODE_ID,
+          id: CRIBL_NODE_ID_TOP,
           type: 'cribl',
           position: {
-              x: clampNodeX(criblX, pathNodeWidth),
-              y: sentinelY
+              x: clampNodeX(criblTopCenterX - (pathNodeWidth / 2), pathNodeWidth),
+              y: getTopLayerY(1)
           },
           data: {
               color: PATH_CONFIGS.cribl.color,
               icon: PATH_CONFIGS.cribl.sourceIcon,
               logoUrl: PATH_CONFIGS.cribl.logoUrl,
-              label: 'Cribl Stream',
-              acceptsTop: criblIngress.top,
-              acceptsBottom: criblIngress.bottom
+              label: 'Cribl Stream'
           },
           style: {
               width: pathNodeWidth,
               height: sentinelNodeHeight
           }
       });
-
-      edges.push(buildCriblToSentinelEdge(CRIBL_NODE_ID, 'sentinel', PATH_CONFIGS.cribl.color, {
-          id: `e-${CRIBL_NODE_ID}--sentinel`
+      edges.push(buildMiddleEdge(CRIBL_NODE_ID_TOP, 'sentinel', PATH_CONFIGS.cribl.color, 'top', {
+          id: `e-${CRIBL_NODE_ID_TOP}--sentinel`
       }));
+  }
+
+  if (criblIngress.bottom) {
+      const criblBottomCenterX = average(criblBottomRows.map((row) => getRowCenterX(row)));
+      nodes.push({
+          id: CRIBL_NODE_ID_BOTTOM,
+          type: 'cribl',
+          position: {
+              x: clampNodeX(criblBottomCenterX - (pathNodeWidth / 2), pathNodeWidth),
+              y: getBottomLayerY(1)
+          },
+          data: {
+              color: PATH_CONFIGS.cribl.color,
+              icon: PATH_CONFIGS.cribl.sourceIcon,
+              logoUrl: PATH_CONFIGS.cribl.logoUrl,
+              label: 'Cribl Stream'
+          },
+          style: {
+              width: pathNodeWidth,
+              height: sentinelNodeHeight
+          }
+      });
+      edges.push(buildMiddleEdge(CRIBL_NODE_ID_BOTTOM, 'sentinel', PATH_CONFIGS.cribl.color, 'bottom', {
+          id: `e-${CRIBL_NODE_ID_BOTTOM}--sentinel`
+      }));
+  }
+
+  // ─── Existing Linux VMs — already streaming to workspace via DCR ───────────
+  // These are real VMs in the user's environment, distinct from calculated
+  // collector VMs (which represent VMs needed for new onboarding).
+  const EXISTING_VMS_NODE_ID = 'existing-linux-vms';
+  const infraData = window.discoveredInfrastructure || null;
+  const existingVMs = infraData?.vms || [];
+  const activeVMs = existingVMs.filter(v => v.status === 'active');
+  const idleVMs = existingVMs.filter(v => v.status === 'idle');
+  const staleVMs = existingVMs.filter(v => v.status === 'stale');
+  const totalExistingVMs = existingVMs.length;
+
+  const syslogDcrEntries = sharedDcrEntries.filter((entry) => entry.color === PATH_CONFIGS.syslog_cef.color);
+  if (infraData && totalExistingVMs > 0 && syslogDcrEntries.length > 0) {
+      const measuredEps = infraData.summary?.totalEPS || 0;
+      let capacityLabel;
+      if (idleVMs.length === 0 && staleVMs.length === 0) {
+          capacityLabel = `${totalExistingVMs} VM${totalExistingVMs !== 1 ? 's' : ''} · all active`;
+      } else {
+          const parts = [];
+          if (activeVMs.length > 0) parts.push(`${activeVMs.length} active`);
+          if (idleVMs.length > 0) parts.push(`${idleVMs.length} idle`);
+          if (staleVMs.length > 0) parts.push(`${staleVMs.length} stale`);
+          capacityLabel = `${totalExistingVMs} VM${totalExistingVMs !== 1 ? 's' : ''} · ${parts.join(', ')}`;
+      }
+      const measuredEpsLabel = measuredEps > 0 ? `~${formatEps(measuredEps)} EPS measured (24h)` : null;
+      nodes.push({
+          id: EXISTING_VMS_NODE_ID,
+          type: 'collectorVm',
+          data: {
+              color: PATH_CONFIGS.syslog_cef.color,
+              band: 'top',
+              vmCount: totalExistingVMs,
+              capacityLabel,
+              measuredEpsLabel
+          },
+          position: {
+              x: diagramLeftX,
+              y: topBandLayout.bandBottomY + 80
+          },
+          style: { width: collectorVmWidth }
+      });
+      syslogDcrEntries.forEach((entry) => {
+          edges.push(buildMiddleEdge(EXISTING_VMS_NODE_ID, entry.id, PATH_CONFIGS.syslog_cef.color, 'top'));
+      });
   }
 
   zoneLayouts.forEach((layout) => {
@@ -1701,7 +1774,7 @@ export function renderTopology(selectedSolutions, containerEl) {
       position: { x: sentinelX, y: sentinelY },
       data: {
           workspace: 'Log Analytics Workspace',
-          hasSidecarTarget: criblSourceIds.length > 0
+          hasSidecarTarget: false
       },
       style: { width: sentinelNodeWidth },
       draggable: true
@@ -1757,7 +1830,43 @@ export function renderTopology(selectedSolutions, containerEl) {
           const sourceToSentinelEdge = (options = {}) => buildSourceToMiddleEdge(sourceId, 'sentinel', pc.color, sourceBand, options);
 
           if (usesSharedDcr(entry.type) && entry.route === ROUTE_CRIBL) {
-              edges.push(buildSourceToMiddleEdge(sourceId, CRIBL_NODE_ID, PATH_CONFIGS.cribl.color, sourceBand));
+              if (entry.type === 'syslog_cef' && entry.collectorVm) {
+                  // On-prem syslog/CEF: Source → Linux VM → Cribl Stream → Sentinel
+                  const collectorVmId = `collector-${ROUTE_CRIBL}-${entry.zone}`;
+                  if (!renderedCollectorVmIds.has(collectorVmId)) {
+                      const sharedPlan = getSharedPlanForRow(entry);
+                      nodes.push({
+                          id: collectorVmId,
+                          type: 'collectorVm',
+                          data: {
+                              color: PATH_CONFIGS.syslog_cef.color,
+                              band: sourceBand,
+                              vmCount: sharedPlan?.vmCount || 0,
+                              capacityLabel: sharedPlan
+                                  ? `${formatEps(sharedPlan.totalEps)} EPS [max: ${formatTopologyCount(FIREWALL_VM_EPS_CAPACITY)} EPS/VM]`
+                                  : ''
+                          },
+                          position: {
+                              x: entry.collectorVm.x,
+                              y: sourceBand === 'bottom'
+                                  ? getBottomLayerY(1) + intermediaryNodeHeight + 60
+                                  : topBandLayout.bandBottomY + 80
+                          },
+                          style: { width: collectorVmWidth }
+                      });
+                      renderedCollectorVmIds.add(collectorVmId);
+                  }
+                  edges.push(buildSourceToCollectorEdge(sourceId, collectorVmId, PATH_CONFIGS.syslog_cef.color));
+                  const criblEdgeId = `e-${collectorVmId}--${getCriblNodeId(sourceBand)}`;
+                  if (!renderedCollectorTargetEdgeIds.has(criblEdgeId)) {
+                      edges.push(buildMiddleEdge(collectorVmId, getCriblNodeId(sourceBand), PATH_CONFIGS.syslog_cef.color, sourceBand, {
+                          id: criblEdgeId
+                      }));
+                      renderedCollectorTargetEdgeIds.add(criblEdgeId);
+                  }
+                  return;
+              }
+              edges.push(buildSourceToMiddleEdge(sourceId, getCriblNodeId(sourceBand), PATH_CONFIGS.cribl.color, sourceBand));
               return;
           }
 
@@ -1788,9 +1897,11 @@ export function renderTopology(selectedSolutions, containerEl) {
                                       ? `${formatEps(sharedPlan.totalEps)} EPS [max: ${formatTopologyCount(FIREWALL_VM_EPS_CAPACITY)} EPS/VM]`
                                       : ''
                               },
-                              position: entry.collectorVm || {
-                                  x: entry.x + sourceWidth + collectorVmOffsetX,
-                                  y: entry.y + collectorVmOffsetY
+                              position: {
+                                  x: entry.collectorVm ? entry.collectorVm.x : (entry.x + sourceWidth + collectorVmOffsetX),
+                                  y: sourceBand === 'bottom'
+                                      ? getBottomLayerY(1) + intermediaryNodeHeight + 60
+                                      : topBandLayout.bandBottomY + 80
                               },
                               style: { width: collectorVmWidth }
                           });
@@ -1981,6 +2092,171 @@ export function renderTopology(selectedSolutions, containerEl) {
   };
 
   applyDistributedHandlePorts();
+
+  function createLayerBoxNodes(existingNodes = []) {
+      const layerConfigs = [
+          { name: 'sources', label: '📡 SOURCES', color: '#f59e0b', types: new Set(['source', 'uberBox']), band: 'top' },
+          { name: 'collection', label: '📦 COLLECTION INFRASTRUCTURE', color: '#22c55e', types: new Set(['server', 'collectorVm']), band: 'top' },
+          { name: 'transformation', label: '🔄 PIPELINE & TRANSFORMATIONS', color: '#8b5cf6', types: new Set(['dcr', 'cribl', 'pathBox']), band: 'top' },
+          { name: 'transformation-bottom', label: '🔄 PIPELINE & TRANSFORMATIONS', color: '#8b5cf6', types: new Set(['dcr', 'cribl', 'pathBox']), band: 'bottom' },
+          { name: 'collection-bottom', label: '📦 COLLECTION INFRASTRUCTURE', color: '#22c55e', types: new Set(['server', 'collectorVm']), band: 'bottom' },
+          { name: 'sources-bottom', label: '📡 SOURCES', color: '#f59e0b', types: new Set(['source', 'uberBox']), band: 'bottom' }
+      ];
+      const getNodeWidth = (node = {}) => Number(node?.style?.width)
+          || (node?.type === 'source' ? sourceNodeWidth
+              : node?.type === 'server' ? serverNodeWidth
+                  : node?.type === 'collectorVm' ? collectorVmWidth
+                      : node?.type === 'cribl' || node?.type === 'pathBox' ? pathNodeWidth
+                          : node?.type === 'dcr' ? dcrNodeWidth
+                              : node?.type === 'sentinel' ? sentinelNodeWidth
+                                  : 0);
+      const getNodeHeight = (node = {}) => {
+          if (node?.type === 'uberBox') {
+              return Number(node?.style?.height) || null;
+          }
+          switch (node?.type) {
+          case 'source':
+              return sourceNodeHeight;
+          case 'server':
+          case 'collectorVm':
+              return 120;
+          case 'dcr':
+          case 'pathBox':
+          case 'cribl':
+              return 100;
+          case 'sentinel':
+              return sentinelNodeHeight;
+          default:
+              return null;
+          }
+      };
+      const sentinelMidY = sentinelY + (sentinelNodeHeight / 2);
+
+      // Pass 1: compute raw bounds for each layer
+      const layerBounds = layerConfigs.map((layer) => {
+          const matchingNodes = (Array.isArray(existingNodes) ? existingNodes : []).filter((node) => {
+              if (!layer.types.has(node?.type)) return false;
+              const nodeY = Number(node?.position?.y);
+              if (!Number.isFinite(nodeY)) return false;
+              if (layer.band === 'center') return true;
+              if (layer.band === 'top') return nodeY < sentinelMidY;
+              return nodeY >= sentinelMidY && node?.type !== 'sentinel';
+          });
+          if (!matchingNodes.length) return { layer, empty: true };
+
+          let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+          matchingNodes.forEach((node) => {
+              const nodeX = Number(node?.position?.x);
+              const nodeY = Number(node?.position?.y);
+              if (!Number.isFinite(nodeX) || !Number.isFinite(nodeY)) return;
+              minX = Math.min(minX, nodeX);
+              maxX = Math.max(maxX, nodeX + getNodeWidth(node));
+              minY = Math.min(minY, nodeY);
+              const h = getNodeHeight(node);
+              if (Number.isFinite(h)) maxY = Math.max(maxY, nodeY + h);
+          });
+          if (!Number.isFinite(minX)) return { layer, empty: true };
+          return { layer, minX, maxX, minY, maxY };
+      });
+
+      // Find the SOURCES top-band bounds to use as reference width for top layers
+      const sourcesTopBounds = layerBounds.find((b) => b.layer.name === 'sources' && !b.empty);
+      const refMinX = sourcesTopBounds ? sourcesTopBounds.minX - 50 : diagramLeftX - 50;
+      const refMaxX = sourcesTopBounds ? sourcesTopBounds.maxX + 50 : diagramRightX + 50;
+      const sourcesBottomEdge = sourcesTopBounds ? sourcesTopBounds.maxY + 45 : 0;
+
+      // Find the SOURCES bottom-band bounds to use as reference width for bottom layers
+      const sourcesBottomBounds = layerBounds.find((b) => b.layer.name === 'sources-bottom' && !b.empty);
+      const refBottomMinX = sourcesBottomBounds ? sourcesBottomBounds.minX - 50 : refMinX;
+      const refBottomMaxX = sourcesBottomBounds ? sourcesBottomBounds.maxX + 50 : refMaxX;
+      const sourcesBottomTopEdge = sourcesBottomBounds ? sourcesBottomBounds.minY - 75 : Infinity;
+
+      // Pass 2: create layer box nodes sequentially (top band: sources→collection→transformation, bottom band: sources→collection→transformation)
+      const LAYER_GAP = 12;
+      const topOrder = ['sources', 'collection', 'transformation'];
+      const bottomOrder = ['sources-bottom', 'collection-bottom', 'transformation-bottom'];
+      const computedBoxes = {};
+
+      // Compute top band layers in order (top-to-bottom stacking)
+      topOrder.forEach((name) => {
+          const bounds = layerBounds.find((b) => b.layer.name === name);
+          if (!bounds || bounds.empty) return;
+          const { minY, maxY } = bounds;
+          let boxLeft, boxRight, boxTop, boxBottom;
+          if (name === 'sources') {
+              boxLeft = bounds.minX - 50;
+              boxRight = bounds.maxX + 50;
+              boxTop = minY - 75;
+              boxBottom = maxY + 45;
+          } else {
+              boxLeft = refMinX;
+              boxRight = refMaxX;
+              // HARD RULE: this layer MUST start below the previous layer's bottom edge
+              const prevName = topOrder[topOrder.indexOf(name) - 1];
+              const prevBottom = computedBoxes[prevName]?.boxBottom || sourcesBottomEdge;
+              boxTop = Math.max(minY - 75, prevBottom + LAYER_GAP);
+              // Ensure box extends to contain nodes AND has minimum height
+              boxBottom = Math.max(maxY + 45, boxTop + 80);
+          }
+          computedBoxes[name] = { boxLeft, boxRight, boxTop, boxBottom };
+      });
+
+      // Compute bottom band layers in order (bottom-to-top stacking: sources-bottom is furthest down, transformation-bottom is closest to center)
+      // Visual order from center down: transformation-bottom → collection-bottom → sources-bottom
+      // So we compute sources-bottom first (anchor), then collection-bottom must sit ABOVE it, then transformation-bottom ABOVE collection-bottom
+      bottomOrder.forEach((name) => {
+          const bounds = layerBounds.find((b) => b.layer.name === name);
+          if (!bounds || bounds.empty) return;
+          const { minY, maxY } = bounds;
+          let boxLeft, boxRight, boxTop, boxBottom;
+          if (name === 'sources-bottom') {
+              boxLeft = bounds.minX - 50;
+              boxRight = bounds.maxX + 50;
+              boxTop = minY - 75;
+              boxBottom = maxY + 45;
+          } else {
+              boxLeft = refBottomMinX;
+              boxRight = refBottomMaxX;
+              // HARD RULE: this layer MUST end above the previous layer's top edge
+              const prevName = bottomOrder[bottomOrder.indexOf(name) - 1];
+              const prevTopEdge = computedBoxes[prevName]?.boxTop;
+              boxBottom = prevTopEdge !== undefined
+                  ? Math.min(maxY + 45, prevTopEdge - LAYER_GAP)
+                  : maxY + 45;
+              // Ensure box has minimum height (extends upward)
+              boxTop = Math.min(minY - 75, boxBottom - 80);
+          }
+          computedBoxes[name] = { boxLeft, boxRight, boxTop, boxBottom };
+      });
+
+      return layerConfigs.flatMap((layer) => {
+          const box = computedBoxes[layer.name];
+          if (!box) return [];
+          const { boxLeft, boxRight, boxTop, boxBottom } = box;
+
+          return [{
+              id: `layer-${layer.name}`,
+              type: 'layerBox',
+              position: { x: boxLeft, y: boxTop },
+              data: {
+                  label: layer.label,
+                  layer: layer.name.replace('-bottom', ''),
+                  color: layer.color
+              },
+              style: {
+                  width: boxRight - boxLeft,
+                  height: boxBottom - boxTop,
+                  zIndex: -2,
+                  pointerEvents: 'none'
+              },
+              draggable: false,
+              selectable: false
+          }];
+      });
+  }
+
+  const layerBoxNodes = createLayerBoxNodes(nodes);
+  const allRenderNodes = [...layerBoxNodes, ...nodes];
 
   const legendSeeds = [
         ...groupEntries.map(([type]) => {
@@ -2264,6 +2540,9 @@ export function renderTopology(selectedSolutions, containerEl) {
             data.capacityLabel
                 ? h('div', { className: 'rf-dcr-detail rf-dcr-detail--metric' }, data.capacityLabel)
                 : null,
+            data.measuredEpsLabel
+                ? h('div', { className: 'rf-dcr-detail rf-dcr-detail--metric', style: { color: '#10B981', fontWeight: 600 } }, data.measuredEpsLabel)
+                : null,
             ...renderDistributedHandles('source', 'top', data.color, getPortHandleCount(data, 'source', 'top'), 6, sourceActiveSide !== 'top'),
             ...renderDistributedHandles('source', 'bottom', data.color, getPortHandleCount(data, 'source', 'bottom'), 6, sourceActiveSide !== 'bottom'),
             h(Handle, { id: HANDLE_IDS.sourceRight, type: 'source', position: Position.Right, style: getHandleStyle(data.color, 6, true) })
@@ -2282,10 +2561,22 @@ export function renderTopology(selectedSolutions, containerEl) {
         );
     }
 
+    function LayerBoxNode({ data }) {
+        const color = data?.color || '#0078d4';
+        return h('div', {
+            className: `rf-layer-box rf-layer-box--${data?.layer || 'sources'}`,
+            style: {
+                '--layer-box-color': color,
+                '--layer-box-fill': hexToRgba(color, 0.03)
+            }
+        },
+        h('div', { className: 'rf-layer-box__label' }, data?.label || ''));
+    }
+
     function FlowWrapper() {
-        const nt = React.useMemo(() => ({ source: SourceNode, pathBox: PathBoxNode, cribl: CriblNode, server: ServerNode, dcr: DCRNode, sentinel: SentinelNode, uberBox: UberBoxNode, collectorVm: CollectorVmNode }), []);
+        const nt = React.useMemo(() => ({ source: SourceNode, pathBox: PathBoxNode, cribl: CriblNode, server: ServerNode, dcr: DCRNode, sentinel: SentinelNode, uberBox: UberBoxNode, collectorVm: CollectorVmNode, layerBox: LayerBoxNode }), []);
         return h(RF, {
-            defaultNodes: nodes,
+            defaultNodes: allRenderNodes,
             defaultEdges: edges,
             nodeTypes: nt,
             fitView: true,

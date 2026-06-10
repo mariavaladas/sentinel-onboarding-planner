@@ -1,0 +1,19 @@
+# OS/Editor
+.DS_Store
+Thumbs.db
+*.swp
+*.swo
+*~
+
+# Backups and temp
+_cleanup-backup/
+test-results/
+*.tmp
+
+# Scripts (local dev helpers)
+apply_k_patch.py
+scripts/patch_fieldpack.py
+scripts/verify_fieldpack.py
+
+# Generated reports (local)
+gantt-task-model-proposal.xlsx

@@ -1,0 +1,27 @@
+# Health Report: 2026-05-25T13:26 Session
+
+## Decisions.md Status
+- **Before:** 38704 bytes (no archive created)
+- **After:** 42102 bytes
+- **Inbox processed:** 3 files (k-gantt-columns-panel.md, k-sizing-panel.md, luv-capacity-qa.md)
+- **Archive action:** SKIPPED (below 51200 byte threshold, no entries > 30 days old)
+
+## History Files
+- k/history.md: 8346 bytes (no summarization needed)
+- luv/history.md: 9381 bytes (no summarization needed)
+- deckard/history.md: 11551 bytes (no summarization needed)
+- sebastian/history.md: 14761 bytes (no summarization needed)
+- Threshold: 15360 bytes (15KB) — All files below
+
+## Artifacts Created
+- .squad/orchestration-log/2026-05-25T13-26-k.md (1358 bytes)
+- .squad/log/2026-05-25T13-26-gantt-columns-panel.md (606 bytes)
+
+## Git Commit
+- Message: "docs(squad): log K-8 resizable columns + detail panel session"
+- Trailer: Co-authored-by: Copilot <223556219+Copilot@users.noreply.github.com>
+- Files staged: 5
+- Commit hash: 2ad7069
+
+## Session Complete
+✓ All 8 steps executed successfully

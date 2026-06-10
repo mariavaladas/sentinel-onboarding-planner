@@ -504,6 +504,45 @@ body {
     font-size: 1.2rem;
 }
 
+/* Notice Legend */
+.notice-legend {
+    list-style: none;
+    margin: 10px 0 0 0;
+    padding: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    color: var(--text-secondary);
+    font-size: 0.85rem;
+}
+
+.notice-legend-icon {
+    display: inline-block;
+    padding: 1px 7px;
+    border-radius: var(--radius-sm);
+    background: var(--bg-card);
+    border: 1px solid var(--border-color);
+    font-size: 0.78rem;
+    font-weight: 600;
+    margin-right: 6px;
+    vertical-align: middle;
+}
+
+.legend-star {
+    color: var(--warning);
+    border-color: rgba(245, 158, 11, 0.4);
+}
+
+.legend-featured {
+    color: var(--accent);
+    border-color: rgba(139, 92, 246, 0.4);
+}
+
+.legend-connected {
+    color: var(--success);
+    border-color: rgba(16, 185, 129, 0.4);
+}
+
 /* NLP Input (Step 3) */
 .nlp-input-section {
     background: var(--bg-card);
@@ -5056,6 +5095,16 @@ body.is-resizing-gantt {
 .mitre-coverage-section { margin-top: 28px; }
 .mitre-coverage-section h3 { font-size: 1rem; color: var(--text-primary); margin-bottom: 4px; }
 .mitre-coverage-section .mitre-subtitle { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 16px; }
+.mitre-coverage-section .mitre-fallback-note {
+    font-size: 0.78rem;
+    color: var(--text-muted);
+    background: var(--bg-secondary, rgba(255,255,255,0.04));
+    border: 1px solid var(--border-color, rgba(255,255,255,0.1));
+    border-radius: 6px;
+    padding: 5px 10px;
+    margin-bottom: 8px;
+    display: inline-block;
+}
 
 .mitre-loading { text-align: center; padding: 24px; color: var(--text-muted); font-size: 0.85rem; }
 
@@ -5171,3 +5220,29 @@ body.is-resizing-gantt {
 
 .mitre-expand-icon { color: var(--text-muted); font-size: 0.8rem; transition: transform 0.2s; display: block; margin-top: 4px; text-align: right; }
 .mitre-connector-row.expanded .mitre-expand-icon { transform: rotate(180deg); }
+
+.rf-layer-box {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    box-sizing: border-box;
+    border: 2px dashed var(--layer-box-color, var(--border-color));
+    border-radius: 16px;
+    background: var(--layer-box-fill, rgba(255, 255, 255, 0.03));
+    pointer-events: none;
+    box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.04);
+}
+
+.rf-layer-box__label {
+    position: absolute;
+    top: 10px;
+    left: 14px;
+    padding: 0;
+    font-size: 12px;
+    font-weight: 600;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--layer-box-color, var(--text-muted));
+    opacity: 0.6;
+    pointer-events: none;
+}

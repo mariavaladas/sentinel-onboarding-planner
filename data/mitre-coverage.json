@@ -1,0 +1,7406 @@
+{
+  "generated": "2026-06-10T13:56:36.909Z",
+  "solutions": {
+    "Azure DDoS Protection": {
+      "tactics": {
+        "Impact": 2
+      },
+      "techniques": {
+        "Impact": [
+          "T1498"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Azure Activity": {
+      "tactics": {
+        "DefenseEvasion": 6,
+        "CredentialAccess": 1,
+        "Impact": 2,
+        "Persistence": 1,
+        "PrivilegeEscalation": 1,
+        "InitialAccess": 1,
+        "Execution": 2
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1578",
+          "T1578.003",
+          "T1528",
+          "T1550"
+        ],
+        "CredentialAccess": [
+          "T1528",
+          "T1550"
+        ],
+        "Impact": [
+          "T1496",
+          "T1078",
+          "T1059"
+        ],
+        "Persistence": [
+          "T1098",
+          "T1548"
+        ],
+        "PrivilegeEscalation": [
+          "T1098",
+          "T1548"
+        ],
+        "InitialAccess": [
+          "T1078",
+          "T1059",
+          "T1496"
+        ],
+        "Execution": [
+          "T1078",
+          "T1059",
+          "T1496"
+        ]
+      },
+      "totalRules": 14,
+      "rulesParsed": 10
+    },
+    "AzureDevOpsAuditing": {
+      "tactics": {
+        "DefenseEvasion": 4,
+        "Collection": 1,
+        "Persistence": 2,
+        "CredentialAccess": 2,
+        "Execution": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1578.002",
+          "T1562.008",
+          "T1564",
+          "T1578"
+        ],
+        "Collection": [
+          "T1119"
+        ],
+        "Persistence": [
+          "T1505",
+          "T1098"
+        ],
+        "CredentialAccess": [
+          "T1528",
+          "T1552"
+        ],
+        "Execution": [
+          "T1578",
+          "T1569"
+        ]
+      },
+      "totalRules": 19,
+      "rulesParsed": 10
+    },
+    "Azure Firewall": {
+      "tactics": {
+        "InitialAccess": 5,
+        "Exfiltration": 4,
+        "CommandAndControl": 4,
+        "Discovery": 3,
+        "DefenseEvasion": 2,
+        "Impact": 2,
+        "CredentialAccess": 2,
+        "Execution": 2,
+        "Reconnaissance": 2
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1041",
+          "T1568.001",
+          "T1568.002",
+          "T1046",
+          "T1078",
+          "T1110",
+          "T1003",
+          "T1204",
+          "T1496",
+          "T1036"
+        ],
+        "Exfiltration": [
+          "T1190",
+          "T1041",
+          "T1568.001",
+          "T1568.002",
+          "T1046",
+          "T1571",
+          "T1572",
+          "T1003",
+          "T1204",
+          "T1071"
+        ],
+        "CommandAndControl": [
+          "T1190",
+          "T1041",
+          "T1568.001",
+          "T1568.002",
+          "T1046",
+          "T1571",
+          "T1572",
+          "T1003",
+          "T1204",
+          "T1071"
+        ],
+        "Discovery": [
+          "T1190",
+          "T1041",
+          "T1568.001",
+          "T1568.002",
+          "T1046",
+          "T1595.001"
+        ],
+        "DefenseEvasion": [
+          "T1041",
+          "T1571",
+          "T1572",
+          "T1496",
+          "T1204",
+          "T1036"
+        ],
+        "Impact": [
+          "T1498",
+          "T1496",
+          "T1204",
+          "T1036"
+        ],
+        "CredentialAccess": [
+          "T1078",
+          "T1110",
+          "T1190",
+          "T1041",
+          "T1003",
+          "T1204"
+        ],
+        "Execution": [
+          "T1190",
+          "T1041",
+          "T1003",
+          "T1204",
+          "T1496",
+          "T1036"
+        ],
+        "Reconnaissance": [
+          "T1046",
+          "T1595.001"
+        ]
+      },
+      "totalRules": 11,
+      "rulesParsed": 10
+    },
+    "Azure Key Vault": {
+      "tactics": {
+        "Impact": 2,
+        "CredentialAccess": 2
+      },
+      "techniques": {
+        "Impact": [
+          "T1485"
+        ],
+        "CredentialAccess": [
+          "T1003"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "AzureSecurityBenchmark": {
+      "tactics": {
+        "Discovery": 1
+      },
+      "techniques": {
+        "Discovery": [
+          "T1082"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Azure SQL Database solution for sentinel": {
+      "tactics": {
+        "InitialAccess": 8,
+        "Impact": 1,
+        "Exfiltration": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190"
+        ],
+        "Impact": [
+          "T1485"
+        ],
+        "Exfiltration": [
+          "T1537"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Azure Web Application Firewall (WAF)": {
+      "tactics": {
+        "DefenseEvasion": 7,
+        "Execution": 4,
+        "InitialAccess": 5,
+        "PrivilegeEscalation": 2
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1211",
+          "T1059",
+          "T1190",
+          "T0890",
+          "T1548"
+        ],
+        "Execution": [
+          "T1211",
+          "T1059",
+          "T1190",
+          "T0890",
+          "T1189",
+          "T1203",
+          "T0853"
+        ],
+        "InitialAccess": [
+          "T1211",
+          "T1059",
+          "T1190",
+          "T0890",
+          "T1189",
+          "T1203",
+          "T0853"
+        ],
+        "PrivilegeEscalation": [
+          "T1211",
+          "T1059",
+          "T1190",
+          "T0890"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Microsoft Business Applications": {
+      "tactics": {
+        "CredentialAccess": 2,
+        "Execution": 2,
+        "Persistence": 2,
+        "DefenseEvasion": 3,
+        "PrivilegeEscalation": 3,
+        "Exfiltration": 3,
+        "Discovery": 1,
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1528",
+          "T1569",
+          "T0871",
+          "T0834",
+          "T0859",
+          "T1133",
+          "T1190",
+          "T1078",
+          "T1212"
+        ],
+        "Execution": [
+          "T1528",
+          "T1569",
+          "T0871",
+          "T0834",
+          "T0859",
+          "T0863",
+          "T0873"
+        ],
+        "Persistence": [
+          "T1528",
+          "T1569",
+          "T0871",
+          "T0834",
+          "T0859",
+          "T0863",
+          "T0873"
+        ],
+        "DefenseEvasion": [
+          "T1070",
+          "T1562",
+          "T1629",
+          "T1567"
+        ],
+        "PrivilegeEscalation": [
+          "T1548",
+          "T1078",
+          "T1133",
+          "T1190",
+          "T1212"
+        ],
+        "Exfiltration": [
+          "T1567",
+          "T1048",
+          "T1629",
+          "T1538",
+          "T1526"
+        ],
+        "Discovery": [
+          "T1538",
+          "T1526",
+          "T1567"
+        ],
+        "InitialAccess": [
+          "T1133",
+          "T1190",
+          "T1078",
+          "T1212"
+        ]
+      },
+      "totalRules": 49,
+      "rulesParsed": 10
+    },
+    "Microsoft Defender for Cloud": {
+      "tactics": {
+        "Impact": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1496"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Microsoft Defender for Cloud Apps": {
+      "tactics": {
+        "CommandAndControl": 1,
+        "Exfiltration": 1
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1071",
+          "T1567"
+        ],
+        "Exfiltration": [
+          "T1071",
+          "T1567"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "MicrosoftDefenderForEndpoint": {
+      "tactics": {
+        "Persistence": 1
+      },
+      "techniques": {
+        "Persistence": [
+          "T1137"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Microsoft Defender XDR": {
+      "tactics": {
+        "InitialAccess": 3,
+        "Persistence": 6,
+        "Impact": 1,
+        "Execution": 4,
+        "DefenseEvasion": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1195",
+          "T1059",
+          "T1546"
+        ],
+        "Persistence": [
+          "T1053",
+          "T1554",
+          "T1195",
+          "T1059",
+          "T1546",
+          "T1543",
+          "T1027"
+        ],
+        "Impact": [
+          "T1485"
+        ],
+        "Execution": [
+          "T1203",
+          "T1195",
+          "T1059",
+          "T1546",
+          "T1543",
+          "T1027"
+        ],
+        "DefenseEvasion": [
+          "T1543",
+          "T1059",
+          "T1027"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Global Secure Access": {
+      "tactics": {
+        "CommandAndControl": 5,
+        "InitialAccess": 2,
+        "Exfiltration": 2,
+        "DefenseEvasion": 1,
+        "Discovery": 1
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1071",
+          "T1571"
+        ],
+        "InitialAccess": [
+          "T1078",
+          "T1133",
+          "T1571"
+        ],
+        "Exfiltration": [
+          "T1571"
+        ],
+        "DefenseEvasion": [
+          "T1571"
+        ],
+        "Discovery": [
+          "T1046"
+        ]
+      },
+      "totalRules": 7,
+      "rulesParsed": 7
+    },
+    "Microsoft Entra ID": {
+      "tactics": {
+        "CredentialAccess": 2,
+        "Persistence": 4,
+        "PrivilegeEscalation": 2,
+        "InitialAccess": 5,
+        "Impact": 1
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1555",
+          "T1098",
+          "T1110"
+        ],
+        "Persistence": [
+          "T1555",
+          "T1098",
+          "T1098.003",
+          "T1078.004"
+        ],
+        "PrivilegeEscalation": [
+          "T1555",
+          "T1098",
+          "T1098.003",
+          "T1078.004"
+        ],
+        "InitialAccess": [
+          "T1078.004",
+          "T1078",
+          "T1199"
+        ],
+        "Impact": [
+          "T1098.003",
+          "T1078.004"
+        ]
+      },
+      "totalRules": 73,
+      "rulesParsed": 10
+    },
+    "Microsoft Entra ID Protection": {
+      "tactics": {
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1078"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Microsoft 365": {
+      "tactics": {
+        "InitialAccess": 1,
+        "Persistence": 3,
+        "Collection": 4,
+        "Exfiltration": 2,
+        "DefenseEvasion": 1,
+        "Impact": 1,
+        "CommandAndControl": 1,
+        "LateralMovement": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1566"
+        ],
+        "Persistence": [
+          "T1136",
+          "T1098",
+          "T1078",
+          "T1114"
+        ],
+        "Collection": [
+          "T1114",
+          "T1020",
+          "T1098"
+        ],
+        "Exfiltration": [
+          "T1114",
+          "T1020"
+        ],
+        "DefenseEvasion": [
+          "T1098",
+          "T1078"
+        ],
+        "Impact": [
+          "T1485",
+          "T1489"
+        ],
+        "CommandAndControl": [
+          "T1105",
+          "T1570"
+        ],
+        "LateralMovement": [
+          "T1105",
+          "T1570"
+        ]
+      },
+      "totalRules": 16,
+      "rulesParsed": 10
+    },
+    "Microsoft Copilot": {
+      "tactics": {
+        "DefenseEvasion": 2,
+        "InitialAccess": 1,
+        "CredentialAccess": 1,
+        "Impact": 1,
+        "Persistence": 1,
+        "PrivilegeEscalation": 1,
+        "Discovery": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1562.001",
+          "T1087",
+          "T1562"
+        ],
+        "InitialAccess": [
+          "T1078",
+          "T1110",
+          "T1565"
+        ],
+        "CredentialAccess": [
+          "T1078",
+          "T1110",
+          "T1565"
+        ],
+        "Impact": [
+          "T1078",
+          "T1110",
+          "T1565"
+        ],
+        "Persistence": [
+          "T1546",
+          "T1098"
+        ],
+        "PrivilegeEscalation": [
+          "T1546",
+          "T1098"
+        ],
+        "Discovery": [
+          "T1087",
+          "T1562"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "Microsoft Exchange Security - Exchange On-Premises": {
+      "tactics": {
+        "Exfiltration": 2,
+        "Persistence": 2,
+        "Collection": 2
+      },
+      "techniques": {
+        "Exfiltration": [
+          "T1020",
+          "T1098",
+          "T1114"
+        ],
+        "Persistence": [
+          "T1020",
+          "T1098",
+          "T1114"
+        ],
+        "Collection": [
+          "T1020",
+          "T1098",
+          "T1114"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Microsoft Purview": {
+      "tactics": {
+        "Discovery": 2
+      },
+      "techniques": {
+        "Discovery": [
+          "T1087"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Azure Cloud NGFW by Palo Alto Networks": {
+      "tactics": {
+        "CommandAndControl": 1,
+        "Discovery": 2
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1071"
+        ],
+        "Discovery": [
+          "T1046"
+        ]
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "CrowdStrike Falcon Endpoint Protection": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "FalconFriday": {
+      "tactics": {
+        "DefenseEvasion": 8,
+        "Persistence": 1,
+        "PrivilegeEscalation": 2,
+        "CommandAndControl": 1,
+        "LateralMovement": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1211",
+          "T1036",
+          "T1105",
+          "T1564.004",
+          "T1027",
+          "T1140",
+          "T1134.002"
+        ],
+        "Persistence": [
+          "T1546.015"
+        ],
+        "PrivilegeEscalation": [
+          "T1546.015",
+          "T1134.002"
+        ],
+        "CommandAndControl": [
+          "T1105",
+          "T1564.004",
+          "T1027",
+          "T1140"
+        ],
+        "LateralMovement": [
+          "T1021.003"
+        ]
+      },
+      "totalRules": 30,
+      "rulesParsed": 10
+    },
+    "Endpoint Threat Protection Essentials": {
+      "tactics": {
+        "CredentialAccess": 2,
+        "LateralMovement": 2,
+        "CommandAndControl": 1,
+        "Persistence": 2,
+        "DefenseEvasion": 1,
+        "Execution": 2
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1003.001",
+          "T1003"
+        ],
+        "LateralMovement": [
+          "T1021.003"
+        ],
+        "CommandAndControl": [
+          "T1572"
+        ],
+        "Persistence": [
+          "T1546.009",
+          "T1546.010"
+        ],
+        "DefenseEvasion": [
+          "T1070"
+        ],
+        "Execution": [
+          "T1059"
+        ]
+      },
+      "totalRules": 14,
+      "rulesParsed": 10
+    },
+    "McAfee ePolicy Orchestrator": {
+      "tactics": {
+        "DefenseEvasion": 9,
+        "CommandAndControl": 1,
+        "InitialAccess": 2,
+        "Persistence": 1,
+        "PrivilegeEscalation": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1562",
+          "T1070",
+          "T1071",
+          "T1189",
+          "T1195",
+          "T1543",
+          "T1055"
+        ],
+        "CommandAndControl": [
+          "T1562",
+          "T1071"
+        ],
+        "InitialAccess": [
+          "T1562",
+          "T1070",
+          "T1189",
+          "T1195",
+          "T1543",
+          "T1055",
+          "T1566"
+        ],
+        "Persistence": [
+          "T1562",
+          "T1070",
+          "T1189",
+          "T1195",
+          "T1543",
+          "T1055"
+        ],
+        "PrivilegeEscalation": [
+          "T1562",
+          "T1070",
+          "T1189",
+          "T1195",
+          "T1543",
+          "T1055"
+        ]
+      },
+      "totalRules": 14,
+      "rulesParsed": 10
+    },
+    "SentinelOne": {
+      "tactics": {
+        "InitialAccess": 4,
+        "DefenseEvasion": 5,
+        "PrivilegeEscalation": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1078",
+          "T1190"
+        ],
+        "DefenseEvasion": [
+          "T1070"
+        ],
+        "PrivilegeEscalation": [
+          "T1078"
+        ]
+      },
+      "totalRules": 11,
+      "rulesParsed": 10
+    },
+    "Symantec Endpoint Protection": {
+      "tactics": {
+        "Exfiltration": 1,
+        "CommandAndControl": 1,
+        "LateralMovement": 1,
+        "Execution": 1
+      },
+      "techniques": {
+        "Exfiltration": [
+          "T1041",
+          "T1132",
+          "T1001",
+          "T1021"
+        ],
+        "CommandAndControl": [
+          "T1041",
+          "T1132",
+          "T1001",
+          "T1021"
+        ],
+        "LateralMovement": [
+          "T1041",
+          "T1132",
+          "T1001",
+          "T1021"
+        ],
+        "Execution": [
+          "T1204.002"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Trend Micro Vision One": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Bitglass": {
+      "tactics": {
+        "Exfiltration": 2,
+        "InitialAccess": 5,
+        "CredentialAccess": 1,
+        "PrivilegeEscalation": 1,
+        "DefenseEvasion": 1
+      },
+      "techniques": {
+        "Exfiltration": [
+          "T1567"
+        ],
+        "InitialAccess": [
+          "T1078"
+        ],
+        "CredentialAccess": [
+          "T1110"
+        ],
+        "PrivilegeEscalation": [
+          "T1078"
+        ],
+        "DefenseEvasion": [
+          "T1070"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "AristaAwakeSecurity": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "BloodHound Enterprise": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 102,
+      "rulesParsed": 10
+    },
+    "CiscoASA": {
+      "tactics": {
+        "Discovery": 2,
+        "Impact": 2
+      },
+      "techniques": {
+        "Discovery": [
+          "T1046",
+          "T1498"
+        ],
+        "Impact": [
+          "T1046",
+          "T1498"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Cisco ISE": {
+      "tactics": {
+        "Persistence": 1,
+        "DefenseEvasion": 3,
+        "Impact": 1,
+        "CredentialAccess": 1,
+        "InitialAccess": 2,
+        "CommandAndControl": 1,
+        "PrivilegeEscalation": 1
+      },
+      "techniques": {
+        "Persistence": [
+          "T1098"
+        ],
+        "DefenseEvasion": [
+          "T1070",
+          "T1562.002",
+          "T1070.004"
+        ],
+        "Impact": [
+          "T1490"
+        ],
+        "CredentialAccess": [
+          "T1552"
+        ],
+        "InitialAccess": [
+          "T1133"
+        ],
+        "CommandAndControl": [
+          "T1568"
+        ],
+        "PrivilegeEscalation": [
+          "T1098"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Cisco SD-WAN": {
+      "tactics": {
+        "InitialAccess": 2,
+        "ResourceDevelopment": 1,
+        "CommandAndControl": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1189"
+        ],
+        "ResourceDevelopment": [
+          "T1587.001"
+        ],
+        "CommandAndControl": [
+          "T1071"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "Cisco Secure Endpoint": {
+      "tactics": {
+        "Execution": 4,
+        "InitialAccess": 4,
+        "CommandAndControl": 1,
+        "DefenseEvasion": 1,
+        "Impact": 1
+      },
+      "techniques": {
+        "Execution": [
+          "T1204.002",
+          "T1190"
+        ],
+        "InitialAccess": [
+          "T1204.002",
+          "T1190",
+          "T1133"
+        ],
+        "CommandAndControl": [
+          "T1071"
+        ],
+        "DefenseEvasion": [
+          "T1562"
+        ],
+        "Impact": [
+          "T1486"
+        ]
+      },
+      "totalRules": 11,
+      "rulesParsed": 10
+    },
+    "CiscoWSA": {
+      "tactics": {
+        "InitialAccess": 6,
+        "Exfiltration": 2,
+        "CommandAndControl": 2
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1566",
+          "T1189"
+        ],
+        "Exfiltration": [
+          "T1567",
+          "T1048"
+        ],
+        "CommandAndControl": [
+          "T1102"
+        ]
+      },
+      "totalRules": 11,
+      "rulesParsed": 10
+    },
+    "Cloudflare": {
+      "tactics": {
+        "InitialAccess": 9,
+        "Persistence": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190"
+        ],
+        "Persistence": [
+          "T1505"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Cloudflare CCF": {
+      "tactics": {
+        "InitialAccess": 9,
+        "Persistence": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190"
+        ],
+        "Persistence": [
+          "T1505"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Corelight": {
+      "tactics": {
+        "CommandAndControl": 1,
+        "DefenseEvasion": 1,
+        "CredentialAccess": 1,
+        "Exfiltration": 2,
+        "InitialAccess": 3,
+        "Persistence": 2
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1568"
+        ],
+        "DefenseEvasion": [
+          "T1090"
+        ],
+        "CredentialAccess": [
+          "T1187"
+        ],
+        "Exfiltration": [
+          "T1567",
+          "T1030"
+        ],
+        "InitialAccess": [
+          "T1566"
+        ],
+        "Persistence": [
+          "T1505"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Cortex XDR": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "CTERA": {
+      "tactics": {
+        "Impact": 4,
+        "DefenseEvasion": 1,
+        "PrivilegeEscalation": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1203",
+          "T1485",
+          "T1486"
+        ],
+        "DefenseEvasion": [
+          "T1562"
+        ],
+        "PrivilegeEscalation": [
+          "T1068"
+        ]
+      },
+      "totalRules": 6,
+      "rulesParsed": 6
+    },
+    "Cynerio": {
+      "tactics": {
+        "CredentialAccess": 2,
+        "LateralMovement": 3
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1552"
+        ],
+        "LateralMovement": [
+          "T0866"
+        ]
+      },
+      "totalRules": 5,
+      "rulesParsed": 5
+    },
+    "Darktrace": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "Dragos": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "ExtraHop": {
+      "tactics": {
+        "Persistence": 1
+      },
+      "techniques": {
+        "Persistence": [
+          "T1546"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "DNS Essentials": {
+      "tactics": {
+        "CommandAndControl": 7,
+        "Reconnaissance": 2
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1568",
+          "T1008",
+          "T1573",
+          "T1572",
+          "T1090",
+          "T1102"
+        ],
+        "Reconnaissance": [
+          "T1590"
+        ]
+      },
+      "totalRules": 9,
+      "rulesParsed": 9
+    },
+    "ForescoutHostPropertyMonitor": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Fortinet FortiWeb Cloud WAF-as-a-Service connector for Microsoft Sentinel": {
+      "tactics": {
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1133"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Illusive Platform": {
+      "tactics": {
+        "Persistence": 1,
+        "PrivilegeEscalation": 1,
+        "DefenseEvasion": 1,
+        "CredentialAccess": 1,
+        "LateralMovement": 1
+      },
+      "techniques": {
+        "Persistence": [
+          "T1078",
+          "T1098",
+          "T1548",
+          "T1021"
+        ],
+        "PrivilegeEscalation": [
+          "T1078",
+          "T1098",
+          "T1548",
+          "T1021"
+        ],
+        "DefenseEvasion": [
+          "T1078",
+          "T1098",
+          "T1548",
+          "T1021"
+        ],
+        "CredentialAccess": [
+          "T1078",
+          "T1098",
+          "T1548",
+          "T1021"
+        ],
+        "LateralMovement": [
+          "T1078",
+          "T1098",
+          "T1548",
+          "T1021"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "IronNet IronDefense": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "ImpervaCloudWAF": {
+      "tactics": {
+        "InitialAccess": 10
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Infoblox NIOS": {
+      "tactics": {
+        "CommandAndControl": 1,
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1568",
+          "T1008"
+        ],
+        "InitialAccess": [
+          "T1200"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "MimecastAudit": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "MimecastTTP": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "NetskopeWebTx": {
+      "tactics": {
+        "Exfiltration": 8,
+        "Collection": 4,
+        "InitialAccess": 3,
+        "CredentialAccess": 1,
+        "Discovery": 2,
+        "DefenseEvasion": 1,
+        "CommandAndControl": 1
+      },
+      "techniques": {
+        "Exfiltration": [
+          "T1567",
+          "T1074",
+          "T1199",
+          "T1530",
+          "T1048",
+          "T1562",
+          "T1071",
+          "T1046"
+        ],
+        "Collection": [
+          "T1567",
+          "T1074",
+          "T1530"
+        ],
+        "InitialAccess": [
+          "T1199",
+          "T1567",
+          "T1078",
+          "T1526"
+        ],
+        "CredentialAccess": [
+          "T1078"
+        ],
+        "Discovery": [
+          "T1199",
+          "T1526",
+          "T1071",
+          "T1048",
+          "T1046"
+        ],
+        "DefenseEvasion": [
+          "T1562",
+          "T1048"
+        ],
+        "CommandAndControl": [
+          "T1071",
+          "T1048",
+          "T1046"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "MimecastSEG": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 9,
+      "rulesParsed": 9
+    },
+    "Netskopev2": {
+      "tactics": {
+        "Execution": 1
+      },
+      "techniques": {
+        "Execution": [
+          "T1204"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Network Threat Protection Essentials": {
+      "tactics": {
+        "Execution": 2,
+        "InitialAccess": 1,
+        "CommandAndControl": 1
+      },
+      "techniques": {
+        "Execution": [
+          "T1204",
+          "T1189",
+          "T1071",
+          "T1203"
+        ],
+        "InitialAccess": [
+          "T1189",
+          "T1071",
+          "T1203"
+        ],
+        "CommandAndControl": [
+          "T1189",
+          "T1071",
+          "T1203"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "NGINX HTTP Server": {
+      "tactics": {
+        "InitialAccess": 9,
+        "Impact": 2
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1133",
+          "T1498",
+          "T1189"
+        ],
+        "Impact": [
+          "T1499",
+          "T1498",
+          "T1190",
+          "T1133"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Network Session Essentials": {
+      "tactics": {
+        "LateralMovement": 3,
+        "CommandAndControl": 4,
+        "Discovery": 3,
+        "Exfiltration": 1,
+        "Execution": 2,
+        "InitialAccess": 2,
+        "Impact": 1,
+        "Reconnaissance": 1,
+        "CredentialAccess": 1
+      },
+      "techniques": {
+        "LateralMovement": [
+          "T1021",
+          "T1021.002",
+          "T1095",
+          "T1071",
+          "T1046",
+          "T1030",
+          "T1210"
+        ],
+        "CommandAndControl": [
+          "T1095",
+          "T1071",
+          "T1046",
+          "T1030",
+          "T1210",
+          "T1571"
+        ],
+        "Discovery": [
+          "T1095",
+          "T1071",
+          "T1046",
+          "T1030",
+          "T1210",
+          "T1590"
+        ],
+        "Exfiltration": [
+          "T1095",
+          "T1071",
+          "T1046",
+          "T1030",
+          "T1210"
+        ],
+        "Execution": [
+          "T1095"
+        ],
+        "InitialAccess": [
+          "T1095"
+        ],
+        "Impact": [
+          "T1499"
+        ],
+        "Reconnaissance": [
+          "T1590",
+          "T1046"
+        ],
+        "CredentialAccess": [
+          "T1110"
+        ]
+      },
+      "totalRules": 9,
+      "rulesParsed": 9
+    },
+    "Pathlock_TDnR": {
+      "tactics": {
+        "Persistence": 3,
+        "DefenseEvasion": 2,
+        "Discovery": 1,
+        "PrivilegeEscalation": 2,
+        "Execution": 1,
+        "Impact": 5,
+        "Collection": 1
+      },
+      "techniques": {
+        "Persistence": [
+          "T1505",
+          "T1562",
+          "T1548",
+          "T1098",
+          "T1053",
+          "T1059"
+        ],
+        "DefenseEvasion": [
+          "T1505",
+          "T1562",
+          "T1565"
+        ],
+        "Discovery": [
+          "T1082"
+        ],
+        "PrivilegeEscalation": [
+          "T1548",
+          "T1098"
+        ],
+        "Execution": [
+          "T1053",
+          "T1059"
+        ],
+        "Impact": [
+          "T1565",
+          "T1530",
+          "T1562"
+        ],
+        "Collection": [
+          "T1530",
+          "T1565"
+        ]
+      },
+      "totalRules": 77,
+      "rulesParsed": 10
+    },
+    "SINEC Security Guard": {
+      "tactics": {
+        "Impact": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1486"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "SonicWall Firewall": {
+      "tactics": {
+        "InitialAccess": 1,
+        "Execution": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190"
+        ],
+        "Execution": [
+          "T1204"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "SymantecProxySG": {
+      "tactics": {
+        "DefenseEvasion": 1,
+        "CommandAndControl": 2,
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1090",
+          "T1562"
+        ],
+        "CommandAndControl": [
+          "T1090",
+          "T1562",
+          "T1566",
+          "T1071"
+        ],
+        "InitialAccess": [
+          "T1566",
+          "T1071"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Sophos XG Firewall": {
+      "tactics": {
+        "Impact": 1,
+        "Discovery": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1499"
+        ],
+        "Discovery": [
+          "T1046"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Symantec VIP": {
+      "tactics": {
+        "CredentialAccess": 2
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1110"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Tanium": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "vArmour Application Controller": {
+      "tactics": {
+        "Discovery": 1,
+        "LateralMovement": 1
+      },
+      "techniques": {
+        "Discovery": [
+          "T1135",
+          "T1570"
+        ],
+        "LateralMovement": [
+          "T1135",
+          "T1570"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Ubiquiti UniFi": {
+      "tactics": {
+        "CommandAndControl": 7,
+        "Exfiltration": 4,
+        "InitialAccess": 3
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1071",
+          "T1095",
+          "T1571",
+          "T1572",
+          "T1048",
+          "T1071.002",
+          "T1041",
+          "T1090",
+          "T1573"
+        ],
+        "Exfiltration": [
+          "T1071",
+          "T1571",
+          "T1572",
+          "T1048",
+          "T1071.002",
+          "T1041"
+        ],
+        "InitialAccess": [
+          "T1133"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "VMware SD-WAN and SASE": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 14,
+      "rulesParsed": 10
+    },
+    "Web Session Essentials": {
+      "tactics": {
+        "InitialAccess": 6,
+        "CommandAndControl": 6,
+        "Exfiltration": 1,
+        "Execution": 1,
+        "Impact": 1,
+        "CredentialAccess": 2,
+        "DefenseEvasion": 1,
+        "Persistence": 1,
+        "Discovery": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1133",
+          "T1071",
+          "T1059",
+          "T1498",
+          "T1528"
+        ],
+        "CommandAndControl": [
+          "T1190",
+          "T1133",
+          "T1071",
+          "T1071.001",
+          "T1036",
+          "T1505",
+          "T1083",
+          "T1110"
+        ],
+        "Exfiltration": [
+          "T1030"
+        ],
+        "Execution": [
+          "T1190",
+          "T1133",
+          "T1059"
+        ],
+        "Impact": [
+          "T1190",
+          "T1133",
+          "T1498"
+        ],
+        "CredentialAccess": [
+          "T1190",
+          "T1133",
+          "T1528",
+          "T1083",
+          "T1071",
+          "T1110"
+        ],
+        "DefenseEvasion": [
+          "T1036",
+          "T1505",
+          "T1071"
+        ],
+        "Persistence": [
+          "T1036",
+          "T1505",
+          "T1071"
+        ],
+        "Discovery": [
+          "T1083",
+          "T1071",
+          "T1110"
+        ]
+      },
+      "totalRules": 15,
+      "rulesParsed": 10
+    },
+    "Windows Server DNS": {
+      "tactics": {
+        "CommandAndControl": 1,
+        "Discovery": 1,
+        "Impact": 2,
+        "Exfiltration": 1
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1568",
+          "T1008"
+        ],
+        "Discovery": [
+          "T1046"
+        ],
+        "Impact": [
+          "T1496"
+        ],
+        "Exfiltration": [
+          "T1048"
+        ]
+      },
+      "totalRules": 5,
+      "rulesParsed": 5
+    },
+    "ZeroNetworks": {
+      "tactics": {
+        "DefenseEvasion": 1,
+        "CredentialAccess": 1,
+        "LateralMovement": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1562"
+        ],
+        "CredentialAccess": [
+          "T1528"
+        ],
+        "LateralMovement": [
+          "T1021"
+        ]
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "Zscaler Internet Access": {
+      "tactics": {
+        "CommandAndControl": 2
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1071.001",
+          "T1102",
+          "T1071"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Zscaler Private Access (ZPA)": {
+      "tactics": {
+        "InitialAccess": 8,
+        "Persistence": 2
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1078",
+          "T1190"
+        ],
+        "Persistence": [
+          "T1078"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Acronis Cyber Protect Cloud": {
+      "tactics": {
+        "InitialAccess": 2,
+        "Execution": 1,
+        "Impact": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1078",
+          "T1566.002",
+          "T1566.001"
+        ],
+        "Execution": [
+          "T1204.001"
+        ],
+        "Impact": [
+          "T1486"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "Amazon Web Services": {
+      "tactics": {
+        "Execution": 1,
+        "Persistence": 6,
+        "PrivilegeEscalation": 7,
+        "DefenseEvasion": 9,
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "Execution": [
+          "T1204"
+        ],
+        "Persistence": [
+          "T1098.001",
+          "T1562.007",
+          "T1078",
+          "T1484",
+          "T1098.003"
+        ],
+        "PrivilegeEscalation": [
+          "T1098.001",
+          "T1562.007",
+          "T1078",
+          "T1484",
+          "T1098.003"
+        ],
+        "DefenseEvasion": [
+          "T1098.001",
+          "T1562.007",
+          "T1078",
+          "T1070",
+          "T1562.008",
+          "T1484",
+          "T1098.003"
+        ],
+        "InitialAccess": [
+          "T1078"
+        ]
+      },
+      "totalRules": 62,
+      "rulesParsed": 10
+    },
+    "ARGOSCloudSecurity": {
+      "tactics": {
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "AWS Security Hub": {
+      "tactics": {
+        "Impact": 2,
+        "DefenseEvasion": 2,
+        "InitialAccess": 1,
+        "LateralMovement": 1,
+        "Discovery": 1,
+        "Persistence": 3,
+        "PrivilegeEscalation": 3,
+        "CredentialAccess": 1,
+        "Exfiltration": 1,
+        "Collection": 1,
+        "Execution": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1565.001",
+          "T1562.008"
+        ],
+        "DefenseEvasion": [
+          "T1565.001",
+          "T1562.008",
+          "T1098",
+          "T1110",
+          "T1556.006"
+        ],
+        "InitialAccess": [
+          "T1133",
+          "T1021",
+          "T1046"
+        ],
+        "LateralMovement": [
+          "T1133",
+          "T1021",
+          "T1046"
+        ],
+        "Discovery": [
+          "T1133",
+          "T1021",
+          "T1046"
+        ],
+        "Persistence": [
+          "T1098.003",
+          "T1078.001",
+          "T1098",
+          "T1110",
+          "T1556.006",
+          "T1134.001",
+          "T1134.003",
+          "T1098.001"
+        ],
+        "PrivilegeEscalation": [
+          "T1098.003",
+          "T1078.001",
+          "T1098",
+          "T1110",
+          "T1556.006",
+          "T1134.001",
+          "T1134.003",
+          "T1098.001"
+        ],
+        "CredentialAccess": [
+          "T1098",
+          "T1110",
+          "T1556.006"
+        ],
+        "Exfiltration": [
+          "T1567",
+          "T1530"
+        ],
+        "Collection": [
+          "T1567",
+          "T1530"
+        ],
+        "Execution": [
+          "T1059"
+        ]
+      },
+      "totalRules": 8,
+      "rulesParsed": 8
+    },
+    "CiscoUmbrella": {
+      "tactics": {
+        "CommandAndControl": 9,
+        "Exfiltration": 7,
+        "Impact": 1,
+        "Execution": 2,
+        "Discovery": 1,
+        "LateralMovement": 1,
+        "Collection": 1,
+        "DefenseEvasion": 1,
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1573",
+          "T1041",
+          "T1071.001",
+          "T1496",
+          "T1001.003",
+          "T1059",
+          "T1046",
+          "T1021",
+          "T1557",
+          "T1102",
+          "T1020",
+          "T1132",
+          "T1027",
+          "T1059.001",
+          "T1071",
+          "T1567"
+        ],
+        "Exfiltration": [
+          "T1573",
+          "T1041",
+          "T1071.001",
+          "T1496",
+          "T1059",
+          "T1046",
+          "T1021",
+          "T1557",
+          "T1102",
+          "T1020",
+          "T1071",
+          "T1567"
+        ],
+        "Impact": [
+          "T1496",
+          "T1071.001",
+          "T1041"
+        ],
+        "Execution": [
+          "T1059",
+          "T1046",
+          "T1021",
+          "T1557",
+          "T1102",
+          "T1020",
+          "T1132",
+          "T1027",
+          "T1059.001"
+        ],
+        "Discovery": [
+          "T1059",
+          "T1046",
+          "T1021",
+          "T1557",
+          "T1102",
+          "T1020"
+        ],
+        "LateralMovement": [
+          "T1059",
+          "T1046",
+          "T1021",
+          "T1557",
+          "T1102",
+          "T1020"
+        ],
+        "Collection": [
+          "T1059",
+          "T1046",
+          "T1021",
+          "T1557",
+          "T1102",
+          "T1020"
+        ],
+        "DefenseEvasion": [
+          "T1132",
+          "T1027",
+          "T1059.001"
+        ],
+        "InitialAccess": [
+          "T1189"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Datawiza": {
+      "tactics": {
+        "Discovery": 1
+      },
+      "techniques": {
+        "Discovery": [
+          "T1082"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Cloud Identity Threat Protection Essentials": {
+      "tactics": {
+        "CredentialAccess": 1,
+        "Persistence": 2
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1098",
+          "T1556"
+        ],
+        "Persistence": [
+          "T1098",
+          "T1556",
+          "T1098.001"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Google Cloud Platform Audit Logs": {
+      "tactics": {
+        "Impact": 1,
+        "DefenseEvasion": 6,
+        "CommandAndControl": 1,
+        "ResourceDevelopment": 1,
+        "PrivilegeEscalation": 1,
+        "Persistence": 1,
+        "InitialAccess": 2,
+        "Collection": 1,
+        "Exfiltration": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1485",
+          "T1490",
+          "T1562.001"
+        ],
+        "DefenseEvasion": [
+          "T1485",
+          "T1490",
+          "T1562.001",
+          "T1071.004",
+          "T1584.002",
+          "T1562.008",
+          "T1078.004",
+          "T1562.004",
+          "T1133"
+        ],
+        "CommandAndControl": [
+          "T1562.001",
+          "T1071.004",
+          "T1584.002"
+        ],
+        "ResourceDevelopment": [
+          "T1562.001",
+          "T1071.004",
+          "T1584.002"
+        ],
+        "PrivilegeEscalation": [
+          "T1562.008",
+          "T1078.004"
+        ],
+        "Persistence": [
+          "T1562.004",
+          "T1133",
+          "T1562.001"
+        ],
+        "InitialAccess": [
+          "T1562.004",
+          "T1133",
+          "T1562.001",
+          "T1530",
+          "T1078.004",
+          "T1567.002"
+        ],
+        "Collection": [
+          "T1530",
+          "T1078.004",
+          "T1567.002"
+        ],
+        "Exfiltration": [
+          "T1530",
+          "T1078.004",
+          "T1567.002"
+        ]
+      },
+      "totalRules": 7,
+      "rulesParsed": 7
+    },
+    "GoogleCloudPlatformDNS": {
+      "tactics": {
+        "PrivilegeEscalation": 3,
+        "Exfiltration": 1,
+        "InitialAccess": 2,
+        "CommandAndControl": 4
+      },
+      "techniques": {
+        "PrivilegeEscalation": [
+          "T1068"
+        ],
+        "Exfiltration": [
+          "T1567"
+        ],
+        "InitialAccess": [
+          "T1566",
+          "T1195"
+        ],
+        "CommandAndControl": [
+          "T1095"
+        ]
+      },
+      "totalRules": 11,
+      "rulesParsed": 10
+    },
+    "GoogleCloudPlatformIAM": {
+      "tactics": {
+        "DefenseEvasion": 2,
+        "PrivilegeEscalation": 1,
+        "LateralMovement": 2,
+        "Persistence": 1,
+        "Discovery": 4
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1562",
+          "T1550"
+        ],
+        "PrivilegeEscalation": [
+          "T1078"
+        ],
+        "LateralMovement": [
+          "T1550"
+        ],
+        "Persistence": [
+          "T1136"
+        ],
+        "Discovery": [
+          "T1069",
+          "T1087"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Google Cloud Platform Security Command Center": {
+      "tactics": {
+        "InitialAccess": 2,
+        "CredentialAccess": 2,
+        "Collection": 1,
+        "CommandAndControl": 1,
+        "DefenseEvasion": 2,
+        "LateralMovement": 1,
+        "Discovery": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1552",
+          "T1133",
+          "T1021",
+          "T1046"
+        ],
+        "CredentialAccess": [
+          "T1190",
+          "T1552"
+        ],
+        "Collection": [
+          "T1557",
+          "T1071.004",
+          "T1562.001"
+        ],
+        "CommandAndControl": [
+          "T1557",
+          "T1071.004",
+          "T1562.001"
+        ],
+        "DefenseEvasion": [
+          "T1557",
+          "T1071.004",
+          "T1562.001",
+          "T1562"
+        ],
+        "LateralMovement": [
+          "T1133",
+          "T1021",
+          "T1046"
+        ],
+        "Discovery": [
+          "T1133",
+          "T1021",
+          "T1046"
+        ]
+      },
+      "totalRules": 5,
+      "rulesParsed": 5
+    },
+    "GravityZone": {
+      "tactics": {
+        "LateralMovement": 1
+      },
+      "techniques": {
+        "LateralMovement": [
+          "T1210"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "GoogleWorkspaceReports": {
+      "tactics": {
+        "Persistence": 3,
+        "InitialAccess": 2,
+        "DefenseEvasion": 2,
+        "Collection": 1,
+        "CredentialAccess": 2
+      },
+      "techniques": {
+        "Persistence": [
+          "T1098",
+          "T1185"
+        ],
+        "InitialAccess": [
+          "T1190",
+          "T1566"
+        ],
+        "DefenseEvasion": [
+          "T1550",
+          "T1036"
+        ],
+        "Collection": [
+          "T1114"
+        ],
+        "CredentialAccess": [
+          "T1110",
+          "T1111"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "RSAIDPlus_AdminLogs_Connector": {
+      "tactics": {
+        "Impact": 1
+      },
+      "techniques": {
+        "Impact": []
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "RubrikSecurityCloud": {
+      "tactics": {
+        "Persistence": 2
+      },
+      "techniques": {
+        "Persistence": [
+          "T1546"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "PaloAltoCDL": {
+      "tactics": {
+        "InitialAccess": 9,
+        "Reconnaissance": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190"
+        ],
+        "Reconnaissance": [
+          "T1595"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "PaloAltoPrismaCloud": {
+      "tactics": {
+        "InitialAccess": 10
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1078",
+          "T1133"
+        ]
+      },
+      "totalRules": 11,
+      "rulesParsed": 10
+    },
+    "Salesforce Service Cloud": {
+      "tactics": {
+        "CredentialAccess": 2,
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1110"
+        ],
+        "InitialAccess": [
+          "T1078"
+        ]
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "SAP ETD Cloud": {
+      "tactics": {
+        "Discovery": 2
+      },
+      "techniques": {
+        "Discovery": []
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "SAP BTP": {
+      "tactics": {
+        "DefenseEvasion": 4,
+        "InitialAccess": 2,
+        "Persistence": 4,
+        "Impact": 1,
+        "CredentialAccess": 3,
+        "PrivilegeEscalation": 2,
+        "LateralMovement": 1,
+        "Execution": 2,
+        "Reconnaissance": 1,
+        "Discovery": 1,
+        "ResourceDevelopment": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1562.008",
+          "T1078",
+          "T1531",
+          "T1070",
+          "T1548",
+          "T1222",
+          "T1552"
+        ],
+        "InitialAccess": [
+          "T1078",
+          "T1531",
+          "T1070",
+          "T1195",
+          "T1546"
+        ],
+        "Persistence": [
+          "T1078",
+          "T1531",
+          "T1070",
+          "T1059",
+          "T1546",
+          "T1195",
+          "T1584",
+          "T1072",
+          "T0873"
+        ],
+        "Impact": [
+          "T1078",
+          "T1531",
+          "T1070"
+        ],
+        "CredentialAccess": [
+          "T1606",
+          "T1556",
+          "T1134",
+          "T1552",
+          "T1021",
+          "T1070"
+        ],
+        "PrivilegeEscalation": [
+          "T1606",
+          "T1556",
+          "T1134",
+          "T1548",
+          "T1222"
+        ],
+        "LateralMovement": [
+          "T1552",
+          "T1021"
+        ],
+        "Execution": [
+          "T1059",
+          "T1546",
+          "T1584",
+          "T1072",
+          "T0873"
+        ],
+        "Reconnaissance": [
+          "T1595",
+          "T1526"
+        ],
+        "Discovery": [
+          "T1595",
+          "T1526"
+        ],
+        "ResourceDevelopment": [
+          "T1584",
+          "T1072",
+          "T0873"
+        ]
+      },
+      "totalRules": 15,
+      "rulesParsed": 10
+    },
+    "SAP LogServ": {
+      "tactics": {
+        "PrivilegeEscalation": 2,
+        "Persistence": 2,
+        "LateralMovement": 2,
+        "DefenseEvasion": 2
+      },
+      "techniques": {
+        "PrivilegeEscalation": [],
+        "Persistence": [],
+        "LateralMovement": [],
+        "DefenseEvasion": []
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "Theom": {
+      "tactics": {
+        "CredentialAccess": 1,
+        "Collection": 9
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1552"
+        ],
+        "Collection": [
+          "T1213",
+          "T1530",
+          "T1119"
+        ]
+      },
+      "totalRules": 20,
+      "rulesParsed": 10
+    },
+    "VMware Carbon Black Cloud": {
+      "tactics": {
+        "LateralMovement": 1,
+        "Execution": 1
+      },
+      "techniques": {
+        "LateralMovement": [
+          "T1210"
+        ],
+        "Execution": [
+          "T1204"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Vectra AI Detect": {
+      "tactics": {
+        "CredentialAccess": 6,
+        "Discovery": 6,
+        "LateralMovement": 7,
+        "Collection": 6,
+        "CommandAndControl": 7,
+        "Exfiltration": 6,
+        "Impact": 6
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "Discovery": [
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "LateralMovement": [
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "Collection": [
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "CommandAndControl": [
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "Exfiltration": [
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "Impact": [
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ]
+      },
+      "totalRules": 7,
+      "rulesParsed": 7
+    },
+    "Vectra XDR": {
+      "tactics": {
+        "Persistence": 7
+      },
+      "techniques": {
+        "Persistence": [
+          "T1546"
+        ]
+      },
+      "totalRules": 7,
+      "rulesParsed": 7
+    },
+    "Alsid For AD": {
+      "tactics": {
+        "CredentialAccess": 9,
+        "DefenseEvasion": 1
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1110",
+          "T1003.006",
+          "T1558.001",
+          "T1003.001",
+          "T1110.003"
+        ],
+        "DefenseEvasion": [
+          "T1207"
+        ]
+      },
+      "totalRules": 12,
+      "rulesParsed": 10
+    },
+    "CiscoDuoSecurity": {
+      "tactics": {
+        "Impact": 3,
+        "InitialAccess": 5,
+        "Persistence": 2
+      },
+      "techniques": {
+        "Impact": [
+          "T1489",
+          "T1531"
+        ],
+        "InitialAccess": [
+          "T1078"
+        ],
+        "Persistence": [
+          "T1078"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Authomize": {
+      "tactics": {
+        "InitialAccess": 6,
+        "PrivilegeEscalation": 5,
+        "Persistence": 3
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1078"
+        ],
+        "PrivilegeEscalation": [
+          "T1078",
+          "T1098"
+        ],
+        "Persistence": [
+          "T1098"
+        ]
+      },
+      "totalRules": 21,
+      "rulesParsed": 10
+    },
+    "Keeper Security": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "PingFederate": {
+      "tactics": {
+        "CredentialAccess": 1,
+        "InitialAccess": 9
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1110"
+        ],
+        "InitialAccess": [
+          "T1078",
+          "T1190"
+        ]
+      },
+      "totalRules": 11,
+      "rulesParsed": 10
+    },
+    "Red Sift": {
+      "tactics": {
+        "InitialAccess": 4,
+        "DefenseEvasion": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1566",
+          "T1078"
+        ],
+        "DefenseEvasion": [
+          "T1556"
+        ]
+      },
+      "totalRules": 5,
+      "rulesParsed": 5
+    },
+    "Semperis Directory Services Protector": {
+      "tactics": {
+        "DefenseEvasion": 2,
+        "CredentialAccess": 3,
+        "PrivilegeEscalation": 4,
+        "Persistence": 2,
+        "InitialAccess": 2,
+        "ResourceDevelopment": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1207",
+          "T1134"
+        ],
+        "CredentialAccess": [
+          "T1558.001",
+          "T1078",
+          "T1110",
+          "T1133",
+          "T1584"
+        ],
+        "PrivilegeEscalation": [
+          "T1098",
+          "T1134",
+          "T1068",
+          "T1548"
+        ],
+        "Persistence": [
+          "T1098",
+          "T1548"
+        ],
+        "InitialAccess": [
+          "T1078",
+          "T1110",
+          "T1133",
+          "T1584"
+        ],
+        "ResourceDevelopment": [
+          "T1133",
+          "T1110",
+          "T1584"
+        ]
+      },
+      "totalRules": 8,
+      "rulesParsed": 8
+    },
+    "SailPointIdentityNow": {
+      "tactics": {
+        "InitialAccess": 6,
+        "Collection": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1133",
+          "T1005"
+        ],
+        "Collection": [
+          "T1133",
+          "T1005"
+        ]
+      },
+      "totalRules": 6,
+      "rulesParsed": 6
+    },
+    "Silverfort": {
+      "tactics": {
+        "PrivilegeEscalation": 2,
+        "InitialAccess": 1,
+        "CredentialAccess": 1
+      },
+      "techniques": {
+        "PrivilegeEscalation": [
+          "T1068"
+        ],
+        "InitialAccess": [
+          "T1190"
+        ],
+        "CredentialAccess": [
+          "T1110"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "Armorblox": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Business Email Compromise - Financial Fraud": {
+      "tactics": {
+        "Persistence": 3,
+        "DefenseEvasion": 1,
+        "PrivilegeEscalation": 2,
+        "Collection": 2
+      },
+      "techniques": {
+        "Persistence": [
+          "T1078.004",
+          "T1098",
+          "T1078"
+        ],
+        "DefenseEvasion": [
+          "T1098",
+          "T1078"
+        ],
+        "PrivilegeEscalation": [
+          "T1078.004"
+        ],
+        "Collection": [
+          "T1530"
+        ]
+      },
+      "totalRules": 7,
+      "rulesParsed": 7
+    },
+    "ProofPointTap": {
+      "tactics": {
+        "InitialAccess": 2
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1566.001",
+          "T1566.002"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Proofpoint On demand(POD) Email Security": {
+      "tactics": {
+        "InitialAccess": 6,
+        "Exfiltration": 5,
+        "CommandAndControl": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1078",
+          "T1567",
+          "T1566"
+        ],
+        "Exfiltration": [
+          "T1078",
+          "T1567"
+        ],
+        "CommandAndControl": [
+          "T1573"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "CiscoSEG": {
+      "tactics": {
+        "Exfiltration": 2,
+        "InitialAccess": 8
+      },
+      "techniques": {
+        "Exfiltration": [
+          "T1030"
+        ],
+        "InitialAccess": [
+          "T1566"
+        ]
+      },
+      "totalRules": 11,
+      "rulesParsed": 10
+    },
+    "ValimailEnforce": {
+      "tactics": {
+        "DefenseEvasion": 3,
+        "InitialAccess": 1,
+        "Impact": 2,
+        "PrivilegeEscalation": 2
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1562",
+          "T1566",
+          "T1531",
+          "T1078"
+        ],
+        "InitialAccess": [
+          "T1566",
+          "T1562"
+        ],
+        "Impact": [
+          "T1562",
+          "T1531",
+          "T1078"
+        ],
+        "PrivilegeEscalation": [
+          "T1562",
+          "T1531",
+          "T1078"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "AtlassianJiraAudit": {
+      "tactics": {
+        "PrivilegeEscalation": 1,
+        "Persistence": 3,
+        "Impact": 4,
+        "InitialAccess": 1,
+        "Collection": 1
+      },
+      "techniques": {
+        "PrivilegeEscalation": [
+          "T1078"
+        ],
+        "Persistence": [
+          "T1078"
+        ],
+        "Impact": [
+          "T1531"
+        ],
+        "InitialAccess": [
+          "T1078"
+        ],
+        "Collection": [
+          "T1213"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Dynatrace": {
+      "tactics": {
+        "Execution": 5,
+        "Impact": 5,
+        "InitialAccess": 5,
+        "PrivilegeEscalation": 5,
+        "DefenseEvasion": 4,
+        "LateralMovement": 4,
+        "Persistence": 4
+      },
+      "techniques": {
+        "Execution": [
+          "T1059",
+          "T1565",
+          "T1190",
+          "T1068",
+          "T1140",
+          "T1659",
+          "T1210",
+          "T1554",
+          "T1548"
+        ],
+        "Impact": [
+          "T1059",
+          "T1565",
+          "T1190",
+          "T1068",
+          "T1140",
+          "T1659",
+          "T1210",
+          "T1554",
+          "T1548"
+        ],
+        "InitialAccess": [
+          "T1059",
+          "T1565",
+          "T1190",
+          "T1068",
+          "T1140",
+          "T1659",
+          "T1210",
+          "T1554",
+          "T1548"
+        ],
+        "PrivilegeEscalation": [
+          "T1059",
+          "T1565",
+          "T1190",
+          "T1068",
+          "T1140",
+          "T1659",
+          "T1210",
+          "T1554",
+          "T1548"
+        ],
+        "DefenseEvasion": [
+          "T1140",
+          "T1059",
+          "T1565",
+          "T1659",
+          "T1210",
+          "T1554",
+          "T1548"
+        ],
+        "LateralMovement": [
+          "T1140",
+          "T1059",
+          "T1565",
+          "T1659",
+          "T1210",
+          "T1554",
+          "T1548"
+        ],
+        "Persistence": [
+          "T1140",
+          "T1059",
+          "T1565",
+          "T1659",
+          "T1210",
+          "T1554",
+          "T1548"
+        ]
+      },
+      "totalRules": 5,
+      "rulesParsed": 5
+    },
+    "Tomcat": {
+      "tactics": {
+        "InitialAccess": 8,
+        "Impact": 2
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1189"
+        ],
+        "Impact": [
+          "T1498"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Blacklens": {
+      "tactics": {
+        "Reconnaissance": 1,
+        "ResourceDevelopment": 1,
+        "InitialAccess": 1,
+        "CredentialAccess": 1,
+        "Collection": 1,
+        "Exfiltration": 1,
+        "DefenseEvasion": 1,
+        "CommandAndControl": 1
+      },
+      "techniques": {
+        "Reconnaissance": [
+          "T1595",
+          "T1583",
+          "T1190",
+          "T1110",
+          "T1005",
+          "T1041",
+          "T1562",
+          "T1071"
+        ],
+        "ResourceDevelopment": [
+          "T1595",
+          "T1583",
+          "T1190",
+          "T1110",
+          "T1005",
+          "T1041",
+          "T1562",
+          "T1071"
+        ],
+        "InitialAccess": [
+          "T1595",
+          "T1583",
+          "T1190",
+          "T1110",
+          "T1005",
+          "T1041",
+          "T1562",
+          "T1071"
+        ],
+        "CredentialAccess": [
+          "T1595",
+          "T1583",
+          "T1190",
+          "T1110",
+          "T1005",
+          "T1041",
+          "T1562",
+          "T1071"
+        ],
+        "Collection": [
+          "T1595",
+          "T1583",
+          "T1190",
+          "T1110",
+          "T1005",
+          "T1041",
+          "T1562",
+          "T1071"
+        ],
+        "Exfiltration": [
+          "T1595",
+          "T1583",
+          "T1190",
+          "T1110",
+          "T1005",
+          "T1041",
+          "T1562",
+          "T1071"
+        ],
+        "DefenseEvasion": [
+          "T1595",
+          "T1583",
+          "T1190",
+          "T1110",
+          "T1005",
+          "T1041",
+          "T1562",
+          "T1071"
+        ],
+        "CommandAndControl": [
+          "T1595",
+          "T1583",
+          "T1190",
+          "T1110",
+          "T1005",
+          "T1041",
+          "T1562",
+          "T1071"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Check Point Cyberint Alerts": {
+      "tactics": {
+        "DefenseEvasion": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1562"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Cyfirma Digital Risk": {
+      "tactics": {
+        "CredentialAccess": 4,
+        "Collection": 6,
+        "Exfiltration": 10,
+        "Impact": 2,
+        "InitialAccess": 8,
+        "Reconnaissance": 2
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1552.001",
+          "T1555.003",
+          "T1212",
+          "T1119",
+          "T1048",
+          "T1486",
+          "T1078",
+          "T1003",
+          "T1213",
+          "T1537"
+        ],
+        "Collection": [
+          "T1552.001",
+          "T1555.003",
+          "T1212",
+          "T1119",
+          "T1048",
+          "T1486",
+          "T1189",
+          "T1213",
+          "T1593",
+          "T1567.002",
+          "T1078",
+          "T1003",
+          "T1537"
+        ],
+        "Exfiltration": [
+          "T1552.001",
+          "T1555.003",
+          "T1212",
+          "T1119",
+          "T1048",
+          "T1486",
+          "T1566.001",
+          "T1566.002",
+          "T1566.003",
+          "T1189",
+          "T1213",
+          "T1593",
+          "T1567.002",
+          "T1078",
+          "T1003",
+          "T1537"
+        ],
+        "Impact": [
+          "T1552.001",
+          "T1555.003",
+          "T1212",
+          "T1119",
+          "T1048",
+          "T1486"
+        ],
+        "InitialAccess": [
+          "T1566.001",
+          "T1566.002",
+          "T1566.003",
+          "T1189",
+          "T1213",
+          "T1593",
+          "T1567.002",
+          "T1078",
+          "T1003",
+          "T1537"
+        ],
+        "Reconnaissance": [
+          "T1189",
+          "T1213",
+          "T1593",
+          "T1567.002"
+        ]
+      },
+      "totalRules": 14,
+      "rulesParsed": 10
+    },
+    "Cyfirma Compromised Accounts": {
+      "tactics": {
+        "CredentialAccess": 3,
+        "InitialAccess": 3,
+        "Persistence": 1,
+        "Discovery": 1
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1003",
+          "T1552",
+          "T1078",
+          "T1098",
+          "T1087"
+        ],
+        "InitialAccess": [
+          "T1003",
+          "T1552",
+          "T1078",
+          "T1098",
+          "T1087"
+        ],
+        "Persistence": [
+          "T1003",
+          "T1552",
+          "T1078",
+          "T1098"
+        ],
+        "Discovery": [
+          "T1078",
+          "T1087",
+          "T1552"
+        ]
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "Cyfirma Brand Intelligence": {
+      "tactics": {
+        "ResourceDevelopment": 10,
+        "InitialAccess": 8,
+        "CommandAndControl": 4,
+        "Reconnaissance": 4,
+        "Execution": 2,
+        "DefenseEvasion": 2,
+        "CredentialAccess": 2
+      },
+      "techniques": {
+        "ResourceDevelopment": [
+          "T1583.001",
+          "T1586.002",
+          "T1566.002",
+          "T1566.001",
+          "T1071.003",
+          "T1071.001",
+          "T1589.003",
+          "T1585.001",
+          "T1406",
+          "T1414",
+          "T1437",
+          "T1204.002",
+          "T1585.002",
+          "T1566",
+          "T1583",
+          "T1591.002"
+        ],
+        "InitialAccess": [
+          "T1583.001",
+          "T1586.002",
+          "T1566.002",
+          "T1566.001",
+          "T1071.003",
+          "T1071.001",
+          "T1589.003",
+          "T1585.001",
+          "T1585.002",
+          "T1566",
+          "T1583",
+          "T1591.002"
+        ],
+        "CommandAndControl": [
+          "T1583.001",
+          "T1586.002",
+          "T1566.002",
+          "T1566.001",
+          "T1071.003",
+          "T1071.001",
+          "T1406",
+          "T1414",
+          "T1437",
+          "T1204.002"
+        ],
+        "Reconnaissance": [
+          "T1589.003",
+          "T1585.001",
+          "T1566.002",
+          "T1591.002"
+        ],
+        "Execution": [
+          "T1406",
+          "T1414",
+          "T1437",
+          "T1583.001",
+          "T1204.002"
+        ],
+        "DefenseEvasion": [
+          "T1406",
+          "T1414",
+          "T1437",
+          "T1583.001",
+          "T1204.002"
+        ],
+        "CredentialAccess": [
+          "T1406",
+          "T1414",
+          "T1437",
+          "T1583.001",
+          "T1204.002"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Cyfirma Cyber Intelligence": {
+      "tactics": {
+        "CommandAndControl": 4,
+        "InitialAccess": 10,
+        "Exfiltration": 4,
+        "Execution": 6,
+        "DefenseEvasion": 6,
+        "Impact": 6,
+        "Persistence": 2,
+        "PrivilegeEscalation": 2,
+        "CredentialAccess": 2,
+        "Discovery": 2,
+        "LateralMovement": 2,
+        "Collection": 2
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1071",
+          "T1090",
+          "T1573",
+          "T1105",
+          "T1568",
+          "T1566",
+          "T1041",
+          "T1071.001",
+          "T1573.001",
+          "T1568.002",
+          "T1566.002"
+        ],
+        "InitialAccess": [
+          "T1071",
+          "T1090",
+          "T1573",
+          "T1105",
+          "T1568",
+          "T1566",
+          "T1041",
+          "T1071.001",
+          "T1573.001",
+          "T1568.002",
+          "T1566.002",
+          "T1204",
+          "T1027",
+          "T1486",
+          "T1566.001",
+          "T1203",
+          "T1059",
+          "T1547",
+          "T1053",
+          "T1055",
+          "T1562",
+          "T1036",
+          "T1003",
+          "T1555",
+          "T1082",
+          "T1057",
+          "T1021",
+          "T1113",
+          "T1059.001",
+          "T1059.003",
+          "T1547.001",
+          "T1053.005",
+          "T1562.001",
+          "T1003.001",
+          "T1555.003",
+          "T1021.002"
+        ],
+        "Exfiltration": [
+          "T1071",
+          "T1090",
+          "T1573",
+          "T1105",
+          "T1568",
+          "T1566",
+          "T1041",
+          "T1071.001",
+          "T1573.001",
+          "T1568.002",
+          "T1566.002"
+        ],
+        "Execution": [
+          "T1204",
+          "T1566",
+          "T1027",
+          "T1486",
+          "T1566.001",
+          "T1203",
+          "T1059",
+          "T1547",
+          "T1053",
+          "T1055",
+          "T1562",
+          "T1036",
+          "T1003",
+          "T1555",
+          "T1082",
+          "T1057",
+          "T1021",
+          "T1113",
+          "T1059.001",
+          "T1059.003",
+          "T1547.001",
+          "T1053.005",
+          "T1562.001",
+          "T1003.001",
+          "T1555.003",
+          "T1021.002"
+        ],
+        "DefenseEvasion": [
+          "T1204",
+          "T1566",
+          "T1027",
+          "T1486",
+          "T1566.001",
+          "T1203",
+          "T1059",
+          "T1547",
+          "T1053",
+          "T1055",
+          "T1562",
+          "T1036",
+          "T1003",
+          "T1555",
+          "T1082",
+          "T1057",
+          "T1021",
+          "T1113",
+          "T1059.001",
+          "T1059.003",
+          "T1547.001",
+          "T1053.005",
+          "T1562.001",
+          "T1003.001",
+          "T1555.003",
+          "T1021.002"
+        ],
+        "Impact": [
+          "T1204",
+          "T1566",
+          "T1027",
+          "T1486",
+          "T1566.001",
+          "T1203",
+          "T1059",
+          "T1547",
+          "T1053",
+          "T1055",
+          "T1562",
+          "T1036",
+          "T1003",
+          "T1555",
+          "T1082",
+          "T1057",
+          "T1021",
+          "T1113",
+          "T1059.001",
+          "T1059.003",
+          "T1547.001",
+          "T1053.005",
+          "T1562.001",
+          "T1003.001",
+          "T1555.003",
+          "T1021.002"
+        ],
+        "Persistence": [
+          "T1566",
+          "T1203",
+          "T1059",
+          "T1204",
+          "T1547",
+          "T1053",
+          "T1055",
+          "T1027",
+          "T1562",
+          "T1036",
+          "T1003",
+          "T1555",
+          "T1082",
+          "T1057",
+          "T1021",
+          "T1113",
+          "T1486",
+          "T1566.001",
+          "T1059.001",
+          "T1059.003",
+          "T1547.001",
+          "T1053.005",
+          "T1562.001",
+          "T1003.001",
+          "T1555.003",
+          "T1021.002"
+        ],
+        "PrivilegeEscalation": [
+          "T1566",
+          "T1203",
+          "T1059",
+          "T1204",
+          "T1547",
+          "T1053",
+          "T1055",
+          "T1027",
+          "T1562",
+          "T1036",
+          "T1003",
+          "T1555",
+          "T1082",
+          "T1057",
+          "T1021",
+          "T1113",
+          "T1486",
+          "T1566.001",
+          "T1059.001",
+          "T1059.003",
+          "T1547.001",
+          "T1053.005",
+          "T1562.001",
+          "T1003.001",
+          "T1555.003",
+          "T1021.002"
+        ],
+        "CredentialAccess": [
+          "T1566",
+          "T1203",
+          "T1059",
+          "T1204",
+          "T1547",
+          "T1053",
+          "T1055",
+          "T1027",
+          "T1562",
+          "T1036",
+          "T1003",
+          "T1555",
+          "T1082",
+          "T1057",
+          "T1021",
+          "T1113",
+          "T1486",
+          "T1566.001",
+          "T1059.001",
+          "T1059.003",
+          "T1547.001",
+          "T1053.005",
+          "T1562.001",
+          "T1003.001",
+          "T1555.003",
+          "T1021.002"
+        ],
+        "Discovery": [
+          "T1566",
+          "T1203",
+          "T1059",
+          "T1204",
+          "T1547",
+          "T1053",
+          "T1055",
+          "T1027",
+          "T1562",
+          "T1036",
+          "T1003",
+          "T1555",
+          "T1082",
+          "T1057",
+          "T1021",
+          "T1113",
+          "T1486",
+          "T1566.001",
+          "T1059.001",
+          "T1059.003",
+          "T1547.001",
+          "T1053.005",
+          "T1562.001",
+          "T1003.001",
+          "T1555.003",
+          "T1021.002"
+        ],
+        "LateralMovement": [
+          "T1566",
+          "T1203",
+          "T1059",
+          "T1204",
+          "T1547",
+          "T1053",
+          "T1055",
+          "T1027",
+          "T1562",
+          "T1036",
+          "T1003",
+          "T1555",
+          "T1082",
+          "T1057",
+          "T1021",
+          "T1113",
+          "T1486",
+          "T1566.001",
+          "T1059.001",
+          "T1059.003",
+          "T1547.001",
+          "T1053.005",
+          "T1562.001",
+          "T1003.001",
+          "T1555.003",
+          "T1021.002"
+        ],
+        "Collection": [
+          "T1566",
+          "T1203",
+          "T1059",
+          "T1204",
+          "T1547",
+          "T1053",
+          "T1055",
+          "T1027",
+          "T1562",
+          "T1036",
+          "T1003",
+          "T1555",
+          "T1082",
+          "T1057",
+          "T1021",
+          "T1113",
+          "T1486",
+          "T1566.001",
+          "T1059.001",
+          "T1059.003",
+          "T1547.001",
+          "T1053.005",
+          "T1562.001",
+          "T1003.001",
+          "T1555.003",
+          "T1021.002"
+        ]
+      },
+      "totalRules": 36,
+      "rulesParsed": 10
+    },
+    "Cyfirma Attack Surface": {
+      "tactics": {
+        "DefenseEvasion": 8,
+        "ResourceDevelopment": 2,
+        "Reconnaissance": 6,
+        "InitialAccess": 10,
+        "CredentialAccess": 4,
+        "Collection": 4,
+        "Discovery": 6,
+        "Exfiltration": 4,
+        "Persistence": 4,
+        "Execution": 4,
+        "Impact": 4,
+        "PrivilegeEscalation": 2,
+        "CommandAndControl": 2
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1553",
+          "T1588",
+          "T1595",
+          "T1190",
+          "T1552",
+          "T1087",
+          "T1046",
+          "T1136",
+          "T1059",
+          "T1566",
+          "T1070",
+          "T1027",
+          "T1505",
+          "T1555",
+          "T1114",
+          "T1068",
+          "T1499",
+          "T1566.002",
+          "T1071.001",
+          "T1090.002",
+          "T1595.002",
+          "T1036.005",
+          "T1041",
+          "T1071",
+          "T1090",
+          "T1036"
+        ],
+        "ResourceDevelopment": [
+          "T1553",
+          "T1588",
+          "T1595",
+          "T1190",
+          "T1552"
+        ],
+        "Reconnaissance": [
+          "T1553",
+          "T1588",
+          "T1595",
+          "T1190",
+          "T1552",
+          "T1087",
+          "T1046",
+          "T1136",
+          "T1059",
+          "T1566",
+          "T1070",
+          "T1027",
+          "T1505",
+          "T1555",
+          "T1114",
+          "T1566.002",
+          "T1071.001",
+          "T1090.002",
+          "T1595.002",
+          "T1036.005",
+          "T1499",
+          "T1041",
+          "T1071",
+          "T1090",
+          "T1036"
+        ],
+        "InitialAccess": [
+          "T1553",
+          "T1588",
+          "T1595",
+          "T1190",
+          "T1552",
+          "T1087",
+          "T1087.004",
+          "T1046",
+          "T1136",
+          "T1059",
+          "T1566",
+          "T1070",
+          "T1027",
+          "T1505",
+          "T1555",
+          "T1114",
+          "T1068",
+          "T1499",
+          "T1566.002",
+          "T1071.001",
+          "T1090.002",
+          "T1595.002",
+          "T1036.005",
+          "T1041",
+          "T1071",
+          "T1090",
+          "T1036"
+        ],
+        "CredentialAccess": [
+          "T1553",
+          "T1588",
+          "T1595",
+          "T1190",
+          "T1552",
+          "T1087",
+          "T1046",
+          "T1136",
+          "T1059",
+          "T1566",
+          "T1070",
+          "T1027",
+          "T1505",
+          "T1555",
+          "T1114"
+        ],
+        "Collection": [
+          "T1087",
+          "T1087.004",
+          "T1190",
+          "T1046",
+          "T1136",
+          "T1059",
+          "T1566",
+          "T1070",
+          "T1027",
+          "T1505",
+          "T1555",
+          "T1114",
+          "T1595"
+        ],
+        "Discovery": [
+          "T1087",
+          "T1087.004",
+          "T1190",
+          "T1046",
+          "T1136",
+          "T1059",
+          "T1566",
+          "T1070",
+          "T1027",
+          "T1505",
+          "T1555",
+          "T1114",
+          "T1595",
+          "T1068",
+          "T1499"
+        ],
+        "Exfiltration": [
+          "T1087",
+          "T1087.004",
+          "T1566.002",
+          "T1071.001",
+          "T1090.002",
+          "T1595.002",
+          "T1036.005",
+          "T1499",
+          "T1041",
+          "T1566",
+          "T1071",
+          "T1090",
+          "T1595",
+          "T1036"
+        ],
+        "Persistence": [
+          "T1190",
+          "T1087",
+          "T1046",
+          "T1136",
+          "T1059",
+          "T1566",
+          "T1070",
+          "T1027",
+          "T1505",
+          "T1555",
+          "T1114",
+          "T1595",
+          "T1068",
+          "T1499"
+        ],
+        "Execution": [
+          "T1190",
+          "T1087",
+          "T1046",
+          "T1136",
+          "T1059",
+          "T1566",
+          "T1070",
+          "T1027",
+          "T1505",
+          "T1555",
+          "T1114",
+          "T1595",
+          "T1068",
+          "T1499"
+        ],
+        "Impact": [
+          "T1505",
+          "T1068",
+          "T1046",
+          "T1499",
+          "T1566.002",
+          "T1071.001",
+          "T1090.002",
+          "T1595.002",
+          "T1036.005",
+          "T1041",
+          "T1566",
+          "T1071",
+          "T1090",
+          "T1595",
+          "T1036"
+        ],
+        "PrivilegeEscalation": [
+          "T1505",
+          "T1068",
+          "T1046",
+          "T1499"
+        ],
+        "CommandAndControl": [
+          "T1566.002",
+          "T1071.001",
+          "T1090.002",
+          "T1595.002",
+          "T1036.005",
+          "T1499",
+          "T1041",
+          "T1566",
+          "T1071",
+          "T1090",
+          "T1595",
+          "T1036"
+        ]
+      },
+      "totalRules": 12,
+      "rulesParsed": 10
+    },
+    "CyrenThreatIntelligence": {
+      "tactics": {
+        "DefenseEvasion": 1,
+        "CommandAndControl": 1,
+        "Impact": 1,
+        "InitialAccess": 1,
+        "Execution": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1562"
+        ],
+        "CommandAndControl": [
+          "T1071",
+          "T1568"
+        ],
+        "Impact": [
+          "T1071",
+          "T1568"
+        ],
+        "InitialAccess": [
+          "T1566",
+          "T1189"
+        ],
+        "Execution": [
+          "T1566",
+          "T1189"
+        ]
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "Cyfirma Vulnerabilities Intel": {
+      "tactics": {
+        "Execution": 4,
+        "LateralMovement": 4,
+        "PrivilegeEscalation": 4,
+        "InitialAccess": 4,
+        "CredentialAccess": 4,
+        "DefenseEvasion": 4
+      },
+      "techniques": {
+        "Execution": [
+          "T1059",
+          "T1203",
+          "T1210",
+          "T1068",
+          "T1190",
+          "T1133",
+          "T1003",
+          "T1553",
+          "T1548.002",
+          "T1021.002"
+        ],
+        "LateralMovement": [
+          "T1059",
+          "T1203",
+          "T1210",
+          "T1068",
+          "T1190",
+          "T1133",
+          "T1003",
+          "T1553",
+          "T1548.002",
+          "T1021.002"
+        ],
+        "PrivilegeEscalation": [
+          "T1059",
+          "T1203",
+          "T1210",
+          "T1068",
+          "T1190",
+          "T1133",
+          "T1003",
+          "T1553",
+          "T1548.002",
+          "T1021.002"
+        ],
+        "InitialAccess": [
+          "T1059",
+          "T1203",
+          "T1210",
+          "T1068",
+          "T1190",
+          "T1133",
+          "T1003",
+          "T1553",
+          "T1548.002",
+          "T1021.002"
+        ],
+        "CredentialAccess": [
+          "T1059",
+          "T1203",
+          "T1210",
+          "T1068",
+          "T1190",
+          "T1133",
+          "T1003",
+          "T1553",
+          "T1548.002",
+          "T1021.002"
+        ],
+        "DefenseEvasion": [
+          "T1059",
+          "T1203",
+          "T1210",
+          "T1068",
+          "T1190",
+          "T1133",
+          "T1003",
+          "T1553",
+          "T1548.002",
+          "T1021.002"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "Dataminr Pulse": {
+      "tactics": {
+        "Persistence": 1
+      },
+      "techniques": {
+        "Persistence": [
+          "T1546"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Digital Shadows": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Infoblox": {
+      "tactics": {
+        "Impact": 2
+      },
+      "techniques": {
+        "Impact": [
+          "T1498",
+          "T1565"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "GreyNoiseThreatIntelligence": {
+      "tactics": {
+        "CommandAndControl": 5
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1071"
+        ]
+      },
+      "totalRules": 5,
+      "rulesParsed": 5
+    },
+    "Infoblox Cloud Data Connector": {
+      "tactics": {
+        "Impact": 8
+      },
+      "techniques": {
+        "Impact": [
+          "T1498",
+          "T1565"
+        ]
+      },
+      "totalRules": 8,
+      "rulesParsed": 8
+    },
+    "Infoblox SOC Insights": {
+      "tactics": {
+        "Impact": 2
+      },
+      "techniques": {
+        "Impact": [
+          "T1498"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Lumen Defender Threat Feed": {
+      "tactics": {
+        "CommandAndControl": 8
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1071"
+        ]
+      },
+      "totalRules": 8,
+      "rulesParsed": 8
+    },
+    "SOCRadar": {
+      "tactics": {
+        "Impact": 1,
+        "Exfiltration": 1,
+        "Reconnaissance": 1,
+        "InitialAccess": 1,
+        "Discovery": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1485",
+          "T1567"
+        ],
+        "Exfiltration": [
+          "T1485",
+          "T1567"
+        ],
+        "Reconnaissance": [
+          "T1589",
+          "T1078"
+        ],
+        "InitialAccess": [
+          "T1589",
+          "T1078"
+        ],
+        "Discovery": [
+          "T1526"
+        ]
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "TacitRedThreatIntelligence": {
+      "tactics": {
+        "CredentialAccess": 2,
+        "InitialAccess": 1,
+        "Reconnaissance": 1,
+        "Persistence": 1
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1078",
+          "T1589"
+        ],
+        "InitialAccess": [
+          "T1078",
+          "T1589"
+        ],
+        "Reconnaissance": [
+          "T1078",
+          "T1589"
+        ],
+        "Persistence": [
+          "T1078"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "SpyCloud Enterprise Protection": {
+      "tactics": {
+        "CredentialAccess": 2
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1555"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "ThreatConnect": {
+      "tactics": {
+        "CommandAndControl": 5
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1071"
+        ]
+      },
+      "totalRules": 5,
+      "rulesParsed": 5
+    },
+    "Threat Intelligence": {
+      "tactics": {
+        "CommandAndControl": 8,
+        "InitialAccess": 2
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1071"
+        ],
+        "InitialAccess": [
+          "T1566"
+        ]
+      },
+      "totalRules": 52,
+      "rulesParsed": 10
+    },
+    "Threat Intelligence (NEW)": {
+      "tactics": {
+        "CommandAndControl": 8,
+        "InitialAccess": 2
+      },
+      "techniques": {
+        "CommandAndControl": [
+          "T1071"
+        ],
+        "InitialAccess": [
+          "T1566"
+        ]
+      },
+      "totalRules": 52,
+      "rulesParsed": 10
+    },
+    "Vaikora-Sentinel": {
+      "tactics": {
+        "Impact": 2,
+        "DefenseEvasion": 2,
+        "Execution": 2,
+        "PrivilegeEscalation": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1078",
+          "T1562",
+          "T1059",
+          "T1548"
+        ],
+        "DefenseEvasion": [
+          "T1078",
+          "T1562",
+          "T1059",
+          "T1027"
+        ],
+        "Execution": [
+          "T1059",
+          "T1027",
+          "T1078",
+          "T1548"
+        ],
+        "PrivilegeEscalation": [
+          "T1059",
+          "T1078",
+          "T1548"
+        ]
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "Visa Threat Intelligence (VTI)": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Votiro": {
+      "tactics": {
+        "DefenseEvasion": 2,
+        "Discovery": 1,
+        "Impact": 2,
+        "CommandAndControl": 1,
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1036",
+          "T1083",
+          "T1057",
+          "T1082",
+          "T1565",
+          "T1498",
+          "T0837",
+          "T0885",
+          "T1027",
+          "T1486",
+          "T1566"
+        ],
+        "Discovery": [
+          "T1036",
+          "T1083",
+          "T1057",
+          "T1082",
+          "T1565",
+          "T1498",
+          "T0837"
+        ],
+        "Impact": [
+          "T1036",
+          "T1083",
+          "T1057",
+          "T1082",
+          "T1565",
+          "T1498",
+          "T0837",
+          "T0885",
+          "T1027",
+          "T1486",
+          "T1566"
+        ],
+        "CommandAndControl": [
+          "T0885",
+          "T1036",
+          "T1027",
+          "T1486",
+          "T1566"
+        ],
+        "InitialAccess": [
+          "T0885",
+          "T1036",
+          "T1027",
+          "T1486",
+          "T1566"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "ZeroFox": {
+      "tactics": {
+        "ResourceDevelopment": 4,
+        "InitialAccess": 4
+      },
+      "techniques": {
+        "ResourceDevelopment": [
+          "T1583",
+          "T1586",
+          "T1566"
+        ],
+        "InitialAccess": [
+          "T1583",
+          "T1586",
+          "T1566"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "Zinc Open Source": {
+      "tactics": {
+        "Impact": 1,
+        "Persistence": 2
+      },
+      "techniques": {
+        "Impact": [
+          "T1486"
+        ],
+        "Persistence": [
+          "T1546"
+        ]
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "Anvilogic": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "AIShield AI Security Monitoring": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 38,
+      "rulesParsed": 10
+    },
+    "42Crunch API Protection": {
+      "tactics": {
+        "Reconnaissance": 4,
+        "Collection": 1,
+        "CredentialAccess": 3,
+        "Discovery": 3,
+        "Exfiltration": 1,
+        "InitialAccess": 2,
+        "Impact": 1
+      },
+      "techniques": {
+        "Reconnaissance": [
+          "T1593",
+          "T1119",
+          "T1589",
+          "T1592",
+          "T1595",
+          "T1580",
+          "T1083"
+        ],
+        "Collection": [
+          "T1593",
+          "T1119"
+        ],
+        "CredentialAccess": [
+          "T1110",
+          "T1087",
+          "T1190",
+          "T1528",
+          "T1555",
+          "T1187"
+        ],
+        "Discovery": [
+          "T1110",
+          "T1087",
+          "T1190",
+          "T1595",
+          "T1580",
+          "T1083"
+        ],
+        "Exfiltration": [
+          "T1020"
+        ],
+        "InitialAccess": [
+          "T1087",
+          "T1190",
+          "T1528"
+        ],
+        "Impact": [
+          "T1499"
+        ]
+      },
+      "totalRules": 11,
+      "rulesParsed": 10
+    },
+    "ApacheHTTPServer": {
+      "tactics": {
+        "InitialAccess": 8,
+        "Impact": 2
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1189"
+        ],
+        "Impact": [
+          "T1498"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Apache Log4j Vulnerability Detection": {
+      "tactics": {
+        "InitialAccess": 3,
+        "CommandAndControl": 1,
+        "Execution": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1203"
+        ],
+        "CommandAndControl": [
+          "T1071"
+        ],
+        "Execution": [
+          "T1190",
+          "T1203"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "Attacker Tools Threat Protection Essentials": {
+      "tactics": {
+        "Discovery": 2,
+        "CredentialAccess": 3,
+        "Collection": 1,
+        "CommandAndControl": 1,
+        "DefenseEvasion": 1,
+        "Execution": 1,
+        "Exfiltration": 1,
+        "LateralMovement": 1,
+        "Persistence": 1,
+        "PrivilegeEscalation": 1
+      },
+      "techniques": {
+        "Discovery": [
+          "T1016",
+          "T1018",
+          "T1069.002",
+          "T1087.002",
+          "T1482",
+          "T1548.002",
+          "T1134",
+          "T1134.002",
+          "T1134.005",
+          "T1087.001",
+          "T1557.001",
+          "T1071.001",
+          "T1560",
+          "T1547.001",
+          "T1547.005",
+          "T1547.009",
+          "T1217",
+          "T1115",
+          "T1059",
+          "T1059.001",
+          "T1059.003",
+          "T1136.001",
+          "T1136.002",
+          "T1543.003",
+          "T1555.003",
+          "T1484.001",
+          "T1114.001",
+          "T1573.002",
+          "T1546.008",
+          "T1041",
+          "T1567.001",
+          "T1567.002",
+          "T1068",
+          "T1210",
+          "T1083",
+          "T1615",
+          "T1574.001",
+          "T1574.004",
+          "T1574.007",
+          "T1574.008",
+          "T1574.009",
+          "T1070.006",
+          "T1105",
+          "T1056.001",
+          "T1056.004",
+          "T1106",
+          "T1046",
+          "T1135",
+          "T1040",
+          "T1027",
+          "T1003.001",
+          "T1057",
+          "T1055",
+          "T1021.003",
+          "T1021.004",
+          "T1053.005",
+          "T1113",
+          "T1518.001",
+          "T1558.002",
+          "T1558.003",
+          "T1082",
+          "T1049",
+          "T1569.002",
+          "T1127.001",
+          "T1552.001",
+          "T1552.004",
+          "T1550.002",
+          "T1125",
+          "T1102.002",
+          "T1047"
+        ],
+        "CredentialAccess": [
+          "T1003.001",
+          "T1548.002",
+          "T1134",
+          "T1134.002",
+          "T1134.005",
+          "T1087.001",
+          "T1087.002",
+          "T1557.001",
+          "T1071.001",
+          "T1560",
+          "T1547.001",
+          "T1547.005",
+          "T1547.009",
+          "T1217",
+          "T1115",
+          "T1059",
+          "T1059.001",
+          "T1059.003",
+          "T1136.001",
+          "T1136.002",
+          "T1543.003",
+          "T1555.003",
+          "T1484.001",
+          "T1482",
+          "T1114.001",
+          "T1573.002",
+          "T1546.008",
+          "T1041",
+          "T1567.001",
+          "T1567.002",
+          "T1068",
+          "T1210",
+          "T1083",
+          "T1615",
+          "T1574.001",
+          "T1574.004",
+          "T1574.007",
+          "T1574.008",
+          "T1574.009",
+          "T1070.006",
+          "T1105",
+          "T1056.001",
+          "T1056.004",
+          "T1106",
+          "T1046",
+          "T1135",
+          "T1040",
+          "T1027",
+          "T1057",
+          "T1055",
+          "T1021.003",
+          "T1021.004",
+          "T1053.005",
+          "T1113",
+          "T1518.001",
+          "T1558.002",
+          "T1558.003",
+          "T1082",
+          "T1016",
+          "T1049",
+          "T1569.002",
+          "T1127.001",
+          "T1552.001",
+          "T1552.004",
+          "T1550.002",
+          "T1125",
+          "T1102.002",
+          "T1047"
+        ],
+        "Collection": [
+          "T1548.002",
+          "T1134",
+          "T1134.002",
+          "T1134.005",
+          "T1087.001",
+          "T1087.002",
+          "T1557.001",
+          "T1071.001",
+          "T1560",
+          "T1547.001",
+          "T1547.005",
+          "T1547.009",
+          "T1217",
+          "T1115",
+          "T1059",
+          "T1059.001",
+          "T1059.003",
+          "T1136.001",
+          "T1136.002",
+          "T1543.003",
+          "T1555.003",
+          "T1484.001",
+          "T1482",
+          "T1114.001",
+          "T1573.002",
+          "T1546.008",
+          "T1041",
+          "T1567.001",
+          "T1567.002",
+          "T1068",
+          "T1210",
+          "T1083",
+          "T1615",
+          "T1574.001",
+          "T1574.004",
+          "T1574.007",
+          "T1574.008",
+          "T1574.009",
+          "T1070.006",
+          "T1105",
+          "T1056.001",
+          "T1056.004",
+          "T1106",
+          "T1046",
+          "T1135",
+          "T1040",
+          "T1027",
+          "T1003.001",
+          "T1057",
+          "T1055",
+          "T1021.003",
+          "T1021.004",
+          "T1053.005",
+          "T1113",
+          "T1518.001",
+          "T1558.002",
+          "T1558.003",
+          "T1082",
+          "T1016",
+          "T1049",
+          "T1569.002",
+          "T1127.001",
+          "T1552.001",
+          "T1552.004",
+          "T1550.002",
+          "T1125",
+          "T1102.002",
+          "T1047"
+        ],
+        "CommandAndControl": [
+          "T1548.002",
+          "T1134",
+          "T1134.002",
+          "T1134.005",
+          "T1087.001",
+          "T1087.002",
+          "T1557.001",
+          "T1071.001",
+          "T1560",
+          "T1547.001",
+          "T1547.005",
+          "T1547.009",
+          "T1217",
+          "T1115",
+          "T1059",
+          "T1059.001",
+          "T1059.003",
+          "T1136.001",
+          "T1136.002",
+          "T1543.003",
+          "T1555.003",
+          "T1484.001",
+          "T1482",
+          "T1114.001",
+          "T1573.002",
+          "T1546.008",
+          "T1041",
+          "T1567.001",
+          "T1567.002",
+          "T1068",
+          "T1210",
+          "T1083",
+          "T1615",
+          "T1574.001",
+          "T1574.004",
+          "T1574.007",
+          "T1574.008",
+          "T1574.009",
+          "T1070.006",
+          "T1105",
+          "T1056.001",
+          "T1056.004",
+          "T1106",
+          "T1046",
+          "T1135",
+          "T1040",
+          "T1027",
+          "T1003.001",
+          "T1057",
+          "T1055",
+          "T1021.003",
+          "T1021.004",
+          "T1053.005",
+          "T1113",
+          "T1518.001",
+          "T1558.002",
+          "T1558.003",
+          "T1082",
+          "T1016",
+          "T1049",
+          "T1569.002",
+          "T1127.001",
+          "T1552.001",
+          "T1552.004",
+          "T1550.002",
+          "T1125",
+          "T1102.002",
+          "T1047"
+        ],
+        "DefenseEvasion": [
+          "T1548.002",
+          "T1134",
+          "T1134.002",
+          "T1134.005",
+          "T1087.001",
+          "T1087.002",
+          "T1557.001",
+          "T1071.001",
+          "T1560",
+          "T1547.001",
+          "T1547.005",
+          "T1547.009",
+          "T1217",
+          "T1115",
+          "T1059",
+          "T1059.001",
+          "T1059.003",
+          "T1136.001",
+          "T1136.002",
+          "T1543.003",
+          "T1555.003",
+          "T1484.001",
+          "T1482",
+          "T1114.001",
+          "T1573.002",
+          "T1546.008",
+          "T1041",
+          "T1567.001",
+          "T1567.002",
+          "T1068",
+          "T1210",
+          "T1083",
+          "T1615",
+          "T1574.001",
+          "T1574.004",
+          "T1574.007",
+          "T1574.008",
+          "T1574.009",
+          "T1070.006",
+          "T1105",
+          "T1056.001",
+          "T1056.004",
+          "T1106",
+          "T1046",
+          "T1135",
+          "T1040",
+          "T1027",
+          "T1003.001",
+          "T1057",
+          "T1055",
+          "T1021.003",
+          "T1021.004",
+          "T1053.005",
+          "T1113",
+          "T1518.001",
+          "T1558.002",
+          "T1558.003",
+          "T1082",
+          "T1016",
+          "T1049",
+          "T1569.002",
+          "T1127.001",
+          "T1552.001",
+          "T1552.004",
+          "T1550.002",
+          "T1125",
+          "T1102.002",
+          "T1047"
+        ],
+        "Execution": [
+          "T1548.002",
+          "T1134",
+          "T1134.002",
+          "T1134.005",
+          "T1087.001",
+          "T1087.002",
+          "T1557.001",
+          "T1071.001",
+          "T1560",
+          "T1547.001",
+          "T1547.005",
+          "T1547.009",
+          "T1217",
+          "T1115",
+          "T1059",
+          "T1059.001",
+          "T1059.003",
+          "T1136.001",
+          "T1136.002",
+          "T1543.003",
+          "T1555.003",
+          "T1484.001",
+          "T1482",
+          "T1114.001",
+          "T1573.002",
+          "T1546.008",
+          "T1041",
+          "T1567.001",
+          "T1567.002",
+          "T1068",
+          "T1210",
+          "T1083",
+          "T1615",
+          "T1574.001",
+          "T1574.004",
+          "T1574.007",
+          "T1574.008",
+          "T1574.009",
+          "T1070.006",
+          "T1105",
+          "T1056.001",
+          "T1056.004",
+          "T1106",
+          "T1046",
+          "T1135",
+          "T1040",
+          "T1027",
+          "T1003.001",
+          "T1057",
+          "T1055",
+          "T1021.003",
+          "T1021.004",
+          "T1053.005",
+          "T1113",
+          "T1518.001",
+          "T1558.002",
+          "T1558.003",
+          "T1082",
+          "T1016",
+          "T1049",
+          "T1569.002",
+          "T1127.001",
+          "T1552.001",
+          "T1552.004",
+          "T1550.002",
+          "T1125",
+          "T1102.002",
+          "T1047"
+        ],
+        "Exfiltration": [
+          "T1548.002",
+          "T1134",
+          "T1134.002",
+          "T1134.005",
+          "T1087.001",
+          "T1087.002",
+          "T1557.001",
+          "T1071.001",
+          "T1560",
+          "T1547.001",
+          "T1547.005",
+          "T1547.009",
+          "T1217",
+          "T1115",
+          "T1059",
+          "T1059.001",
+          "T1059.003",
+          "T1136.001",
+          "T1136.002",
+          "T1543.003",
+          "T1555.003",
+          "T1484.001",
+          "T1482",
+          "T1114.001",
+          "T1573.002",
+          "T1546.008",
+          "T1041",
+          "T1567.001",
+          "T1567.002",
+          "T1068",
+          "T1210",
+          "T1083",
+          "T1615",
+          "T1574.001",
+          "T1574.004",
+          "T1574.007",
+          "T1574.008",
+          "T1574.009",
+          "T1070.006",
+          "T1105",
+          "T1056.001",
+          "T1056.004",
+          "T1106",
+          "T1046",
+          "T1135",
+          "T1040",
+          "T1027",
+          "T1003.001",
+          "T1057",
+          "T1055",
+          "T1021.003",
+          "T1021.004",
+          "T1053.005",
+          "T1113",
+          "T1518.001",
+          "T1558.002",
+          "T1558.003",
+          "T1082",
+          "T1016",
+          "T1049",
+          "T1569.002",
+          "T1127.001",
+          "T1552.001",
+          "T1552.004",
+          "T1550.002",
+          "T1125",
+          "T1102.002",
+          "T1047"
+        ],
+        "LateralMovement": [
+          "T1548.002",
+          "T1134",
+          "T1134.002",
+          "T1134.005",
+          "T1087.001",
+          "T1087.002",
+          "T1557.001",
+          "T1071.001",
+          "T1560",
+          "T1547.001",
+          "T1547.005",
+          "T1547.009",
+          "T1217",
+          "T1115",
+          "T1059",
+          "T1059.001",
+          "T1059.003",
+          "T1136.001",
+          "T1136.002",
+          "T1543.003",
+          "T1555.003",
+          "T1484.001",
+          "T1482",
+          "T1114.001",
+          "T1573.002",
+          "T1546.008",
+          "T1041",
+          "T1567.001",
+          "T1567.002",
+          "T1068",
+          "T1210",
+          "T1083",
+          "T1615",
+          "T1574.001",
+          "T1574.004",
+          "T1574.007",
+          "T1574.008",
+          "T1574.009",
+          "T1070.006",
+          "T1105",
+          "T1056.001",
+          "T1056.004",
+          "T1106",
+          "T1046",
+          "T1135",
+          "T1040",
+          "T1027",
+          "T1003.001",
+          "T1057",
+          "T1055",
+          "T1021.003",
+          "T1021.004",
+          "T1053.005",
+          "T1113",
+          "T1518.001",
+          "T1558.002",
+          "T1558.003",
+          "T1082",
+          "T1016",
+          "T1049",
+          "T1569.002",
+          "T1127.001",
+          "T1552.001",
+          "T1552.004",
+          "T1550.002",
+          "T1125",
+          "T1102.002",
+          "T1047"
+        ],
+        "Persistence": [
+          "T1548.002",
+          "T1134",
+          "T1134.002",
+          "T1134.005",
+          "T1087.001",
+          "T1087.002",
+          "T1557.001",
+          "T1071.001",
+          "T1560",
+          "T1547.001",
+          "T1547.005",
+          "T1547.009",
+          "T1217",
+          "T1115",
+          "T1059",
+          "T1059.001",
+          "T1059.003",
+          "T1136.001",
+          "T1136.002",
+          "T1543.003",
+          "T1555.003",
+          "T1484.001",
+          "T1482",
+          "T1114.001",
+          "T1573.002",
+          "T1546.008",
+          "T1041",
+          "T1567.001",
+          "T1567.002",
+          "T1068",
+          "T1210",
+          "T1083",
+          "T1615",
+          "T1574.001",
+          "T1574.004",
+          "T1574.007",
+          "T1574.008",
+          "T1574.009",
+          "T1070.006",
+          "T1105",
+          "T1056.001",
+          "T1056.004",
+          "T1106",
+          "T1046",
+          "T1135",
+          "T1040",
+          "T1027",
+          "T1003.001",
+          "T1057",
+          "T1055",
+          "T1021.003",
+          "T1021.004",
+          "T1053.005",
+          "T1113",
+          "T1518.001",
+          "T1558.002",
+          "T1558.003",
+          "T1082",
+          "T1016",
+          "T1049",
+          "T1569.002",
+          "T1127.001",
+          "T1552.001",
+          "T1552.004",
+          "T1550.002",
+          "T1125",
+          "T1102.002",
+          "T1047"
+        ],
+        "PrivilegeEscalation": [
+          "T1548.002",
+          "T1134",
+          "T1134.002",
+          "T1134.005",
+          "T1087.001",
+          "T1087.002",
+          "T1557.001",
+          "T1071.001",
+          "T1560",
+          "T1547.001",
+          "T1547.005",
+          "T1547.009",
+          "T1217",
+          "T1115",
+          "T1059",
+          "T1059.001",
+          "T1059.003",
+          "T1136.001",
+          "T1136.002",
+          "T1543.003",
+          "T1555.003",
+          "T1484.001",
+          "T1482",
+          "T1114.001",
+          "T1573.002",
+          "T1546.008",
+          "T1041",
+          "T1567.001",
+          "T1567.002",
+          "T1068",
+          "T1210",
+          "T1083",
+          "T1615",
+          "T1574.001",
+          "T1574.004",
+          "T1574.007",
+          "T1574.008",
+          "T1574.009",
+          "T1070.006",
+          "T1105",
+          "T1056.001",
+          "T1056.004",
+          "T1106",
+          "T1046",
+          "T1135",
+          "T1040",
+          "T1027",
+          "T1003.001",
+          "T1057",
+          "T1055",
+          "T1021.003",
+          "T1021.004",
+          "T1053.005",
+          "T1113",
+          "T1518.001",
+          "T1558.002",
+          "T1558.003",
+          "T1082",
+          "T1016",
+          "T1049",
+          "T1569.002",
+          "T1127.001",
+          "T1552.001",
+          "T1552.004",
+          "T1550.002",
+          "T1125",
+          "T1102.002",
+          "T1047"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "BitSight": {
+      "tactics": {
+        "Execution": 2,
+        "Reconnaissance": 3,
+        "CommandAndControl": 2,
+        "Impact": 2,
+        "InitialAccess": 2
+      },
+      "techniques": {
+        "Execution": [
+          "T1203",
+          "T1595.002"
+        ],
+        "Reconnaissance": [
+          "T1203",
+          "T1595.002",
+          "T1591",
+          "T1090"
+        ],
+        "CommandAndControl": [
+          "T1591",
+          "T1090"
+        ],
+        "Impact": [
+          "T1491",
+          "T1190"
+        ],
+        "InitialAccess": [
+          "T1491",
+          "T1190"
+        ]
+      },
+      "totalRules": 6,
+      "rulesParsed": 6
+    },
+    "Box": {
+      "tactics": {
+        "Collection": 1,
+        "InitialAccess": 4,
+        "Exfiltration": 2,
+        "Impact": 1,
+        "PrivilegeEscalation": 2
+      },
+      "techniques": {
+        "Collection": [
+          "T1530"
+        ],
+        "InitialAccess": [
+          "T1189",
+          "T1078"
+        ],
+        "Exfiltration": [
+          "T1537",
+          "T1048"
+        ],
+        "Impact": [
+          "T1485"
+        ],
+        "PrivilegeEscalation": [
+          "T1078"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Claroty": {
+      "tactics": {
+        "Impact": 1,
+        "InitialAccess": 3,
+        "Discovery": 4,
+        "Reconnaissance": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1529"
+        ],
+        "InitialAccess": [
+          "T1190"
+        ],
+        "Discovery": [
+          "T1018",
+          "T1595"
+        ],
+        "Reconnaissance": [
+          "T1018",
+          "T1595"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Cognni": {
+      "tactics": {
+        "Collection": 10
+      },
+      "techniques": {
+        "Collection": [
+          "T1530"
+        ]
+      },
+      "totalRules": 15,
+      "rulesParsed": 10
+    },
+    "Commvault Security IQ": {
+      "tactics": {
+        "DefenseEvasion": 1,
+        "Impact": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1578",
+          "T1531"
+        ],
+        "Impact": [
+          "T1578",
+          "T1531"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "ContrastADR": {
+      "tactics": {
+        "Execution": 3,
+        "DefenseEvasion": 5,
+        "InitialAccess": 6,
+        "CommandAndControl": 6,
+        "LateralMovement": 3,
+        "CredentialAccess": 2,
+        "Collection": 1,
+        "Exfiltration": 1,
+        "Reconnaissance": 1,
+        "Discovery": 2
+      },
+      "techniques": {
+        "Execution": [
+          "T1059",
+          "T1055",
+          "T1190",
+          "T1008",
+          "T1210"
+        ],
+        "DefenseEvasion": [
+          "T1059",
+          "T1055",
+          "T1190",
+          "T1008",
+          "T1211",
+          "T1210",
+          "T1018"
+        ],
+        "InitialAccess": [
+          "T1059",
+          "T1055",
+          "T1190",
+          "T1008",
+          "T1211",
+          "T1210",
+          "T1552",
+          "T1005",
+          "T1041",
+          "T1590",
+          "T1571",
+          "T1528",
+          "T1021",
+          "T1046",
+          "T1018"
+        ],
+        "CommandAndControl": [
+          "T1059",
+          "T1055",
+          "T1190",
+          "T1008",
+          "T1211",
+          "T1210",
+          "T1552",
+          "T1005",
+          "T1041",
+          "T1590",
+          "T1571",
+          "T1528",
+          "T1021",
+          "T1046",
+          "T1018"
+        ],
+        "LateralMovement": [
+          "T1190",
+          "T1059",
+          "T1055",
+          "T1210",
+          "T1008",
+          "T1552",
+          "T1005",
+          "T1041",
+          "T1590",
+          "T1571",
+          "T1528",
+          "T1021",
+          "T1046"
+        ],
+        "CredentialAccess": [
+          "T1190",
+          "T1552",
+          "T1005",
+          "T1041",
+          "T1008",
+          "T1590",
+          "T1571",
+          "T1528",
+          "T1021",
+          "T1046"
+        ],
+        "Collection": [
+          "T1190",
+          "T1552",
+          "T1005",
+          "T1041",
+          "T1008",
+          "T1590",
+          "T1571",
+          "T1528",
+          "T1021",
+          "T1046"
+        ],
+        "Exfiltration": [
+          "T1190",
+          "T1552",
+          "T1005",
+          "T1041",
+          "T1008",
+          "T1590",
+          "T1571",
+          "T1528",
+          "T1021",
+          "T1046"
+        ],
+        "Reconnaissance": [
+          "T1190",
+          "T1552",
+          "T1005",
+          "T1041",
+          "T1008",
+          "T1590",
+          "T1571",
+          "T1528",
+          "T1021",
+          "T1046"
+        ],
+        "Discovery": [
+          "T1190",
+          "T1552",
+          "T1005",
+          "T1041",
+          "T1008",
+          "T1590",
+          "T1571",
+          "T1528",
+          "T1021",
+          "T1046",
+          "T1055",
+          "T1018"
+        ]
+      },
+      "totalRules": 6,
+      "rulesParsed": 6
+    },
+    "Contrast Protect": {
+      "tactics": {
+        "InitialAccess": 4,
+        "Exfiltration": 4
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1566"
+        ],
+        "Exfiltration": [
+          "T1566"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "ContinuousDiagnostics&Mitigation": {
+      "tactics": {
+        "Discovery": 1
+      },
+      "techniques": {
+        "Discovery": [
+          "T1082"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "CybersecurityMaturityModelCertification(CMMC)2.0": {
+      "tactics": {
+        "Discovery": 2
+      },
+      "techniques": {
+        "Discovery": [
+          "T1082"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Cyble Vision": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 44,
+      "rulesParsed": 10
+    },
+    "D3SmartSOAR": {
+      "tactics": {
+        "Impact": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1499"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Dev 0270 Detection and Hunting": {
+      "tactics": {
+        "Persistence": 1,
+        "Exfiltration": 1,
+        "DefenseEvasion": 1,
+        "Impact": 1,
+        "Discovery": 1
+      },
+      "techniques": {
+        "Persistence": [
+          "T1098"
+        ],
+        "Exfiltration": [
+          "T1048",
+          "T1562"
+        ],
+        "DefenseEvasion": [
+          "T1048",
+          "T1562"
+        ],
+        "Impact": [
+          "T1486"
+        ],
+        "Discovery": [
+          "T1482"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "Digital Guardian Data Loss Prevention": {
+      "tactics": {
+        "Exfiltration": 10
+      },
+      "techniques": {
+        "Exfiltration": [
+          "T1048"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "EatonForeseer": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 1,
+      "rulesParsed": 0
+    },
+    "Eset Security Management Center": {
+      "tactics": {
+        "Exfiltration": 1,
+        "CommandAndControl": 1,
+        "InitialAccess": 1,
+        "Execution": 1,
+        "CredentialAccess": 1,
+        "PrivilegeEscalation": 1
+      },
+      "techniques": {
+        "Exfiltration": [
+          "T1189",
+          "T1567",
+          "T1071.001"
+        ],
+        "CommandAndControl": [
+          "T1189",
+          "T1567",
+          "T1071.001"
+        ],
+        "InitialAccess": [
+          "T1189",
+          "T1567",
+          "T1071.001"
+        ],
+        "Execution": [
+          "T1204",
+          "T1212",
+          "T1548"
+        ],
+        "CredentialAccess": [
+          "T1204",
+          "T1212",
+          "T1548"
+        ],
+        "PrivilegeEscalation": [
+          "T1204",
+          "T1212",
+          "T1548"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "ESETPROTECT": {
+      "tactics": {
+        "Execution": 1,
+        "Exfiltration": 1,
+        "CommandAndControl": 1,
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "Execution": [
+          "T1204"
+        ],
+        "Exfiltration": [
+          "T1041",
+          "T1071",
+          "T1189",
+          "T1566"
+        ],
+        "CommandAndControl": [
+          "T1041",
+          "T1071",
+          "T1189",
+          "T1566"
+        ],
+        "InitialAccess": [
+          "T1041",
+          "T1071",
+          "T1189",
+          "T1566"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Flare": {
+      "tactics": {
+        "Reconnaissance": 8,
+        "CredentialAccess": 2
+      },
+      "techniques": {
+        "Reconnaissance": [
+          "T1593",
+          "T1596"
+        ],
+        "CredentialAccess": [
+          "T1110",
+          "T1555"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "GitLab": {
+      "tactics": {
+        "CredentialAccess": 4,
+        "Persistence": 3,
+        "InitialAccess": 1,
+        "Collection": 1,
+        "DefenseEvasion": 1,
+        "Impact": 1
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1110",
+          "T1556"
+        ],
+        "Persistence": [
+          "T1136",
+          "T1078",
+          "T1556"
+        ],
+        "InitialAccess": [
+          "T1078"
+        ],
+        "Collection": [
+          "T1213"
+        ],
+        "DefenseEvasion": [
+          "T1556"
+        ],
+        "Impact": [
+          "T1485"
+        ]
+      },
+      "totalRules": 9,
+      "rulesParsed": 9
+    },
+    "Integration for Atlassian Beacon": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "IONIX": {
+      "tactics": {
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1195"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "IoTOTThreatMonitoringwithDefenderforIoT": {
+      "tactics": {
+        "InhibitResponseFunction": 2,
+        "ImpairProcessControl": 2,
+        "Persistence": 1,
+        "Discovery": 2,
+        "Execution": 1,
+        "LateralMovement": 1,
+        "Impact": 1
+      },
+      "techniques": {
+        "InhibitResponseFunction": [
+          "T0814",
+          "T0881"
+        ],
+        "ImpairProcessControl": [
+          "T0806",
+          "T0855"
+        ],
+        "Persistence": [
+          "T0857"
+        ],
+        "Discovery": [
+          "T0842"
+        ],
+        "Execution": [
+          "T0858"
+        ],
+        "LateralMovement": [
+          "T0886"
+        ],
+        "Impact": [
+          "T0882"
+        ]
+      },
+      "totalRules": 15,
+      "rulesParsed": 10
+    },
+    "Jamf Protect": {
+      "tactics": {
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1133"
+        ]
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "KnowBe4 Defend": {
+      "tactics": {
+        "Execution": 2,
+        "InitialAccess": 1,
+        "Persistence": 1,
+        "PrivilegeEscalation": 1
+      },
+      "techniques": {
+        "Execution": [
+          "T1204",
+          "T0853",
+          "T0863",
+          "T1566",
+          "T1546"
+        ],
+        "InitialAccess": [
+          "T1204",
+          "T0853",
+          "T0863",
+          "T1566",
+          "T1546"
+        ],
+        "Persistence": [
+          "T1204",
+          "T0853",
+          "T0863",
+          "T1566",
+          "T1546"
+        ],
+        "PrivilegeEscalation": [
+          "T1204",
+          "T0853",
+          "T0863",
+          "T1566",
+          "T1546"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "LastPass": {
+      "tactics": {
+        "Impact": 3,
+        "InitialAccess": 1,
+        "CredentialAccess": 1,
+        "Discovery": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1485"
+        ],
+        "InitialAccess": [
+          "T1078",
+          "T1190"
+        ],
+        "CredentialAccess": [
+          "T1555",
+          "T1087"
+        ],
+        "Discovery": [
+          "T1555",
+          "T1087"
+        ]
+      },
+      "totalRules": 5,
+      "rulesParsed": 5
+    },
+    "Lookout": {
+      "tactics": {
+        "DefenseEvasion": 3,
+        "Persistence": 3,
+        "PrivilegeEscalation": 2,
+        "Impact": 1,
+        "Discovery": 4,
+        "InitialAccess": 1,
+        "CredentialAccess": 1,
+        "Collection": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1629",
+          "T1626",
+          "T1418",
+          "T1655",
+          "T1424",
+          "T1630"
+        ],
+        "Persistence": [
+          "T1629",
+          "T1626",
+          "T1418",
+          "T1655",
+          "T1424",
+          "T1630"
+        ],
+        "PrivilegeEscalation": [
+          "T1629",
+          "T1626",
+          "T1424",
+          "T1418",
+          "T1630"
+        ],
+        "Impact": [
+          "T1629",
+          "T1626"
+        ],
+        "Discovery": [
+          "T1418",
+          "T1629",
+          "T1655",
+          "T1660",
+          "T1417",
+          "T1423",
+          "T1057",
+          "T1424",
+          "T1630"
+        ],
+        "InitialAccess": [
+          "T1660",
+          "T1417",
+          "T1423"
+        ],
+        "CredentialAccess": [
+          "T1660",
+          "T1417",
+          "T1423"
+        ],
+        "Collection": [
+          "T1660",
+          "T1417",
+          "T1423"
+        ]
+      },
+      "totalRules": 5,
+      "rulesParsed": 5
+    },
+    "Malware Protection Essentials": {
+      "tactics": {
+        "Impact": 1,
+        "Persistence": 2,
+        "PrivilegeEscalation": 2,
+        "DefenseEvasion": 4,
+        "Execution": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1490"
+        ],
+        "Persistence": [
+          "T1547",
+          "T1112"
+        ],
+        "PrivilegeEscalation": [
+          "T1547",
+          "T1112"
+        ],
+        "DefenseEvasion": [
+          "T1547",
+          "T1112",
+          "T1059",
+          "T1027",
+          "T1562"
+        ],
+        "Execution": [
+          "T1059",
+          "T1027"
+        ]
+      },
+      "totalRules": 6,
+      "rulesParsed": 6
+    },
+    "Morphisec": {
+      "tactics": {
+        "Execution": 3,
+        "DefenseEvasion": 3
+      },
+      "techniques": {
+        "Execution": [
+          "T1059",
+          "T1204"
+        ],
+        "DefenseEvasion": [
+          "T1059",
+          "T1204"
+        ]
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "Nasuni": {
+      "tactics": {
+        "Impact": 1
+      },
+      "techniques": {
+        "Impact": [
+          "T1486"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Multi Cloud Attack Coverage Essentials - Resource Abuse": {
+      "tactics": {
+        "CredentialAccess": 7,
+        "InitialAccess": 5,
+        "Execution": 2,
+        "Persistence": 2,
+        "PrivilegeEscalation": 4,
+        "Discovery": 3,
+        "LateralMovement": 1,
+        "Exfiltration": 1
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1110",
+          "T1566",
+          "T1059",
+          "T1078",
+          "T1547",
+          "T1548",
+          "T1069",
+          "T1552",
+          "T1046",
+          "T1557",
+          "T1110.003",
+          "T1110.004",
+          "T1606",
+          "T1556",
+          "T1133",
+          "T1212",
+          "T1048",
+          "T1087",
+          "T1580"
+        ],
+        "InitialAccess": [
+          "T1566",
+          "T1059",
+          "T1078",
+          "T1547",
+          "T1548",
+          "T1069",
+          "T1552",
+          "T1046",
+          "T1557",
+          "T1110",
+          "T1110.003",
+          "T1110.004",
+          "T1606",
+          "T1556",
+          "T1133"
+        ],
+        "Execution": [
+          "T1566",
+          "T1059",
+          "T1078",
+          "T1547",
+          "T1548",
+          "T1069",
+          "T1552",
+          "T1046"
+        ],
+        "Persistence": [
+          "T1566",
+          "T1059",
+          "T1078",
+          "T1547",
+          "T1548",
+          "T1069",
+          "T1552",
+          "T1046"
+        ],
+        "PrivilegeEscalation": [
+          "T1566",
+          "T1059",
+          "T1078",
+          "T1547",
+          "T1548",
+          "T1069",
+          "T1552",
+          "T1046",
+          "T1134",
+          "T1078.002",
+          "T1078.004"
+        ],
+        "Discovery": [
+          "T1566",
+          "T1059",
+          "T1078",
+          "T1547",
+          "T1548",
+          "T1069",
+          "T1552",
+          "T1046",
+          "T1557",
+          "T1110",
+          "T1110.003",
+          "T1110.004",
+          "T1212",
+          "T1048",
+          "T1087",
+          "T1580"
+        ],
+        "LateralMovement": [
+          "T1566",
+          "T1059",
+          "T1078",
+          "T1547",
+          "T1548",
+          "T1069",
+          "T1552"
+        ],
+        "Exfiltration": [
+          "T1557",
+          "T1110",
+          "T1110.003",
+          "T1110.004",
+          "T1212",
+          "T1048",
+          "T1087",
+          "T1580"
+        ]
+      },
+      "totalRules": 9,
+      "rulesParsed": 9
+    },
+    "NetClean ProActive": {
+      "tactics": {
+        "Discovery": 1
+      },
+      "techniques": {
+        "Discovery": [
+          "T1083"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "OracleWebLogicServer": {
+      "tactics": {
+        "InitialAccess": 9,
+        "Impact": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1189"
+        ],
+        "Impact": [
+          "T1498"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Oracle Cloud Infrastructure": {
+      "tactics": {
+        "Discovery": 3,
+        "DefenseEvasion": 1,
+        "InitialAccess": 2,
+        "Impact": 2,
+        "Reconnaissance": 2
+      },
+      "techniques": {
+        "Discovery": [
+          "T1580",
+          "T1069"
+        ],
+        "DefenseEvasion": [
+          "T1070"
+        ],
+        "InitialAccess": [
+          "T1190"
+        ],
+        "Impact": [
+          "T1496",
+          "T1529"
+        ],
+        "Reconnaissance": [
+          "T1595"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "OracleDatabaseAudit": {
+      "tactics": {
+        "InitialAccess": 6,
+        "Collection": 2,
+        "Impact": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1078"
+        ],
+        "Collection": [
+          "T1005",
+          "T1119"
+        ],
+        "Impact": [
+          "T1529"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 9
+    },
+    "Pulse Connect Secure": {
+      "tactics": {
+        "CredentialAccess": 2
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1110"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Pure Storage": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "Quokka": {
+      "tactics": {
+        "InitialAccess": 1,
+        "Execution": 1,
+        "Persistence": 1,
+        "PrivilegeEscalation": 1,
+        "DefenseEvasion": 1,
+        "CredentialAccess": 1,
+        "Discovery": 1,
+        "Collection": 1,
+        "CommandAndControl": 1,
+        "Impact": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1406",
+          "T1409",
+          "T1414",
+          "T1417",
+          "T1418",
+          "T1422",
+          "T1424",
+          "T1429",
+          "T1430",
+          "T1471",
+          "T1474",
+          "T1481",
+          "T1509",
+          "T1512",
+          "T1513",
+          "T1516",
+          "T1517",
+          "T1532",
+          "T1541",
+          "T1544",
+          "T1582",
+          "T1616",
+          "T1617",
+          "T1623",
+          "T1624",
+          "T1625",
+          "T1627",
+          "T1628",
+          "T1629",
+          "T1630",
+          "T1631",
+          "T1633",
+          "T1634",
+          "T1635",
+          "T1636",
+          "T1638",
+          "T1640",
+          "T1641",
+          "T1642",
+          "T1643"
+        ],
+        "Execution": [
+          "T1406",
+          "T1409",
+          "T1414",
+          "T1417",
+          "T1418",
+          "T1422",
+          "T1424",
+          "T1429",
+          "T1430",
+          "T1471",
+          "T1474",
+          "T1481",
+          "T1509",
+          "T1512",
+          "T1513",
+          "T1516",
+          "T1517",
+          "T1532",
+          "T1541",
+          "T1544",
+          "T1582",
+          "T1616",
+          "T1617",
+          "T1623",
+          "T1624",
+          "T1625",
+          "T1627",
+          "T1628",
+          "T1629",
+          "T1630",
+          "T1631",
+          "T1633",
+          "T1634",
+          "T1635",
+          "T1636",
+          "T1638",
+          "T1640",
+          "T1641",
+          "T1642",
+          "T1643"
+        ],
+        "Persistence": [
+          "T1406",
+          "T1409",
+          "T1414",
+          "T1417",
+          "T1418",
+          "T1422",
+          "T1424",
+          "T1429",
+          "T1430",
+          "T1471",
+          "T1474",
+          "T1481",
+          "T1509",
+          "T1512",
+          "T1513",
+          "T1516",
+          "T1517",
+          "T1532",
+          "T1541",
+          "T1544",
+          "T1582",
+          "T1616",
+          "T1617",
+          "T1623",
+          "T1624",
+          "T1625",
+          "T1627",
+          "T1628",
+          "T1629",
+          "T1630",
+          "T1631",
+          "T1633",
+          "T1634",
+          "T1635",
+          "T1636",
+          "T1638",
+          "T1640",
+          "T1641",
+          "T1642",
+          "T1643"
+        ],
+        "PrivilegeEscalation": [
+          "T1406",
+          "T1409",
+          "T1414",
+          "T1417",
+          "T1418",
+          "T1422",
+          "T1424",
+          "T1429",
+          "T1430",
+          "T1471",
+          "T1474",
+          "T1481",
+          "T1509",
+          "T1512",
+          "T1513",
+          "T1516",
+          "T1517",
+          "T1532",
+          "T1541",
+          "T1544",
+          "T1582",
+          "T1616",
+          "T1617",
+          "T1623",
+          "T1624",
+          "T1625",
+          "T1627",
+          "T1628",
+          "T1629",
+          "T1630",
+          "T1631",
+          "T1633",
+          "T1634",
+          "T1635",
+          "T1636",
+          "T1638",
+          "T1640",
+          "T1641",
+          "T1642",
+          "T1643"
+        ],
+        "DefenseEvasion": [
+          "T1406",
+          "T1409",
+          "T1414",
+          "T1417",
+          "T1418",
+          "T1422",
+          "T1424",
+          "T1429",
+          "T1430",
+          "T1471",
+          "T1474",
+          "T1481",
+          "T1509",
+          "T1512",
+          "T1513",
+          "T1516",
+          "T1517",
+          "T1532",
+          "T1541",
+          "T1544",
+          "T1582",
+          "T1616",
+          "T1617",
+          "T1623",
+          "T1624",
+          "T1625",
+          "T1627",
+          "T1628",
+          "T1629",
+          "T1630",
+          "T1631",
+          "T1633",
+          "T1634",
+          "T1635",
+          "T1636",
+          "T1638",
+          "T1640",
+          "T1641",
+          "T1642",
+          "T1643"
+        ],
+        "CredentialAccess": [
+          "T1406",
+          "T1409",
+          "T1414",
+          "T1417",
+          "T1418",
+          "T1422",
+          "T1424",
+          "T1429",
+          "T1430",
+          "T1471",
+          "T1474",
+          "T1481",
+          "T1509",
+          "T1512",
+          "T1513",
+          "T1516",
+          "T1517",
+          "T1532",
+          "T1541",
+          "T1544",
+          "T1582",
+          "T1616",
+          "T1617",
+          "T1623",
+          "T1624",
+          "T1625",
+          "T1627",
+          "T1628",
+          "T1629",
+          "T1630",
+          "T1631",
+          "T1633",
+          "T1634",
+          "T1635",
+          "T1636",
+          "T1638",
+          "T1640",
+          "T1641",
+          "T1642",
+          "T1643"
+        ],
+        "Discovery": [
+          "T1406",
+          "T1409",
+          "T1414",
+          "T1417",
+          "T1418",
+          "T1422",
+          "T1424",
+          "T1429",
+          "T1430",
+          "T1471",
+          "T1474",
+          "T1481",
+          "T1509",
+          "T1512",
+          "T1513",
+          "T1516",
+          "T1517",
+          "T1532",
+          "T1541",
+          "T1544",
+          "T1582",
+          "T1616",
+          "T1617",
+          "T1623",
+          "T1624",
+          "T1625",
+          "T1627",
+          "T1628",
+          "T1629",
+          "T1630",
+          "T1631",
+          "T1633",
+          "T1634",
+          "T1635",
+          "T1636",
+          "T1638",
+          "T1640",
+          "T1641",
+          "T1642",
+          "T1643"
+        ],
+        "Collection": [
+          "T1406",
+          "T1409",
+          "T1414",
+          "T1417",
+          "T1418",
+          "T1422",
+          "T1424",
+          "T1429",
+          "T1430",
+          "T1471",
+          "T1474",
+          "T1481",
+          "T1509",
+          "T1512",
+          "T1513",
+          "T1516",
+          "T1517",
+          "T1532",
+          "T1541",
+          "T1544",
+          "T1582",
+          "T1616",
+          "T1617",
+          "T1623",
+          "T1624",
+          "T1625",
+          "T1627",
+          "T1628",
+          "T1629",
+          "T1630",
+          "T1631",
+          "T1633",
+          "T1634",
+          "T1635",
+          "T1636",
+          "T1638",
+          "T1640",
+          "T1641",
+          "T1642",
+          "T1643"
+        ],
+        "CommandAndControl": [
+          "T1406",
+          "T1409",
+          "T1414",
+          "T1417",
+          "T1418",
+          "T1422",
+          "T1424",
+          "T1429",
+          "T1430",
+          "T1471",
+          "T1474",
+          "T1481",
+          "T1509",
+          "T1512",
+          "T1513",
+          "T1516",
+          "T1517",
+          "T1532",
+          "T1541",
+          "T1544",
+          "T1582",
+          "T1616",
+          "T1617",
+          "T1623",
+          "T1624",
+          "T1625",
+          "T1627",
+          "T1628",
+          "T1629",
+          "T1630",
+          "T1631",
+          "T1633",
+          "T1634",
+          "T1635",
+          "T1636",
+          "T1638",
+          "T1640",
+          "T1641",
+          "T1642",
+          "T1643"
+        ],
+        "Impact": [
+          "T1406",
+          "T1409",
+          "T1414",
+          "T1417",
+          "T1418",
+          "T1422",
+          "T1424",
+          "T1429",
+          "T1430",
+          "T1471",
+          "T1474",
+          "T1481",
+          "T1509",
+          "T1512",
+          "T1513",
+          "T1516",
+          "T1517",
+          "T1532",
+          "T1541",
+          "T1544",
+          "T1582",
+          "T1616",
+          "T1617",
+          "T1623",
+          "T1624",
+          "T1625",
+          "T1627",
+          "T1628",
+          "T1629",
+          "T1630",
+          "T1631",
+          "T1633",
+          "T1634",
+          "T1635",
+          "T1636",
+          "T1638",
+          "T1640",
+          "T1641",
+          "T1642",
+          "T1643"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Radiflow": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 8,
+      "rulesParsed": 8
+    },
+    "RidgeSecurity": {
+      "tactics": {
+        "Execution": 2,
+        "InitialAccess": 2,
+        "PrivilegeEscalation": 2
+      },
+      "techniques": {
+        "Execution": [
+          "T1189",
+          "T1059",
+          "T1053",
+          "T1548"
+        ],
+        "InitialAccess": [
+          "T1189",
+          "T1059",
+          "T1053",
+          "T1548"
+        ],
+        "PrivilegeEscalation": [
+          "T1189",
+          "T1059",
+          "T1053",
+          "T1548"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Samsung Knox Asset Intelligence": {
+      "tactics": {
+        "PrivilegeEscalation": 1,
+        "Persistence": 1,
+        "CredentialAccess": 1,
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "PrivilegeEscalation": [
+          "T1548"
+        ],
+        "Persistence": [
+          "T1645"
+        ],
+        "CredentialAccess": [
+          "T1110"
+        ],
+        "InitialAccess": [
+          "T1566"
+        ]
+      },
+      "totalRules": 7,
+      "rulesParsed": 7
+    },
+    "SenservaPro": {
+      "tactics": {
+        "Impact": 4,
+        "CredentialAccess": 3,
+        "InitialAccess": 3
+      },
+      "techniques": {
+        "Impact": [
+          "T1529",
+          "T1498",
+          "T1485"
+        ],
+        "CredentialAccess": [
+          "T1212",
+          "T1556",
+          "T1056",
+          "T1555",
+          "T1606",
+          "T1040"
+        ],
+        "InitialAccess": [
+          "T1078",
+          "T1566"
+        ]
+      },
+      "totalRules": 15,
+      "rulesParsed": 10
+    },
+    "SecurityThreatEssentialSolution": {
+      "tactics": {
+        "InitialAccess": 1,
+        "DefenseEvasion": 1,
+        "CredentialAccess": 1,
+        "Collection": 1,
+        "Exfiltration": 2,
+        "Impact": 2,
+        "Persistence": 2,
+        "PrivilegeEscalation": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1078.004",
+          "T1557",
+          "T1111"
+        ],
+        "DefenseEvasion": [
+          "T1078.004",
+          "T1557",
+          "T1111"
+        ],
+        "CredentialAccess": [
+          "T1078.004",
+          "T1557",
+          "T1111"
+        ],
+        "Collection": [
+          "T1114",
+          "T1020"
+        ],
+        "Exfiltration": [
+          "T1114",
+          "T1020",
+          "T1030"
+        ],
+        "Impact": [
+          "T1531",
+          "T1485"
+        ],
+        "Persistence": [
+          "T1098",
+          "T1078",
+          "T1078.004"
+        ],
+        "PrivilegeEscalation": [
+          "T1098",
+          "T1078"
+        ]
+      },
+      "totalRules": 7,
+      "rulesParsed": 7
+    },
+    "Snowflake": {
+      "tactics": {
+        "Discovery": 3,
+        "Impact": 2,
+        "InitialAccess": 2,
+        "Collection": 2,
+        "PrivilegeEscalation": 1
+      },
+      "techniques": {
+        "Discovery": [
+          "T1526",
+          "T1518",
+          "T1087"
+        ],
+        "Impact": [
+          "T1499",
+          "T1485"
+        ],
+        "InitialAccess": [
+          "T1078"
+        ],
+        "Collection": [
+          "T1119"
+        ],
+        "PrivilegeEscalation": [
+          "T1078"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "SOC Prime CCF": {
+      "tactics": {
+        "DefenseEvasion": 2,
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "DefenseEvasion": [
+          "T1562.001"
+        ],
+        "InitialAccess": [
+          "T1078"
+        ]
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "Squadra Technologies SecRmm": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "SonraiSecurity": {
+      "tactics": {
+        "Collection": 9,
+        "CommandAndControl": 9,
+        "CredentialAccess": 9,
+        "DefenseEvasion": 9,
+        "Discovery": 9,
+        "Execution": 9,
+        "Exfiltration": 9,
+        "Impact": 9,
+        "InitialAccess": 9,
+        "LateralMovement": 9,
+        "Persistence": 9,
+        "PrivilegeEscalation": 9
+      },
+      "techniques": {
+        "Collection": [
+          "T1566",
+          "T1059",
+          "T1547",
+          "T1548",
+          "T1562",
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "CommandAndControl": [
+          "T1566",
+          "T1059",
+          "T1547",
+          "T1548",
+          "T1562",
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "CredentialAccess": [
+          "T1566",
+          "T1059",
+          "T1547",
+          "T1548",
+          "T1562",
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "DefenseEvasion": [
+          "T1566",
+          "T1059",
+          "T1547",
+          "T1548",
+          "T1562",
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "Discovery": [
+          "T1566",
+          "T1059",
+          "T1547",
+          "T1548",
+          "T1562",
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "Execution": [
+          "T1566",
+          "T1059",
+          "T1547",
+          "T1548",
+          "T1562",
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "Exfiltration": [
+          "T1566",
+          "T1059",
+          "T1547",
+          "T1548",
+          "T1562",
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "Impact": [
+          "T1566",
+          "T1059",
+          "T1547",
+          "T1548",
+          "T1562",
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "InitialAccess": [
+          "T1566",
+          "T1059",
+          "T1547",
+          "T1548",
+          "T1562",
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "LateralMovement": [
+          "T1566",
+          "T1059",
+          "T1547",
+          "T1548",
+          "T1562",
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "Persistence": [
+          "T1566",
+          "T1059",
+          "T1547",
+          "T1548",
+          "T1562",
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ],
+        "PrivilegeEscalation": [
+          "T1566",
+          "T1059",
+          "T1547",
+          "T1548",
+          "T1562",
+          "T1003",
+          "T1087",
+          "T1021",
+          "T1119",
+          "T1071",
+          "T1041",
+          "T1499"
+        ]
+      },
+      "totalRules": 9,
+      "rulesParsed": 9
+    },
+    "Syslog": {
+      "tactics": {
+        "CredentialAccess": 2,
+        "CommandAndControl": 3,
+        "Exfiltration": 2
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1110"
+        ],
+        "CommandAndControl": [
+          "T1102",
+          "T1090",
+          "T1008"
+        ],
+        "Exfiltration": [
+          "T1020"
+        ]
+      },
+      "totalRules": 7,
+      "rulesParsed": 7
+    },
+    "Tenable App": {
+      "tactics": {
+        "CredentialAccess": 9,
+        "DefenseEvasion": 1
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1110",
+          "T1003.006",
+          "T1558.001",
+          "T1003.001",
+          "T1110.003"
+        ],
+        "DefenseEvasion": [
+          "T1207"
+        ]
+      },
+      "totalRules": 12,
+      "rulesParsed": 10
+    },
+    "Trend Micro Apex One": {
+      "tactics": {
+        "InitialAccess": 4,
+        "Execution": 1,
+        "PrivilegeEscalation": 2,
+        "LateralMovement": 1,
+        "CommandAndControl": 2
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190"
+        ],
+        "Execution": [
+          "T1059"
+        ],
+        "PrivilegeEscalation": [
+          "T1078",
+          "T1546"
+        ],
+        "LateralMovement": [
+          "T1021"
+        ],
+        "CommandAndControl": [
+          "T1071",
+          "T1102"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "Trend Micro Cloud App Security": {
+      "tactics": {
+        "Exfiltration": 1,
+        "InitialAccess": 6,
+        "Impact": 2,
+        "DefenseEvasion": 1
+      },
+      "techniques": {
+        "Exfiltration": [
+          "T1048"
+        ],
+        "InitialAccess": [
+          "T1566"
+        ],
+        "Impact": [
+          "T1486"
+        ],
+        "DefenseEvasion": [
+          "T1562"
+        ]
+      },
+      "totalRules": 10,
+      "rulesParsed": 10
+    },
+    "VMware vCenter": {
+      "tactics": {
+        "PrivilegeEscalation": 2,
+        "InitialAccess": 1
+      },
+      "techniques": {
+        "PrivilegeEscalation": [
+          "T1078"
+        ],
+        "InitialAccess": [
+          "T1078"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "Vaikora-AzureSecurityCenter": {
+      "tactics": {
+        "Discovery": 2,
+        "LateralMovement": 2,
+        "Collection": 2,
+        "Exfiltration": 2,
+        "InitialAccess": 1,
+        "Execution": 1,
+        "Persistence": 1,
+        "DefenseEvasion": 1,
+        "CredentialAccess": 1,
+        "CommandAndControl": 1,
+        "Impact": 1
+      },
+      "techniques": {
+        "Discovery": [],
+        "LateralMovement": [],
+        "Collection": [],
+        "Exfiltration": [],
+        "InitialAccess": [],
+        "Execution": [],
+        "Persistence": [],
+        "DefenseEvasion": [],
+        "CredentialAccess": [],
+        "CommandAndControl": [],
+        "Impact": []
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "Valence Security": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "Veeam": {
+      "tactics": {},
+      "techniques": {},
+      "totalRules": 132,
+      "rulesParsed": 10
+    },
+    "Veritas NetBackup": {
+      "tactics": {
+        "Discovery": 1,
+        "CredentialAccess": 1
+      },
+      "techniques": {
+        "Discovery": [],
+        "CredentialAccess": [
+          "T1110"
+        ]
+      },
+      "totalRules": 2,
+      "rulesParsed": 2
+    },
+    "VersasecCMS": {
+      "tactics": {
+        "CredentialAccess": 1
+      },
+      "techniques": {
+        "CredentialAccess": [
+          "T1110"
+        ]
+      },
+      "totalRules": 1,
+      "rulesParsed": 1
+    },
+    "VMWareESXi": {
+      "tactics": {
+        "InitialAccess": 5,
+        "Impact": 3,
+        "CredentialAccess": 1,
+        "PrivilegeEscalation": 1,
+        "Persistence": 1,
+        "DefenseEvasion": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190",
+          "T1078",
+          "T1098",
+          "T1556"
+        ],
+        "Impact": [
+          "T1529"
+        ],
+        "CredentialAccess": [
+          "T1110"
+        ],
+        "PrivilegeEscalation": [
+          "T1078"
+        ],
+        "Persistence": [
+          "T1078",
+          "T1098",
+          "T1556"
+        ],
+        "DefenseEvasion": [
+          "T1078",
+          "T1098",
+          "T1556"
+        ]
+      },
+      "totalRules": 14,
+      "rulesParsed": 10
+    },
+    "Windows Forwarded Events": {
+      "tactics": {
+        "Persistence": 1,
+        "Impact": 1,
+        "Exfiltration": 2
+      },
+      "techniques": {
+        "Persistence": [
+          "T1546"
+        ],
+        "Impact": [
+          "T1496"
+        ],
+        "Exfiltration": [
+          "T1020"
+        ]
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    },
+    "Web Shells Threat Protection": {
+      "tactics": {
+        "Persistence": 2,
+        "InitialAccess": 1,
+        "CommandAndControl": 1
+      },
+      "techniques": {
+        "Persistence": [
+          "T1505",
+          "T1071"
+        ],
+        "InitialAccess": [
+          "T1190"
+        ],
+        "CommandAndControl": [
+          "T1505",
+          "T1071"
+        ]
+      },
+      "totalRules": 3,
+      "rulesParsed": 3
+    },
+    "Windows Security Events": {
+      "tactics": {
+        "Collection": 3,
+        "CredentialAccess": 2,
+        "InitialAccess": 1,
+        "LateralMovement": 1,
+        "Discovery": 1,
+        "DefenseEvasion": 2,
+        "Execution": 1
+      },
+      "techniques": {
+        "Collection": [
+          "T1005"
+        ],
+        "CredentialAccess": [
+          "T1110"
+        ],
+        "InitialAccess": [
+          "T1190"
+        ],
+        "LateralMovement": [
+          "T1210"
+        ],
+        "Discovery": [
+          "T1012"
+        ],
+        "DefenseEvasion": [
+          "T1070",
+          "T1059",
+          "T1027",
+          "T1140"
+        ],
+        "Execution": [
+          "T1059",
+          "T1027",
+          "T1140"
+        ]
+      },
+      "totalRules": 20,
+      "rulesParsed": 10
+    },
+    "XBOW": {
+      "tactics": {
+        "InitialAccess": 1,
+        "Execution": 1,
+        "PrivilegeEscalation": 1,
+        "DefenseEvasion": 1,
+        "Impact": 1,
+        "Discovery": 3,
+        "Reconnaissance": 2,
+        "CredentialAccess": 1
+      },
+      "techniques": {
+        "InitialAccess": [
+          "T1190"
+        ],
+        "Execution": [
+          "T1190"
+        ],
+        "PrivilegeEscalation": [
+          "T1190"
+        ],
+        "DefenseEvasion": [
+          "T1190"
+        ],
+        "Impact": [
+          "T1190"
+        ],
+        "Discovery": [
+          "T1595"
+        ],
+        "Reconnaissance": [
+          "T1595"
+        ],
+        "CredentialAccess": []
+      },
+      "totalRules": 4,
+      "rulesParsed": 4
+    }
+  }
+}

@@ -9,8 +9,14 @@ import {
     updateConnectorCapacityEntries,
     applySizingToTaskContent,
     clearCriblIngestionEntries
-} from './modules/capacity.js';
-import { calculatePriorityScore, getPhase } from './modules/scoring.js';
+} from './modules/capacity.js?v=16';
+import {
+    buildGanttPlan as buildGeneratedGanttPlan,
+    formatTaskDuration as formatGeneratedTaskDuration,
+    parseDurationToHours as parseGeneratedTaskDurationToHours,
+    getPackJoinTaskId
+} from './modules/gantt-tasks.js?v=16';
+import { calculatePriorityScore, getPhase } from './modules/scoring.js?v=16';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
 const DAY_MS = 24 * 60 * 60 * 1000;
@@ -19,6 +25,7 @@ const DAYS_PER_WEEK = 5;
 const HOURS_PER_WEEK = HOURS_PER_DAY * DAYS_PER_WEEK;
 const BUSINESS_DAY_START_HOUR = 9;
 const BUSINESS_DAY_END_HOUR = BUSINESS_DAY_START_HOUR + HOURS_PER_DAY;
+const GENERAL_SENTINEL_DOC_URL = 'https://learn.microsoft.com/en-us/azure/sentinel/';
 const DURATION_OVERRIDE_STORAGE_KEY = 'sentinelPlanner.taskDurationOverrides.v1';
 const DURATION_OVERRIDE_STATE_VERSION = 7;
 const DATE_FORMAT_STORAGE_KEY = 'sentinelPlanner.dateFormat.v1';
@@ -42,17 +49,17 @@ const GANTT_TABLE_COLUMNS = [
         minWidth: 220
     },
     {
+        key: 'status',
+        label: 'Status',
+        headerClassName: 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--status',
+        width: 138,
+        minWidth: 124
+    },
+    {
         key: 'owner',
         label: 'Owner',
         headerClassName: 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--owner',
         width: 156,
-        minWidth: 120
-    },
-    {
-        key: 'status',
-        label: 'Status',
-        headerClassName: 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--status',
-        width: 148,
         minWidth: 120
     },
     {
@@ -99,7 +106,7 @@ const INLINE_DURATION_QUICK_PICKS = [
     { label: '3w', value: 3, unit: 'weeks' },
     { label: '1mo', value: 4, unit: 'weeks' }
 ];
-const STATUS_OPTIONS = ['Planned', 'In Progress', 'Completed', 'In Review', 'Skipped'];
+const STATUS_OPTIONS = ['Not Started', 'In Progress', 'Complete', 'Blocked', 'Skipped'];
 const IMPACT_OPTIONS = ['Low', 'Medium', 'High'];
 const OWNER_OPTIONS = ['SOC Architect', 'SOC Lead', 'SOC Engineers', 'Operations Team', 'Identity/Entra Admin', 'Security Admin'];
 const DEFAULT_NEW_TASK_NAME = 'New Task';
@@ -133,11 +140,11 @@ const GANTT_BAR_LABEL_MIN_PRIMARY_CHARS = 4;
 const PLANNER_WIDE_LAYOUT_CLASS = 'planner-step-expanded';
 const DATE_PICKER_WEEKDAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 const STATUS_COLOR_CLASS_MAP = {
-    'Planned': 'is-planned',
+    'Not Started': 'is-not-started',
     'In Progress': 'is-in-progress',
-    'Completed': 'is-completed',
-    'In Review': 'is-in-review',
-    'Skipped': 'is-skipped'
+    Complete: 'is-complete',
+    Blocked: 'is-blocked',
+    Skipped: 'is-skipped'
 };
 const IMPACT_COLOR_CLASS_MAP = {
     'Low': 'is-low',
@@ -221,12 +228,50 @@ export const PHASE_BAR_COLOR = {
 };
 
 export const STATUS_BAR_COLOR = {
-    Planned: null, // Planned bars keep the muted phase palette instead of a shared override.
+    'Not Started': null,
     'In Progress': '#14b8a6',
-    Completed: '#22c55e',
-    'In Review': '#f59e0b',
+    Complete: '#22c55e',
+    Blocked: '#ef4444',
     Skipped: '#64748b'
 };
+
+const CONNECTOR_COLOR_PALETTE = Object.freeze([
+    '#4A90D9',
+    '#4FA869',
+    '#D8892E',
+    '#8C5CCB',
+    '#169B92',
+    '#D65A4F',
+    '#B88A12'
+]);
+
+const CONNECTOR_COLOR_PALETTE_LIGHT_TEXT = Object.freeze([
+    '#2D6CB5',
+    '#357A4A',
+    '#A5681F',
+    '#6B3FA8',
+    '#0F7068',
+    '#B0422F',
+    '#8A670E'
+]);
+
+const CONNECTOR_COLOR_PALETTE_DARK_TEXT = Object.freeze([
+    '#6AAEF5',
+    '#6FCF8A',
+    '#F0A84A',
+    '#B08AE8',
+    '#2ECBC1',
+    '#F07A6A',
+    '#D4AC1E'
+]);
+
+const STATUS_BAR_VISUALS = Object.freeze({
+    default: { opacity: 0.5, fillOpacity: 0.62, strokeDasharray: '1.5 4', strokeWidth: 2 },
+    active: { opacity: 0.75, fillOpacity: 0.82, strokeDasharray: '6 4', strokeWidth: 2 },
+    complete: { opacity: 1, fillOpacity: 0.96, strokeDasharray: 'none', strokeWidth: 2 },
+    blocked: { opacity: 0.95, fillOpacity: 0.9, strokeDasharray: '3 3', strokeWidth: 2.2 },
+    group: { opacity: 1, fillOpacity: 1, strokeDasharray: 'none', strokeWidth: 2 }
+});
 
 let currentGanttPlanData = null;
 let durationOverrideState = null;
@@ -468,17 +513,19 @@ function getDurationWeeks(solution = {}) {
 function normalizeStatusLabel(status = '') {
     const normalized = String(status || '').trim().toLowerCase();
     switch (normalized) {
-        case 'completed':
         case 'complete':
-            return 'Completed';
+        case 'completed':
+            return 'Complete';
         case 'in progress':
         case 'in-progress':
         case 'active':
-            return 'In Progress';
         case 'in review':
         case 'in-review':
         case 'review':
-            return 'In Review';
+            return 'In Progress';
+        case 'blocked':
+        case 'block':
+            return 'Blocked';
         case 'skipped':
         case 'skip':
         case 'removed':
@@ -488,7 +535,252 @@ function normalizeStatusLabel(status = '') {
         case 'not started':
         case 'todo':
         default:
-            return 'Planned';
+            return 'Not Started';
+    }
+}
+
+function getStatusIndicatorDisplay(status = '') {
+    const normalizedStatus = normalizeStatusLabel(status);
+    switch (normalizedStatus) {
+        case 'Complete':
+            return {
+                normalizedStatus,
+                label: 'Complete',
+                colorClassName: STATUS_COLOR_CLASS_MAP.Complete
+            };
+        case 'In Progress':
+            return {
+                normalizedStatus,
+                label: 'In Progress',
+                colorClassName: STATUS_COLOR_CLASS_MAP['In Progress']
+            };
+        case 'Blocked':
+            return {
+                normalizedStatus,
+                label: 'Blocked',
+                colorClassName: STATUS_COLOR_CLASS_MAP.Blocked
+            };
+        case 'Skipped':
+            return {
+                normalizedStatus,
+                label: 'Skipped',
+                colorClassName: STATUS_COLOR_CLASS_MAP.Skipped
+            };
+        case 'Not Started':
+        default:
+            return {
+                normalizedStatus: 'Not Started',
+                label: 'Not Started',
+                colorClassName: STATUS_COLOR_CLASS_MAP['Not Started']
+            };
+    }
+}
+
+function getSolutionGroupAggregateStatus(groupRow = {}, rows = []) {
+    if (!groupRow?.isSolutionGroup) {
+        return normalizeStatusLabel(groupRow?.status);
+    }
+
+    const groupStatuses = (Array.isArray(rows) ? rows : [])
+        .filter((candidate) => candidate && !candidate.isSolutionGroup && candidate.solutionGroupId === groupRow.id)
+        .map((candidate) => normalizeStatusLabel(candidate.status));
+
+    if (groupStatuses.length === 0) {
+        return normalizeStatusLabel(groupRow?.status);
+    }
+
+    if (groupStatuses.some((status) => status === 'Blocked')) {
+        return 'Blocked';
+    }
+
+    if (groupStatuses.some((status) => status === 'In Progress')) {
+        return 'In Progress';
+    }
+
+    if (groupStatuses.every((status) => status === 'Complete')) {
+        return 'Complete';
+    }
+
+    if (groupStatuses.every((status) => status === 'Skipped')) {
+        return 'Skipped';
+    }
+
+    return 'Not Started';
+}
+
+function getTaskProgressFromStatus(status = '') {
+    const normalizedStatus = normalizeStatusLabel(status);
+    switch (normalizedStatus) {
+        case 'Complete':
+            return 100;
+        case 'In Progress':
+            return 50;
+        case 'Blocked':
+            return 20;
+        default:
+            return 0;
+    }
+}
+
+function calculateCompletedChildProgress(rows = []) {
+    const childRows = (Array.isArray(rows) ? rows : []).filter(Boolean);
+    if (childRows.length === 0) {
+        return 0;
+    }
+
+    const completedCount = childRows.reduce((count, candidate) => (
+        normalizeStatusLabel(candidate.status) === 'Complete' ? count + 1 : count
+    ), 0);
+    return Math.round((completedCount / childRows.length) * 100);
+}
+
+function getTaskProgress(row = {}, rows = []) {
+    const safeRows = Array.isArray(rows) ? rows : [];
+
+    if (row?.isSolutionGroup) {
+        const leafChildRows = safeRows.filter((candidate) => candidate
+            && candidate.id !== row.id
+            && !candidate.isSolutionGroup
+            && !candidate.isSummary
+            && candidate.solutionGroupId === row.id);
+        const directChildRows = safeRows.filter((candidate) => candidate
+            && candidate.id !== row.id
+            && !candidate.isSolutionGroup
+            && candidate.solutionGroupId === row.id
+            && !candidate.parentId);
+        const progressRows = leafChildRows.length > 0 ? leafChildRows : directChildRows;
+        return progressRows.length > 0
+            ? calculateCompletedChildProgress(progressRows)
+            : getTaskProgressFromStatus(row?.status);
+    }
+
+    if (row?.isSummary) {
+        const childRows = safeRows.filter((candidate) => candidate && candidate.parentId === row.id);
+        return childRows.length > 0
+            ? calculateCompletedChildProgress(childRows)
+            : getTaskProgressFromStatus(row?.status);
+    }
+
+    return getTaskProgressFromStatus(row?.status);
+}
+
+function getConnectorPaletteColor(index = 0) {
+    const safeIndex = Number.isFinite(Number(index)) ? Number(index) : 0;
+    return CONNECTOR_COLOR_PALETTE[((safeIndex % CONNECTOR_COLOR_PALETTE.length) + CONNECTOR_COLOR_PALETTE.length) % CONNECTOR_COLOR_PALETTE.length];
+}
+
+function buildSolutionPresentationMap(selectedSolutions = []) {
+    return (Array.isArray(selectedSolutions) ? selectedSolutions : []).reduce((map, solution, index) => {
+        const solutionId = String(solution?.id || '').trim();
+        if (!solutionId) return map;
+ 
+        const displayNumber = String(index + 1);
+        const label = `${displayNumber}. ${solution?.name || solutionId}`;
+        map.set(solutionId, {
+            solutionId,
+            displayNumber,
+            label,
+            color: getConnectorPaletteColor(index)
+        });
+        return map;
+    }, new Map());
+}
+
+const FIELD_PACK_DISPLAY_NAMES = Object.freeze({
+    'windows-security-events': 'Windows Security Events',
+    'windows-ama': 'Windows Security Events',
+    'custom-logs': 'Custom Logs',
+    'ama-custom-logs': 'Custom Logs',
+    'wec-wef': 'Windows Forwarded Events',
+    'syslog-cef': 'Syslog / CEF',
+    'cribl-intermediary': 'Cribl Stream'
+});
+
+function formatFieldPackDisplayName(fieldPack = '') {
+    const normalizedFieldPack = String(fieldPack || '').trim().toLowerCase();
+    if (FIELD_PACK_DISPLAY_NAMES[normalizedFieldPack]) {
+        return FIELD_PACK_DISPLAY_NAMES[normalizedFieldPack];
+    }
+
+    return normalizedFieldPack
+        .replace(/[-_]+/g, ' ')
+        .replace(/\s+/g, ' ')
+        .replace(/\b\w/g, (character) => character.toUpperCase());
+}
+
+function normalizeSolutionLookupValue(value = '') {
+    return String(value || '').trim().toLowerCase().replace(/\s+/g, ' ');
+}
+
+function findSelectedSolutionForFieldPack(fieldPack = '', selectedSolutions = []) {
+    const normalizedFieldPack = String(fieldPack || '').trim().toLowerCase();
+    if (!normalizedFieldPack) return null;
+
+    const expectedDisplayName = normalizeSolutionLookupValue(formatFieldPackDisplayName(normalizedFieldPack));
+    return (Array.isArray(selectedSolutions) ? selectedSolutions : []).find((solution) => {
+        const solutionId = String(solution?.id || '').trim().toLowerCase();
+        if (!solutionId || solutionId.startsWith('synthetic-infra-')) {
+            return false;
+        }
+
+        const solutionFieldPack = String(solution?.fieldPack || '').trim().toLowerCase();
+        const solutionName = normalizeSolutionLookupValue(solution?.name);
+        return solutionFieldPack === normalizedFieldPack || (expectedDisplayName && solutionName === expectedDisplayName);
+    }) || null;
+}
+
+function buildSyntheticInfrastructureSolution(fieldPack = '') {
+    const normalizedFieldPack = String(fieldPack || '').trim() || 'shared-infrastructure';
+    const solutionName = formatFieldPackDisplayName(normalizedFieldPack) || 'Shared Infrastructure';
+    return {
+        id: `synthetic-infra-${normalizedFieldPack}`,
+        name: solutionName,
+        fieldPack: normalizedFieldPack,
+        description: `Coordinate the shared ${solutionName} prerequisites that unblock dependent connector onboarding.`,
+        export_metadata: {
+            group: 'Shared infrastructure'
+        },
+        onboarding: {
+            difficulty: 'moderate',
+            setup_summary: `Complete the shared ${solutionName} prerequisites before connector onboarding begins.`
+        },
+        permissions: {
+            privilege_level: 'high',
+            notes: 'Shared platform and connector administration access.'
+        },
+        docUrl: GENERAL_SENTINEL_DOC_URL,
+        planner: {
+            owner_recommended: 'Operations Team',
+            validation_steps: [`${solutionName} prerequisites are completed and ready for dependent connectors.`],
+            docUrl: GENERAL_SENTINEL_DOC_URL
+        }
+    };
+}
+
+function getRowPrimaryLabel(row = {}) {
+    if (row.isSolutionGroup) {
+        return row.solutionDisplayLabel || row.solutionName || row.step;
+    }
+    return row.step;
+}
+
+function getTaskStatusVisualStyle(task = {}) {
+    if (task?.isSolutionGroup) {
+        return STATUS_BAR_VISUALS.group;
+    }
+
+    const normalizedStatus = normalizeStatusLabel(task?.status);
+    switch (normalizedStatus) {
+        case 'Complete':
+            return STATUS_BAR_VISUALS.complete;
+        case 'In Progress':
+            return STATUS_BAR_VISUALS.active;
+        case 'Blocked':
+            return STATUS_BAR_VISUALS.blocked;
+        case 'Skipped':
+        case 'Not Started':
+        default:
+            return STATUS_BAR_VISUALS.default;
     }
 }
 
@@ -552,7 +844,7 @@ function resolveRowStatus(row, projectStartDate) {
     }
 
     const normalizedStatus = normalizeStatusLabel(row?.status);
-    if (normalizedStatus !== 'Planned') {
+    if (normalizedStatus !== 'Not Started') {
         return normalizedStatus;
     }
 
@@ -560,16 +852,15 @@ function resolveRowStatus(row, projectStartDate) {
     const startDate = getRowCalendarStartDate(row, projectStartDate);
     const dueDate = getRowCalendarDueDate(row, projectStartDate);
 
-    if (dueDate < today) return 'Completed';
+    if (dueDate < today) return 'Complete';
     if (startDate <= today && dueDate >= today) {
-        return row?.phaseKey === 'closeout' ? 'In Review' : 'In Progress';
+        return 'In Progress';
     }
-    if (row?.phaseKey === 'closeout') return 'In Review';
-    return 'Planned';
+    return 'Not Started';
 }
 
 function enrichRowsForDisplay(rows = [], projectStartDate) {
-    return rows.map((row) => {
+    const enrichedRows = rows.map((row) => {
         const startDate = getRowCalendarStartDate(row, projectStartDate);
         const dueDate = getRowCalendarDueDate(row, projectStartDate);
         const status = resolveRowStatus(row, projectStartDate);
@@ -589,6 +880,22 @@ function enrichRowsForDisplay(rows = [], projectStartDate) {
                 Impact: impact,
                 'Start date': formatDateForTable(startDate),
                 'Due date': formatDateForTable(dueDate)
+            }
+        };
+    });
+
+    return enrichedRows.map((row) => {
+        if (!row?.isSolutionGroup) {
+            return row;
+        }
+
+        const aggregateStatus = getSolutionGroupAggregateStatus(row, enrichedRows);
+        return {
+            ...row,
+            status: aggregateStatus,
+            detailFields: {
+                ...row.detailFields,
+                Status: aggregateStatus
             }
         };
     });
@@ -718,16 +1025,58 @@ function getSolutionGroup(solution = {}) {
     return solution?.export_metadata?.group || (solution?.is1P ? 'Microsoft' : 'Third Party');
 }
 
-function getPermissionSummary(solution = {}) {
-    const permissionBuckets = [
+function getSolutionPermissionRoles(solution = {}) {
+    return [...new Set([
         ...(solution?.permissions?.azure_roles || []),
         ...(solution?.permissions?.m365_roles || []),
         ...(solution?.permissions?.resource_permissions || [])
-    ].filter(Boolean);
+    ].map((role) => String(role || '').trim()).filter(Boolean))];
+}
+
+function getPermissionSummary(solution = {}) {
+    const permissionBuckets = getSolutionPermissionRoles(solution);
 
     return permissionBuckets.length > 0
         ? permissionBuckets.join('; ')
         : solution?.permissions?.notes || 'Scoped access to configure and validate this integration.';
+}
+
+function taskMentionsPermissionWork(task = {}) {
+    const permissionHint = [
+        task?.task,
+        task?.description,
+        ...(Array.isArray(task?.required_roles) ? task.required_roles : []),
+        ...(Array.isArray(task?.requiredRoles) ? task.requiredRoles : [])
+    ].filter(Boolean).join(' ');
+
+    return /(rbac|permission|permissions|role\b|roles\b|delegated|consent|licensing|license|service-account scope)/i.test(permissionHint);
+}
+
+function prependSolutionPermissionTask(tasks = [], solution = {}) {
+    if (!Array.isArray(tasks) || tasks.length === 0 || tasks.some((task) => taskMentionsPermissionWork(task))) {
+        return Array.isArray(tasks) ? tasks : [];
+    }
+
+    const permissionRoles = getSolutionPermissionRoles(solution);
+    const permissionSummary = getPermissionSummary(solution);
+    const solutionName = solution?.name || 'this solution';
+    const isGeneralPermissionTask = permissionRoles.length === 0;
+
+    return [{
+        id: 'permission-gate',
+        order: -1,
+        task: isGeneralPermissionTask
+            ? `${solutionName} — General RBAC review`
+            : `Configure ${solutionName} RBAC & permissions`,
+        description: isGeneralPermissionTask
+            ? `Confirm the general customer-side access path required to configure and validate ${solutionName}.`
+            : `Confirm the customer-side RBAC roles, delegated permissions, and approvals required before onboarding ${solutionName}.`,
+        effort_hours: isGeneralPermissionTask ? 0.5 : 1,
+        owner: 'Identity/Entra Admin',
+        owner_role: 'Identity/Entra Admin',
+        required_roles: permissionRoles.length > 0 ? permissionRoles : [permissionSummary],
+        optional: false
+    }, ...tasks];
 }
 
 function getDifficultyLabel(solution = {}) {
@@ -1032,6 +1381,28 @@ function countBusinessDaysBetween(startValue, endValue) {
     }
 
     return businessDays;
+}
+
+function addBusinessDays(value, businessDays = 0) {
+    const nextDate = coerceToBusinessDay(value) || setBusinessDayTime(new Date(), BUSINESS_DAY_START_HOUR);
+    let remainingDays = Math.max(0, Math.round(Number(businessDays) || 0));
+
+    while (remainingDays > 0) {
+        nextDate.setDate(nextDate.getDate() + 1);
+        if (!isWeekendDay(nextDate)) {
+            remainingDays -= 1;
+        }
+    }
+
+    return nextDate;
+}
+
+function getInclusiveBusinessDaysBetween(startValue, endValue) {
+    const startDate = coerceToBusinessDay(startValue);
+    const endDate = coerceToBusinessDay(endValue);
+    if (!startDate || !endDate) return 1;
+    if (endDate < startDate) return 1;
+    return countBusinessDaysBetween(startDate, endDate) + 1;
 }
 
 function getStartWeekFromDate(value, projectStartDate) {
@@ -2219,7 +2590,7 @@ function createCustomTaskEntry(row, { kind = 'top-level' } = {}) {
         summary: DEFAULT_NEW_TASK_SUMMARY,
         owner: normalizedOwner,
         resourceType: row?.resourceType || 'Customer',
-        status: 'Planned',
+        status: 'Not Started',
         impact: 'Medium',
         durationValue: DEFAULT_NEW_TASK_DURATION_VALUE,
         durationUnit: DEFAULT_NEW_TASK_DURATION_UNIT,
@@ -2530,22 +2901,85 @@ function syncTaskBarLabel(wrapper, rect, task = {}) {
     return label;
 }
 
-function lightenHexColor(hexColor, amount = 0.22) {
+function normalizeHexColor(hexColor = '') {
     const safeHex = String(hexColor || '').replace('#', '');
-    if (!/^[0-9a-fA-F]{6}$/.test(safeHex)) return hexColor;
+    return /^[0-9a-fA-F]{6}$/.test(safeHex) ? safeHex.toUpperCase() : '';
+}
 
-    const channels = [0, 2, 4].map((index) => parseInt(safeHex.slice(index, index + 2), 16));
-    const lightened = channels
-        .map((channel) => Math.round(channel + ((255 - channel) * amount)))
+function hexToRgba(hexColor, alpha = 1) {
+    const normalizedHex = normalizeHexColor(hexColor);
+    const safeAlpha = Math.max(0, Math.min(1, Number(alpha) || 0));
+    if (!normalizedHex) return `rgba(148, 163, 184, ${safeAlpha})`;
+
+    const channels = [0, 2, 4].map((index) => parseInt(normalizedHex.slice(index, index + 2), 16));
+    return `rgba(${channels[0]}, ${channels[1]}, ${channels[2]}, ${safeAlpha})`;
+}
+
+function darkenHexColor(hexColor, amount = 0.18) {
+    const safeHex = normalizeHexColor(hexColor);
+    if (!safeHex) return hexColor;
+
+    const safeAmount = Math.max(0, Math.min(1, Number(amount) || 0));
+    const darkened = [0, 2, 4]
+        .map((index) => parseInt(safeHex.slice(index, index + 2), 16))
+        .map((channel) => Math.max(0, Math.round(channel * (1 - safeAmount))))
+        .map((channel) => channel.toString(16).padStart(2, '0'))
+        .join('');
+
+    return `#${darkened.toUpperCase()}`;
+}
+
+function lightenHexColor(hexColor, amount = 0.22) {
+    const safeHex = normalizeHexColor(hexColor);
+    if (!safeHex) return hexColor;
+
+    const safeAmount = Math.max(0, Math.min(1, Number(amount) || 0));
+    const lightened = [0, 2, 4]
+        .map((index) => parseInt(safeHex.slice(index, index + 2), 16))
+        .map((channel) => Math.round(channel + ((255 - channel) * safeAmount)))
         .map((channel) => channel.toString(16).padStart(2, '0'))
         .join('');
 
     return `#${lightened.toUpperCase()}`;
 }
 
+function isLightThemeActive() {
+    if (typeof document === 'undefined') return false;
+    return document.documentElement?.getAttribute('data-theme') === 'light';
+}
+
+function getConnectorTextAccentColor(color = '') {
+    const normalizedColor = normalizeHexColor(color);
+    if (!normalizedColor) return color;
+
+    const paletteIndex = CONNECTOR_COLOR_PALETTE.findIndex((entry) => normalizeHexColor(entry) === normalizedColor);
+    if (paletteIndex >= 0) {
+        const palette = isLightThemeActive()
+            ? CONNECTOR_COLOR_PALETTE_LIGHT_TEXT
+            : CONNECTOR_COLOR_PALETTE_DARK_TEXT;
+        return palette[paletteIndex] || color;
+    }
+
+    return isLightThemeActive()
+        ? darkenHexColor(`#${normalizedColor}`, 0.3)
+        : lightenHexColor(`#${normalizedColor}`, 0.28);
+}
+
+function applyConnectorAccentLabel(element, color = '') {
+    if (!element || !color) return;
+    element.style.color = getConnectorTextAccentColor(color);
+    element.style.fontWeight = '600';
+}
+
+function applyConnectorAccentSurface(element, color = '') {
+    if (!element || !color) return;
+    element.style.boxShadow = `inset 3px 0 0 ${color}`;
+    element.style.background = `linear-gradient(90deg, ${hexToRgba(color, 0.16)} 0%, ${hexToRgba(color, 0.06)} 34%, transparent 72%)`;
+}
+
 function getRowDisplayLabel(row, collapsedSummaryIds = new Set(), collapsedSolutionGroupIds = new Set()) {
     if (row.isSolutionGroup) {
-        return row.solutionName || row.step;
+        return getRowPrimaryLabel(row);
     }
 
     if (row.isSummary) {
@@ -2561,7 +2995,7 @@ function getRowDisplayLabel(row, collapsedSummaryIds = new Set(), collapsedSolut
 }
 
 function formatExportStepLabel(row) {
-    if (row.isSolutionGroup) return row.step;
+    if (row.isSolutionGroup) return getRowPrimaryLabel(row);
     return row.parentId ? `${SUBTASK_INDENT_PREFIX}${row.step}` : [row.number, row.step].filter(Boolean).join(' ');
 }
 
@@ -2569,7 +3003,7 @@ function createRow({
     id,
     phaseKey,
     number,
-    status = 'Planned',
+    status = 'Not Started',
     impact = 'Medium',
     step,
     milestone,
@@ -2739,6 +3173,263 @@ function getCustomTaskDefaultDurationWeeks(customTask = {}) {
     }).durationWeeks;
 }
 
+function hasGeneratedFieldPack(solution = {}) {
+    return Boolean(String(solution?.fieldPack || '').trim());
+}
+
+function getGeneratedTaskDurationHours(task = {}) {
+    const explicitHours = roundDurationHours(Number(task?.durationHours));
+    if (Number.isFinite(explicitHours) && explicitHours > 0) {
+        return explicitHours;
+    }
+
+    const parsedHours = roundDurationHours(parseGeneratedTaskDurationToHours(task?.duration));
+    return parsedHours > 0 ? parsedHours : 1;
+}
+
+function buildGeneratedTaskDescription(task = {}) {
+    const subtasks = Array.isArray(task?.subtasks)
+        ? task.subtasks
+            .map((subtask) => String(subtask || '').replace(/\s+/g, ' ').trim())
+            .filter(Boolean)
+        : [];
+    const configurableNote = String(task?.configurableNote || '').replace(/\s+/g, ' ').trim();
+    const durationLabel = formatGeneratedTaskDuration(getGeneratedTaskDurationHours(task));
+
+    return [
+        subtasks.length > 0 ? subtasks.join(' ') : '',
+        configurableNote ? `Note: ${configurableNote}` : '',
+        `Estimated duration: ${durationLabel}.`
+    ].filter(Boolean).join(' ');
+}
+
+function createEngineBackedSolution(solution = {}, connectorTasks = []) {
+    if (!Array.isArray(connectorTasks) || connectorTasks.length === 0) {
+        return solution;
+    }
+
+    const connectorTaskIds = new Set(connectorTasks.map((task) => task.id));
+    const setupTasks = connectorTasks.map((task, index) => {
+        const durationHours = getGeneratedTaskDurationHours(task);
+        const generatedDependencies = (Array.isArray(task?.dependsOn) ? task.dependsOn : []).filter(Boolean);
+        const localDependencies = generatedDependencies.filter((dependencyId) => connectorTaskIds.has(dependencyId));
+        const inheritsDefaultDependencies = generatedDependencies.some((dependencyId) => !connectorTaskIds.has(dependencyId));
+        return {
+            id: task.id,
+            order: index + 1,
+            task: task.name,
+            description: buildGeneratedTaskDescription(task),
+            effort_hours: durationHours,
+            duration_days: roundDurationHours(durationHours / HOURS_PER_DAY),
+            owner: task.ownerRole,
+            owner_role: task.ownerRole,
+            required_roles: [],
+            optional: false,
+            depends_on: localDependencies,
+            inherits_default_dependencies: inheritsDefaultDependencies
+        };
+    });
+
+    return {
+        ...solution,
+        planner: {
+            ...(solution?.planner || {}),
+            setup_tasks: setupTasks
+        }
+    };
+}
+
+function addGeneratedInfrastructureRows({
+    rows = [],
+    counters = new Map(),
+    durationOverrides = {},
+    phaseStartWeek = START_WEEK_MIN,
+    defaultDependencies = [],
+    generatedPlan = null,
+    generatedGroupSolutions = [],
+    selectedSolutions = [],
+    defaultSolutionGroupCollapsed = true,
+    capacitySnapshot = null
+} = {}) {
+    const generatedTasks = Array.isArray(generatedPlan?.tasks) ? generatedPlan.tasks : [];
+    const sharedInfraTasks = generatedTasks.filter((task) => task?.shared && task.phase === 1);
+    const taskRowIdMap = new Map();
+
+    if (sharedInfraTasks.length === 0) {
+        return {
+            endWeek: phaseStartWeek,
+            terminalRowIds: [...defaultDependencies],
+            taskRowIdMap,
+            syntheticSolutions: []
+        };
+    }
+
+    const groupSolutionByFieldPack = new Map();
+    (Array.isArray(generatedGroupSolutions) ? generatedGroupSolutions : []).forEach((solution) => {
+        const fieldPack = String(solution?.fieldPack || '').trim();
+        if (fieldPack && !groupSolutionByFieldPack.has(fieldPack)) {
+            groupSolutionByFieldPack.set(fieldPack, solution);
+        }
+    });
+
+    const sharedTasksByFieldPack = sharedInfraTasks.reduce((map, task) => {
+        const fieldPack = String(task?.fieldPack || 'shared').trim() || 'shared';
+        const existing = map.get(fieldPack) || [];
+        existing.push(task);
+        map.set(fieldPack, existing);
+        return map;
+    }, new Map());
+
+    sharedInfraTasks.forEach((task) => {
+        taskRowIdMap.set(task.id, `task-shared-${String(task.id || '').toLowerCase()}`);
+    });
+
+    const rowById = new Map((Array.isArray(rows) ? rows : []).map((row) => [row.id, row]));
+    const terminalRowIds = [];
+    const syntheticSolutions = [];
+    let latestEndWeek = phaseStartWeek;
+
+    [...sharedTasksByFieldPack.keys()].forEach((fieldPack) => {
+        const packTasks = sharedTasksByFieldPack.get(fieldPack) || [];
+        if (packTasks.length === 0) return;
+
+        const solution = groupSolutionByFieldPack.get(fieldPack) || null;
+        const selectedSolution = findSelectedSolutionForFieldPack(fieldPack, selectedSolutions);
+        const realSolution = solution || selectedSolution || null;
+        const resolvedSolution = realSolution || buildSyntheticInfrastructureSolution(fieldPack);
+        const groupRowId = getSolutionGroupRowId(resolvedSolution.id);
+        const localRowById = new Map(rowById);
+        const packRows = [];
+
+        packTasks.forEach((task) => {
+            const rowId = taskRowIdMap.get(task.id);
+            const durationHours = getGeneratedTaskDurationHours(task);
+            const dependencyIds = [...new Set((Array.isArray(task?.dependsOn) ? task.dependsOn : []).flatMap((dependencyId) => (
+                taskRowIdMap.has(dependencyId) ? [taskRowIdMap.get(dependencyId)] : defaultDependencies
+            )))];
+            const taskDependencies = dependencyIds.length > 0 ? dependencyIds : [...defaultDependencies];
+            const defaultStartWeek = sanitizeStartWeekInputValue(
+                getDependencyEndWeek(taskDependencies, localRowById, phaseStartWeek)
+            );
+            const durationState = buildDurationState({
+                taskId: rowId,
+                defaultDurationWeeks: businessHoursToWeeks(durationHours),
+                defaultDurationPreferredUnit: inferDurationUnitFromBusinessHours(durationHours),
+                durationOverrides
+            });
+            const startWeekState = buildStartWeekState({
+                taskId: rowId,
+                defaultStartWeek,
+                durationOverrides
+            });
+            const description = buildGeneratedTaskDescription(task);
+            const row = createRow({
+                id: rowId,
+                phaseKey: 'phase1',
+                number: getNextNumber(counters),
+                step: task.name,
+                milestone: task.name,
+                goal: `Complete the shared ${String(task.fieldPack || 'connector').replace(/-/g, ' ')} prerequisites before connector onboarding begins.`,
+                owner: task.ownerRole || 'Operations Team',
+                resourceType: 'Microsoft & Customer',
+                impact: 'Medium',
+                task: description || task.name,
+                description,
+                startWeek: startWeekState.effectiveStartWeek,
+                durationWeeks: durationState.effectiveDuration.durationWeeks,
+                durationHours,
+                durationState,
+                startWeekState,
+                dependencies: taskDependencies,
+                details: {
+                    Solution: resolvedSolution.name,
+                    'Task type': 'Shared infrastructure',
+                    'Connector type': formatFieldPackDisplayName(task.fieldPack || 'Infrastructure'),
+                    Difficulty: task.configurable ? 'moderate' : 'hard',
+                    'Required permissions': task.configurableNote || 'Shared platform and connector administration access.'
+                },
+                taskType: 'Shared infrastructure',
+                solutionId: resolvedSolution.id,
+                solutionName: resolvedSolution.name,
+                solutionGroupId: groupRowId
+            });
+
+            packRows.push(row);
+            localRowById.set(row.id, row);
+        });
+
+        const packTerminalRow = packRows[packRows.length - 1] || null;
+        if (packRows.length > 0) {
+            const baselineStartWeek = packRows[0].startWeek;
+            const groupState = readSolutionGroupState(
+                resolvedSolution.id,
+                baselineStartWeek,
+                resolvedSolution.name,
+                defaultSolutionGroupCollapsed
+            );
+            const shiftWeeks = roundWeekPrecision(groupState.effectiveStartWeek - baselineStartWeek);
+            const shiftedRows = applySolutionGroupShift(packRows, shiftWeeks).map((row) => ({
+                ...row,
+                solutionId: resolvedSolution.id,
+                solutionName: resolvedSolution.name,
+                solutionGroupId: groupRowId,
+                goal: row.goal || `Complete the shared ${resolvedSolution.name} prerequisites before connector onboarding begins.`,
+                detailFields: {
+                    ...row.detailFields,
+                    Solution: resolvedSolution.name,
+                    'Connector type': row.detailFields?.['Connector type'] || formatFieldPackDisplayName(fieldPack)
+                }
+            }));
+            const shiftedTerminalRow = shiftedRows.find((row) => row.id === packTerminalRow?.id) || shiftedRows[shiftedRows.length - 1] || null;
+            const groupDurationWeeks = shiftedTerminalRow
+                ? Math.max(MIN_TASK_DURATION_WEEKS, roundWeekPrecision(shiftedTerminalRow.endWeek - groupState.effectiveStartWeek))
+                : MIN_TASK_DURATION_WEEKS;
+            const solutionGroupRow = buildSolutionGroupRow({
+                solution: resolvedSolution,
+                phaseKey: 'phase1',
+                counters,
+                startWeekState: {
+                    defaultStartWeek: baselineStartWeek,
+                    effectiveStartWeek: groupState.effectiveStartWeek,
+                    hasDirectStartWeekOverride: groupState.hasDirectStartWeekOverride,
+                    hasDerivedCustomStartWeek: false,
+                    isCustomStartWeek: groupState.hasDirectStartWeekOverride,
+                    isStartWeekEditable: true
+                },
+                durationWeeks: groupDurationWeeks,
+                dependencies: [...defaultDependencies],
+                hasDerivedCustomSchedule: shiftedRows.some((row) => row.isCustomSchedule),
+                capacityProfile: realSolution
+                    ? getSolutionCapacityProfile(realSolution, capacitySnapshot || getCapacitySnapshot([realSolution]))
+                    : null
+            });
+            solutionGroupRow.solutionGroupId = solutionGroupRow.id;
+            solutionGroupRow.defaultGroupCollapsed = groupState.defaultCollapsed;
+            solutionGroupRow.isGroupCollapsed = groupState.collapsed;
+
+            rows.push(solutionGroupRow, ...shiftedRows);
+            rowById.set(solutionGroupRow.id, solutionGroupRow);
+            shiftedRows.forEach((row) => rowById.set(row.id, row));
+            if (!realSolution) {
+                syntheticSolutions.push(resolvedSolution);
+            }
+            latestEndWeek = Math.max(latestEndWeek, shiftedTerminalRow?.endWeek || phaseStartWeek);
+        }
+
+        const joinRowId = taskRowIdMap.get(getPackJoinTaskId(fieldPack, generatedPlan?.summary?.criblActive));
+        if (joinRowId) {
+            terminalRowIds.push(joinRowId);
+        }
+    });
+
+    return {
+        endWeek: latestEndWeek,
+        terminalRowIds: terminalRowIds.length > 0 ? [...new Set(terminalRowIds)] : [...defaultDependencies],
+        taskRowIdMap,
+        syntheticSolutions
+    };
+}
+
 function addStandardTasks(rows, counters, durationOverrides = {}) {
     const kickoffDurationState = buildDurationState({
         taskId: 'task-stakeholder-kickoff',
@@ -2809,48 +3500,19 @@ function addStandardTasks(rows, counters, durationOverrides = {}) {
     });
     rows.push(topologyRow);
 
-    const rbacDurationState = buildDurationState({
-        taskId: 'task-rbac-security-groups',
-        defaultDurationWeeks: 1,
-        durationOverrides
-    });
-    const rbacStartWeekState = buildStartWeekState({
-        taskId: 'task-rbac-security-groups',
-        defaultStartWeek: sanitizeStartWeekInputValue(topologyRow.endWeek),
-        durationOverrides
-    });
-    const rbacRow = createRow({
-        id: 'task-rbac-security-groups',
-        phaseKey: 'setup',
-        number: getNextNumber(counters, 'setup'),
-        step: 'RBAC & Security Groups',
-        milestone: 'Administrative roles, access groups, and approvals are in place.',
-        goal: 'Ensure every onboarding task has the right customer-side access path.',
-        owner: 'Identity/Entra Admin',
-        resourceType: 'Customer',
-        impact: 'Medium',
-        task: 'Create or validate the required RBAC assignments, security groups, and approval workflow for connector onboarding.',
-        startWeek: rbacStartWeekState.effectiveStartWeek,
-        durationWeeks: rbacDurationState.effectiveDuration.durationWeeks,
-        durationHours: 2,
-        durationState: rbacDurationState,
-        startWeekState: rbacStartWeekState,
-        dependencies: [topologyRow.id],
-        details: {
-            'Connector type': 'Platform foundation',
-            Difficulty: 'moderate',
-            'Required permissions': 'Azure RBAC, Microsoft Sentinel Contributor, and tenant approval flow.'
-        }
-    });
-    rows.push(rbacRow);
-
     return {
-        endWeek: rbacRow.endWeek,
-        terminalRowIds: [rbacRow.id]
+        endWeek: topologyRow.endWeek,
+        terminalRowIds: [topologyRow.id]
     };
 }
 
-function createGanttTask(row, projectStartDate, collapsedSummaryIds = new Set(), collapsedSolutionGroupIds = new Set()) {
+function createGanttTask(
+    row,
+    projectStartDate,
+    rows = [],
+    collapsedSummaryIds = new Set(),
+    collapsedSolutionGroupIds = new Set()
+) {
     const start = getRowCalendarStartDateTime(row, projectStartDate);
     const end = getRowCalendarEndDateTime(row, projectStartDate);
     const safeEnd = end > start ? end : addBusinessHours(start, HOURS_PER_DAY / 2);
@@ -2858,22 +3520,48 @@ function createGanttTask(row, projectStartDate, collapsedSummaryIds = new Set(),
     const className = PHASE_BY_KEY[row.phaseKey].className;
     const normalizedStatus = normalizeStatusLabel(row.status);
     const phaseColor = PHASE_BAR_COLOR[className];
-    const baseColor = normalizedStatus === 'Planned'
-        ? phaseColor
-        : STATUS_BAR_COLOR[normalizedStatus] || phaseColor;
+    const connectorColor = row.connectorColor || '';
+    const statusColor = !row.isSolutionGroup ? (STATUS_BAR_COLOR[normalizedStatus] || null) : null;
+    const baseColor = statusColor || connectorColor || phaseColor;
+    const barColor = row.isSolutionGroup && connectorColor
+        ? darkenHexColor(connectorColor, 0.06)
+        : row.isSubtask
+            ? lightenHexColor(baseColor)
+            : baseColor;
+    const progress = getTaskProgress(row, rows);
+    const hasPartialProgress = progress > 0 && progress < 100;
+    const statusVisual = row?.isSummary && progress > 0
+        ? progress >= 100
+            ? STATUS_BAR_VISUALS.complete
+            : STATUS_BAR_VISUALS.active
+        : getTaskStatusVisualStyle(row);
 
     return {
         id: row.id,
-        name: row.step,
-        labelText: row.step,
+        name: getRowPrimaryLabel(row),
+        labelText: getRowPrimaryLabel(row),
         durationLabel: row.durationLabel,
+        status: normalizedStatus,
+        startDateLabel: row.startDateLabel,
+        dueDateLabel: row.dueDateLabel,
         start,
         end: safeEnd,
-        progress: normalizedStatus === 'Completed' ? 100 : 0,
+        progress,
         dependencies: row.dependencies.join(','),
         custom_class: className,
         phaseClassName: className,
-        color: row.isSubtask ? lightenHexColor(baseColor) : baseColor,
+        color: barColor,
+        connectorColor: connectorColor || barColor,
+        barOpacity: statusVisual.opacity,
+        barFillOpacity: hasPartialProgress
+            ? Math.min(statusVisual.fillOpacity, row.isSolutionGroup ? 0.6 : 0.52)
+            : statusVisual.fillOpacity,
+        barStrokeWidth: statusVisual.strokeWidth,
+        barStrokeDasharray: statusVisual.strokeDasharray,
+        barStrokeColor: darkenHexColor(barColor, row.isSolutionGroup ? 0.28 : 0.34),
+        progressColor: darkenHexColor(barColor, row.isSolutionGroup ? 0.18 : 0.2),
+        progressFillOpacity: hasPartialProgress ? 1 : 0,
+        progressIsPartial: hasPartialProgress,
         isSummary: row.isSummary,
         isSolutionGroup: row.isSolutionGroup,
         isSubtask: row.isSubtask,
@@ -2902,7 +3590,10 @@ function createSolutionPlanRows({
     customTaskEntries = {},
     capacitySnapshot = null
 }) {
-    const orderedTasks = sortByOrder(solution?.planner?.setup_tasks || []);
+    const orderedTasks = prependSolutionPermissionTask(
+        sortByOrder(solution?.planner?.setup_tasks || []),
+        solution
+    );
     const ownerModel = getOwnerModel(solution);
     const category = getSolutionGroup(solution);
     const capacityProfile = getSolutionCapacityProfile(solution, capacitySnapshot || getCapacitySnapshot([solution]));
@@ -2960,7 +3651,10 @@ function createSolutionPlanRows({
         const taskNumber = `${baseSolutionNumber}.${taskIndex + 1}`;
         const explicitParentDependencies = getResolvedDependencies(task?.depends_on, idMap);
         const parentDependencies = explicitParentDependencies.length > 0
-            ? explicitParentDependencies
+            ? [...new Set([
+                ...(task?.inherits_default_dependencies ? defaultDependencies : []),
+                ...explicitParentDependencies
+            ])]
             : previousMainRowId
                 ? [previousMainRowId]
                 : [...defaultDependencies];
@@ -3070,7 +3764,7 @@ function createSolutionPlanRows({
                     id: customTask.id,
                     phaseKey,
                     number: getSubtaskNumber(taskNumber, task.subtasks.length + customIndex),
-                    status: customTask.status || 'Planned',
+                    status: customTask.status || 'Not Started',
                     impact: customTask.impact || 'Medium',
                     step: customTask.step || DEFAULT_NEW_TASK_NAME,
                     milestone: customTask.milestone || solutionMilestone,
@@ -3250,7 +3944,7 @@ function createSolutionPlanRows({
             id: customTask.id,
             phaseKey,
             number: taskNumber,
-            status: customTask.status || 'Planned',
+            status: customTask.status || 'Not Started',
             impact: customTask.impact || 'Medium',
             step: customTask.step || DEFAULT_NEW_TASK_NAME,
             milestone: customTask.milestone || solutionMilestone,
@@ -3425,7 +4119,7 @@ function buildSolutionGroupRow({
         id: rowId,
         phaseKey,
         number: String(number || getNextNumber(counters)),
-        status: 'Planned',
+        status: 'Not Started',
         impact: solutionImpact,
         step: solution.name,
         milestone: solutionMilestone,
@@ -3606,12 +4300,84 @@ function createVisiblePlanData(planData, collapsedSummaryIds = new Set(), collap
         return createGanttTask(
             { ...row, dependencies: visibleDependencies },
             planData.projectStartDate,
+            planData.rows,
             collapsedSummaryIds,
             collapsedSolutionGroupIds
         );
     });
 
-    return { rows: visibleRows, tasks };
+    const milestones = (planData.milestones || [])
+        .map((milestone) => {
+            let anchorTaskId = milestone.anchorTaskId;
+            if (visibleRowIds.has(anchorTaskId)) {
+                return milestone;
+            }
+
+            const anchorRow = rowById.get(anchorTaskId);
+            if (
+                anchorRow?.parentId
+                && collapsedSummaryIds.has(anchorRow.parentId)
+                && visibleRowIds.has(anchorRow.parentId)
+            ) {
+                anchorTaskId = anchorRow.parentId;
+            } else if (
+                anchorRow?.solutionGroupId
+                && collapsedSolutionGroupIds.has(anchorRow.solutionGroupId)
+                && visibleRowIds.has(anchorRow.solutionGroupId)
+            ) {
+                anchorTaskId = anchorRow.solutionGroupId;
+            }
+
+            return visibleRowIds.has(anchorTaskId)
+                ? { ...milestone, anchorTaskId }
+                : null;
+        })
+        .filter(Boolean);
+
+    return { rows: visibleRows, tasks, milestones };
+}
+
+function pickMilestoneAnchor(rows = [], predicate = () => true, { preferLatest = true } = {}) {
+    const matchingRows = (Array.isArray(rows) ? rows : []).filter((row) => row && predicate(row));
+    if (matchingRows.length === 0) {
+        return null;
+    }
+
+    return [...matchingRows].sort((left, right) => {
+        const endDelta = (left.endWeek || 0) - (right.endWeek || 0);
+        if (endDelta !== 0) {
+            return preferLatest ? endDelta : -endDelta;
+        }
+        return String(left.number || '').localeCompare(String(right.number || ''));
+    })[matchingRows.length - 1];
+}
+
+function buildPlanMilestones(rows = [], projectStartDate) {
+    const taskRows = (Array.isArray(rows) ? rows : []).filter((row) => row && !row.isSolutionGroup);
+    const connectorRows = taskRows.filter((row) => row.solutionId);
+    const analyticsPattern = /(analytic|analytics|rule|rules|workbook|content)/i;
+    const connectorEnablePattern = /(enable|ingest|validate|data collection|connector)/i;
+
+    const workspaceAnchor = pickMilestoneAnchor(taskRows, (row) => row.phaseKey === 'setup');
+    const firstIngestAnchor = pickMilestoneAnchor(
+        connectorRows,
+        (row) => connectorEnablePattern.test(`${row.step || ''} ${row.description || ''} ${row.task || ''}`),
+        { preferLatest: false }
+    ) || pickMilestoneAnchor(connectorRows, () => true, { preferLatest: false });
+    const coverageAnchor = pickMilestoneAnchor(connectorRows, () => true) || workspaceAnchor;
+    const analyticsAnchor = pickMilestoneAnchor(
+        connectorRows,
+        (row) => analyticsPattern.test(`${row.step || ''} ${row.description || ''} ${row.task || ''}`)
+    ) || coverageAnchor;
+    const handoffAnchor = pickMilestoneAnchor(taskRows, () => true) || workspaceAnchor;
+
+    return [
+        { id: 'milestone-workspace-connected', name: 'Workspace Connected', anchorTaskId: workspaceAnchor?.id || '', date: workspaceAnchor ? getRowCalendarEndDateTime(workspaceAnchor, projectStartDate) : null },
+        { id: 'milestone-first-data-ingested', name: 'First Data Ingested', anchorTaskId: firstIngestAnchor?.id || '', date: firstIngestAnchor ? getRowCalendarEndDateTime(firstIngestAnchor, projectStartDate) : null },
+        { id: 'milestone-core-coverage', name: 'Core Coverage Achieved', anchorTaskId: coverageAnchor?.id || '', date: coverageAnchor ? getRowCalendarEndDateTime(coverageAnchor, projectStartDate) : null },
+        { id: 'milestone-analytics-rules', name: 'Analytics Rules Enabled', anchorTaskId: analyticsAnchor?.id || '', date: analyticsAnchor ? getRowCalendarEndDateTime(analyticsAnchor, projectStartDate) : null },
+        { id: 'milestone-handoff', name: 'Handoff to SOC', anchorTaskId: handoffAnchor?.id || '', date: handoffAnchor ? getRowCalendarEndDateTime(handoffAnchor, projectStartDate) : null }
+    ].filter((milestone) => milestone.anchorTaskId && milestone.date instanceof Date && !Number.isNaN(milestone.date.getTime()));
 }
 
 export function buildGanttPlanData(selectedSolutions = [], options = {}) {
@@ -3622,18 +4388,49 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
     const capacitySnapshot = options?.capacitySnapshot || getCapacitySnapshot(solutions);
     const rows = [];
     const counters = new Map();
+    const generatedFieldPackSolutions = solutions.filter((solution) => hasGeneratedFieldPack(solution));
+    const generatedPlan = generatedFieldPackSolutions.length > 0
+        ? buildGeneratedGanttPlan(generatedFieldPackSolutions)
+        : null;
+    const generatedConnectorTasksBySolutionId = (generatedPlan?.tasks || []).reduce((map, task) => {
+        if (task?.shared || task?.phase !== 2 || !task?.connectorId) {
+            return map;
+        }
+        const existing = map.get(task.connectorId) || [];
+        existing.push(task);
+        map.set(task.connectorId, existing);
+        return map;
+    }, new Map());
+    const generatedInfraOnlySolutionIds = new Set(generatedFieldPackSolutions
+        .filter((solution) => hasGeneratedFieldPack(solution) && !(generatedConnectorTasksBySolutionId.get(solution.id)?.length))
+        .map((solution) => solution.id));
 
     const standardPlan = addStandardTasks(rows, counters, durationOverrides);
+    const generatedInfraPlan = addGeneratedInfrastructureRows({
+        rows,
+        counters,
+        durationOverrides,
+        phaseStartWeek: standardPlan.endWeek,
+        defaultDependencies: [...standardPlan.terminalRowIds],
+        generatedPlan,
+        generatedGroupSolutions: generatedFieldPackSolutions.filter((solution) => generatedInfraOnlySolutionIds.has(solution.id)),
+        selectedSolutions: solutions,
+        defaultSolutionGroupCollapsed,
+        capacitySnapshot
+    });
+    const displaySolutions = [...solutions, ...(generatedInfraPlan.syntheticSolutions || [])];
 
-    let previousPhaseBaselineEnd = standardPlan.endWeek;
-    let previousPhaseTerminalIds = [...standardPlan.terminalRowIds];
+    let previousPhaseBaselineEnd = generatedInfraPlan.taskRowIdMap.size > 0 ? generatedInfraPlan.endWeek : standardPlan.endWeek;
+    let previousPhaseTerminalIds = generatedInfraPlan.terminalRowIds.length > 0
+        ? [...generatedInfraPlan.terminalRowIds]
+        : [...standardPlan.terminalRowIds];
     const allSolutionTerminalIds = [];
-    let latestSolutionEndWeek = standardPlan.endWeek;
+    let latestSolutionEndWeek = Math.max(standardPlan.endWeek, generatedInfraPlan.endWeek || standardPlan.endWeek);
 
     [1, 2, 3].forEach((bucket) => {
         const phaseKey = SOLUTION_PHASE_KEY[bucket];
         const phaseSolutions = solutions
-            .filter((solution) => getSolutionPhaseBucket(solution) === bucket)
+            .filter((solution) => getSolutionPhaseBucket(solution) === bucket && !generatedInfraOnlySolutionIds.has(solution.id))
             .sort((left, right) => {
                 const scoreDelta = calculatePriorityScore(right) - calculatePriorityScore(left);
                 return scoreDelta !== 0 ? scoreDelta : left.name.localeCompare(right.name);
@@ -3644,36 +4441,55 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
         }
 
         const placements = [];
-        let baselineCursor = sanitizeStartWeekInputValue(previousPhaseBaselineEnd);
+        const parallelStartWeek = sanitizeStartWeekInputValue(previousPhaseBaselineEnd);
+        let latestPhaseEndWeek = parallelStartWeek;
         phaseSolutions.forEach((solution) => {
-            const estimatedDurationWeeks = estimateSolutionPlanDuration(solution, phaseKey, baselineCursor, customTaskEntries, capacitySnapshot);
+            const generatedConnectorTasks = generatedConnectorTasksBySolutionId.get(solution.id) || [];
+            const usesGeneratedTasks = hasGeneratedFieldPack(solution) && generatedConnectorTasks.length > 0;
+            const plannedSolution = usesGeneratedTasks
+                ? createEngineBackedSolution(solution, generatedConnectorTasks)
+                : solution;
+            const joinTaskId = usesGeneratedTasks
+                ? getPackJoinTaskId(solution.fieldPack, generatedPlan?.summary?.criblActive)
+                : '';
+            const joinRowId = joinTaskId ? generatedInfraPlan.taskRowIdMap.get(joinTaskId) : '';
+            const defaultDependencies = usesGeneratedTasks && joinRowId
+                ? [...new Set([...previousPhaseTerminalIds, joinRowId])]
+                : [...previousPhaseTerminalIds];
+            const estimatedDurationWeeks = estimateSolutionPlanDuration(plannedSolution, phaseKey, parallelStartWeek, customTaskEntries, capacitySnapshot);
             placements.push({
                 solution,
-                baselineStartWeek: baselineCursor,
+                plannedSolution,
+                defaultDependencies,
+                baselineStartWeek: parallelStartWeek,
                 baselineDurationWeeks: estimatedDurationWeeks
             });
-            baselineCursor = sanitizeStartWeekInputValue(baselineCursor + estimatedDurationWeeks);
+            latestPhaseEndWeek = Math.max(latestPhaseEndWeek, sanitizeStartWeekInputValue(parallelStartWeek + estimatedDurationWeeks));
         });
 
-        previousPhaseBaselineEnd = baselineCursor;
+        previousPhaseBaselineEnd = latestPhaseEndWeek;
 
         const phaseTerminalIds = [];
-        placements.forEach(({ solution, baselineStartWeek }) => {
+        placements.forEach(({ solution, plannedSolution, defaultDependencies, baselineStartWeek }) => {
+            const groupRowId = getSolutionGroupRowId(solution.id);
+            const existingGroupRowIndex = rows.findIndex((row) => row.id === groupRowId);
+            const existingGroupRow = existingGroupRowIndex >= 0 ? rows[existingGroupRowIndex] : null;
             const groupState = readSolutionGroupState(solution.id, baselineStartWeek, solution.name, defaultSolutionGroupCollapsed);
-            const solutionNumber = getNextNumber(counters);
+            const solutionNumber = existingGroupRow?.number || getNextNumber(counters);
             const solutionPlan = createSolutionPlanRows({
-                solution,
+                solution: plannedSolution,
                 phaseKey,
                 counters,
                 solutionNumber,
                 phaseStartWeek: baselineStartWeek,
-                defaultDependencies: [],
+                defaultDependencies,
                 durationOverrides,
                 customTaskEntries,
                 capacitySnapshot
             });
-            const groupRowId = getSolutionGroupRowId(solution.id);
-            const shiftWeeks = roundWeekPrecision(groupState.effectiveStartWeek - baselineStartWeek);
+            const shiftWeeks = existingGroupRow
+                ? roundWeekPrecision(existingGroupRow.startWeek - existingGroupRow.defaultStartWeek)
+                : roundWeekPrecision(groupState.effectiveStartWeek - baselineStartWeek);
             const shiftedRows = applySolutionGroupShift(solutionPlan.rows, shiftWeeks).map((row) => ({
                 ...row,
                 solutionGroupId: groupRowId
@@ -3681,30 +4497,73 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
             const terminalRow = shiftedRows.find((row) => row.id === solutionPlan.terminalRowId) || shiftedRows[shiftedRows.length - 1];
             const groupDurationWeeks = terminalRow
                 ? Math.max(MIN_TASK_DURATION_WEEKS, roundWeekPrecision(terminalRow.endWeek - groupState.effectiveStartWeek))
-                : Math.max(MIN_TASK_DURATION_WEEKS, estimateSolutionPlanDuration(solution, phaseKey, groupState.effectiveStartWeek, customTaskEntries, capacitySnapshot));
-            const solutionGroupRow = buildSolutionGroupRow({
-                solution,
-                phaseKey,
-                counters,
-                number: solutionNumber,
-                startWeekState: {
-                    defaultStartWeek: baselineStartWeek,
-                    effectiveStartWeek: groupState.effectiveStartWeek,
-                    hasDirectStartWeekOverride: groupState.hasDirectStartWeekOverride,
-                    hasDerivedCustomStartWeek: false,
-                    isCustomStartWeek: groupState.hasDirectStartWeekOverride,
-                    isStartWeekEditable: true
-                },
-                durationWeeks: groupDurationWeeks,
-                dependencies: [...previousPhaseTerminalIds],
-                hasDerivedCustomSchedule: shiftedRows.some((row) => row.isCustomSchedule),
-                capacityProfile: getSolutionCapacityProfile(solution, capacitySnapshot)
-            });
-            solutionGroupRow.solutionGroupId = solutionGroupRow.id;
-            solutionGroupRow.defaultGroupCollapsed = groupState.defaultCollapsed;
-            solutionGroupRow.isGroupCollapsed = groupState.collapsed;
+                : Math.max(MIN_TASK_DURATION_WEEKS, estimateSolutionPlanDuration(plannedSolution, phaseKey, groupState.effectiveStartWeek, customTaskEntries, capacitySnapshot));
 
-            rows.push(solutionGroupRow, ...shiftedRows);
+            if (existingGroupRow) {
+                const existingGroupRows = [];
+                let insertIndex = existingGroupRowIndex + 1;
+                while (insertIndex < rows.length) {
+                    const candidate = rows[insertIndex];
+                    if (!candidate || candidate.isSolutionGroup || candidate.solutionGroupId !== groupRowId) {
+                        break;
+                    }
+                    existingGroupRows.push(candidate);
+                    insertIndex += 1;
+                }
+
+                const groupEndWeek = [...existingGroupRows, ...shiftedRows].reduce(
+                    (maxEndWeek, row) => Math.max(maxEndWeek, row?.endWeek || existingGroupRow.endWeek),
+                    existingGroupRow.endWeek
+                );
+                const mergedGroupRow = buildSolutionGroupRow({
+                    solution: plannedSolution,
+                    phaseKey: existingGroupRow.phaseKey || phaseKey,
+                    counters,
+                    number: solutionNumber,
+                    startWeekState: {
+                        defaultStartWeek: existingGroupRow.defaultStartWeek,
+                        effectiveStartWeek: existingGroupRow.startWeek,
+                        hasDirectStartWeekOverride: existingGroupRow.hasDirectStartWeekOverride,
+                        hasDerivedCustomStartWeek: false,
+                        isCustomStartWeek: existingGroupRow.isCustomStartWeek,
+                        isStartWeekEditable: true
+                    },
+                    durationWeeks: Math.max(MIN_TASK_DURATION_WEEKS, roundWeekPrecision(groupEndWeek - existingGroupRow.startWeek)),
+                    dependencies: [...existingGroupRow.dependencies],
+                    hasDerivedCustomSchedule: Boolean(existingGroupRow.hasDerivedCustomSchedule || shiftedRows.some((row) => row.isCustomSchedule)),
+                    capacityProfile: getSolutionCapacityProfile(plannedSolution, capacitySnapshot)
+                });
+                mergedGroupRow.solutionGroupId = mergedGroupRow.id;
+                mergedGroupRow.defaultGroupCollapsed = existingGroupRow.defaultGroupCollapsed;
+                mergedGroupRow.isGroupCollapsed = existingGroupRow.isGroupCollapsed;
+
+                rows.splice(existingGroupRowIndex, 1, mergedGroupRow);
+                rows.splice(insertIndex, 0, ...shiftedRows);
+            } else {
+                const solutionGroupRow = buildSolutionGroupRow({
+                    solution: plannedSolution,
+                    phaseKey,
+                    counters,
+                    number: solutionNumber,
+                    startWeekState: {
+                        defaultStartWeek: baselineStartWeek,
+                        effectiveStartWeek: groupState.effectiveStartWeek,
+                        hasDirectStartWeekOverride: groupState.hasDirectStartWeekOverride,
+                        hasDerivedCustomStartWeek: false,
+                        isCustomStartWeek: groupState.hasDirectStartWeekOverride,
+                        isStartWeekEditable: true
+                    },
+                    durationWeeks: groupDurationWeeks,
+                    dependencies: [...defaultDependencies],
+                    hasDerivedCustomSchedule: shiftedRows.some((row) => row.isCustomSchedule),
+                    capacityProfile: getSolutionCapacityProfile(plannedSolution, capacitySnapshot)
+                });
+                solutionGroupRow.solutionGroupId = solutionGroupRow.id;
+                solutionGroupRow.defaultGroupCollapsed = groupState.defaultCollapsed;
+                solutionGroupRow.isGroupCollapsed = groupState.collapsed;
+
+                rows.push(solutionGroupRow, ...shiftedRows);
+            }
 
             if (terminalRow?.id) {
                 phaseTerminalIds.push(terminalRow.id);
@@ -3794,11 +4653,44 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
         enrichRowsForDisplay(applyRowDisplayOverrides(rows, durationOverrides), projectStartDate),
         taskOrders
     ));
-    const tasks = orderedRows.map((row) => createGanttTask(row, projectStartDate));
-    const latestEndWeek = orderedRows.reduce((maxEnd, row) => Math.max(maxEnd, row.endWeek), START_WEEK_MIN);
+    const solutionPresentationMap = buildSolutionPresentationMap(displaySolutions);
+    const usedSolutionIds = new Set();
+    const decoratedRows = orderedRows.map((row) => {
+        const presentation = row.solutionId ? solutionPresentationMap.get(row.solutionId) : null;
+        if (!presentation) return row;
+        usedSolutionIds.add(row.solutionId);
+        return {
+            ...row,
+            connectorColor: presentation.color,
+            connectorDisplayNumber: presentation.displayNumber,
+            solutionDisplayLabel: row.isSolutionGroup ? presentation.label : row.solutionDisplayLabel || ''
+        };
+    });
+    const connectorLegend = displaySolutions
+        .map((solution) => {
+            const presentation = solutionPresentationMap.get(solution.id);
+            if (!presentation || !usedSolutionIds.has(solution.id)) return null;
+            return {
+                solutionId: solution.id,
+                label: presentation.label,
+                color: presentation.color
+            };
+        })
+        .filter(Boolean);
+    const solutionDocUrlMap = new Map(displaySolutions.map((solution) => [
+        solution.id,
+        solution?.docUrl || solution?.planner?.docUrl || GENERAL_SENTINEL_DOC_URL
+    ]));
+    const documentedRows = decoratedRows.map((row) => ({
+        ...row,
+        docUrl: row.docUrl || solutionDocUrlMap.get(row.solutionId) || GENERAL_SENTINEL_DOC_URL
+    }));
+    const milestones = buildPlanMilestones(documentedRows, projectStartDate);
+    const tasks = documentedRows.map((row) => createGanttTask(row, projectStartDate, documentedRows));
+    const latestEndWeek = documentedRows.reduce((maxEnd, row) => Math.max(maxEnd, row.endWeek), START_WEEK_MIN);
     const totalDurationWeeks = Math.max(0, roundWeekPrecision(latestEndWeek - START_WEEK_MIN));
     const phaseBreakdown = PHASE_SEQUENCE.map((phase) => {
-        const phaseRows = orderedRows.filter((row) => row.phaseKey === phase.key && !row.isSolutionGroup);
+        const phaseRows = documentedRows.filter((row) => row.phaseKey === phase.key && !row.isSolutionGroup);
         const phaseEnd = phaseRows.reduce((maxEnd, row) => Math.max(maxEnd, row.endWeek), START_WEEK_MIN);
         const phaseStart = phaseRows.length > 0
             ? phaseRows.reduce((minStart, row) => Math.min(minStart, row.startWeek), phaseRows[0].startWeek)
@@ -3812,7 +4704,7 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
         };
     }).filter((phase) => phase.count > 0);
 
-    const exportRows = orderedRows.map((row) => ({
+    const exportRows = documentedRows.map((row) => ({
         '#': row.number,
         Phase: row.phase,
         Status: row.status,
@@ -3832,13 +4724,15 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
         'Custom schedule': row.hasDirectScheduleOverride ? 'Yes' : row.hasDerivedCustomSchedule ? 'Derived' : 'No'
     }));
 
-    const customScheduleCount = orderedRows.filter((row) => row.hasDirectScheduleOverride).length;
+    const customScheduleCount = documentedRows.filter((row) => row.hasDirectScheduleOverride).length;
 
     return {
         projectStartDate,
         tasks,
-        rows: orderedRows,
+        rows: documentedRows,
+        milestones,
         exportRows,
+        connectorLegend,
         totalDurationWeeks,
         totalTasks: rows.filter((row) => !row.isSolutionGroup).length,
         phaseBreakdown,
@@ -3879,6 +4773,76 @@ function createSummaryHeader(planData) {
 
     header.append(statRow, breakdown);
     return header;
+}
+
+function createConnectorColorLegend(connectorLegend = []) {
+    if (!Array.isArray(connectorLegend) || connectorLegend.length === 0) {
+        return null;
+    }
+
+    const legend = createElement('section', 'gantt-connector-legend');
+    legend.setAttribute('aria-label', 'Connector color legend');
+    legend.style.display = 'flex';
+    legend.style.flexDirection = 'column';
+    legend.style.gap = '10px';
+    legend.style.margin = '0 0 16px';
+    legend.style.padding = '12px 14px';
+    legend.style.border = '1px solid var(--border-color)';
+    legend.style.borderRadius = '12px';
+    legend.style.background = 'var(--bg-secondary)';
+    legend.style.boxShadow = 'var(--shadow)';
+
+    const title = createText('strong', 'Connector colours & milestones', 'gantt-connector-legend-title');
+    title.style.color = 'var(--text-primary)';
+    title.style.fontSize = '0.9rem';
+
+    const items = createElement('div', 'gantt-connector-legend-items');
+    items.style.display = 'flex';
+    items.style.flexWrap = 'wrap';
+    items.style.gap = '8px 10px';
+
+    const appendLegendItem = ({ labelText, color, isMilestone = false }) => {
+        const item = createElement('div', 'gantt-connector-legend-item');
+        item.style.display = 'inline-flex';
+        item.style.alignItems = 'center';
+        item.style.gap = '8px';
+        item.style.padding = '6px 10px';
+        item.style.border = `1px solid ${hexToRgba(color, 0.28)}`;
+        item.style.borderRadius = '999px';
+        item.style.background = `linear-gradient(90deg, ${hexToRgba(color, 0.14)}, ${hexToRgba(color, 0.04)} 72%)`;
+        item.style.color = 'var(--text-secondary)';
+
+        const swatch = createElement('span', 'gantt-connector-legend-swatch');
+        swatch.setAttribute('aria-hidden', 'true');
+        swatch.style.width = '12px';
+        swatch.style.height = '12px';
+        swatch.style.borderRadius = isMilestone ? '2px' : '999px';
+        swatch.style.flex = '0 0 auto';
+        swatch.style.background = color;
+        swatch.style.boxShadow = `0 0 0 1px ${hexToRgba(darkenHexColor(color, 0.34), 0.66)} inset`;
+        if (isMilestone) {
+            swatch.style.transform = 'rotate(45deg)';
+        }
+
+        const label = createText('span', labelText, 'gantt-connector-legend-label');
+        label.style.whiteSpace = 'nowrap';
+
+        item.append(swatch, label);
+        items.appendChild(item);
+    };
+
+    connectorLegend.forEach((entry) => appendLegendItem({
+        labelText: entry.label,
+        color: entry.color
+    }));
+    appendLegendItem({
+        labelText: 'Milestone marker',
+        color: '#f59e0b',
+        isMilestone: true
+    });
+
+    legend.append(title, items);
+    return legend;
 }
 
 function createViewModeToggles(ganttInstanceRef) {
@@ -3950,13 +4914,15 @@ function getRowCapacityBadgeClassName(row = {}) {
     return classNames.join(' ');
 }
 
-function createStatusIndicator(status = 'Planned') {
-    const normalizedStatus = normalizeStatusLabel(status);
+function createStatusIndicator(status = 'Not Started') {
+    const { label, colorClassName } = getStatusIndicatorDisplay(status);
     const indicator = createElement('span', 'gantt-status-indicator');
-    indicator.classList.add(STATUS_COLOR_CLASS_MAP[normalizedStatus] || STATUS_COLOR_CLASS_MAP.Planned);
+    if (colorClassName) {
+        indicator.classList.add(colorClassName);
+    }
     indicator.append(
         createElement('span', 'gantt-status-indicator__swatch'),
-        createText('span', normalizedStatus, 'gantt-status-indicator__label')
+        createText('span', label, 'gantt-status-indicator__label')
     );
     return indicator;
 }
@@ -4919,15 +5885,21 @@ function createTaskTable(
         labelHost.replaceChildren();
 
         if (row.isSolutionGroup) {
+            const groupLabel = getRowPrimaryLabel(row);
             const solutionGroupLabel = createElement('span', 'gantt-solution-group-title-inline');
-            solutionGroupLabel.appendChild(createText('span', row.step, 'gantt-table-task-label'));
+            const label = createText('span', groupLabel, 'gantt-table-task-label');
+            applyConnectorAccentLabel(label, row.connectorColor);
+            solutionGroupLabel.appendChild(label);
 
             const actionButton = createElement('button', 'gantt-solution-group-action-button');
             actionButton.type = 'button';
             actionButton.textContent = getSolutionGroupActionLabel(collapsedSolutionGroupIds.has(row.id));
-            actionButton.title = `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`;
-            actionButton.setAttribute('aria-label', `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`);
+            actionButton.title = `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${groupLabel}`;
+            actionButton.setAttribute('aria-label', `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${groupLabel}`);
             actionButton.setAttribute('aria-expanded', collapsedSolutionGroupIds.has(row.id) ? 'false' : 'true');
+            if (row.connectorColor) {
+                actionButton.style.color = getConnectorTextAccentColor(row.connectorColor);
+            }
             bindPrimaryActivation(actionButton, () => onToggleSolutionGroup?.(row.id));
             solutionGroupLabel.appendChild(actionButton);
 
@@ -5117,7 +6089,7 @@ function createTaskTable(
             rowElement.setAttribute(
                 'aria-label',
                 row.isSolutionGroup
-                    ? `Open details for connector group ${row.step}`
+                    ? `Open details for connector group ${getRowPrimaryLabel(row)}`
                     : `Open details for ${row.step}`
             );
             if (row.isSummary) {
@@ -5125,9 +6097,14 @@ function createTaskTable(
             }
             if (row.isSolutionGroup) {
                 rowElement.setAttribute('aria-expanded', collapsedSolutionGroupIds.has(row.id) ? 'false' : 'true');
+                applyConnectorAccentSurface(rowElement, row.connectorColor);
             }
 
-            const rowNumberCell = createText('div', row.number, 'gantt-table-cell gantt-table-cell--row-number');
+            const rowNumberCell = createText(
+                'div',
+                row.isSolutionGroup ? (row.connectorDisplayNumber || row.number) : row.number,
+                'gantt-table-cell gantt-table-cell--row-number'
+            );
             const taskCell = createElement('div', 'gantt-table-cell gantt-table-cell--task');
             const taskContent = createElement('div', 'gantt-table-task-content');
             if (row.parentId) taskContent.classList.add('gantt-table-task-content--subtask');
@@ -5314,7 +6291,7 @@ function createTaskTable(
                 })
             });
 
-            rowElement.append(rowNumberCell, taskCell, ownerCell, statusCell, durationCell, startCell, dependencyCell, impactCell);
+            rowElement.append(rowNumberCell, taskCell, statusCell, ownerCell, durationCell, startCell, dependencyCell, impactCell);
 
             const activateRow = (event) => {
                 const targetElement = getEventElementTarget(event);
@@ -5709,10 +6686,60 @@ function syncGanttTimelineHeader(chartHost) {
     }
 }
 
+function syncGanttMilestoneMarkers(svg, milestones = [], diagnostics = [], ganttInstance = null) {
+    if (!svg) {
+        return;
+    }
+
+    const layer = svg.querySelector('.gantt-milestone-layer') || createSvgElement('g', 'gantt-milestone-layer');
+    if (!layer.isConnected) {
+        svg.appendChild(layer);
+    }
+
+    const diagnosticsById = new Map((Array.isArray(diagnostics) ? diagnostics : []).map((entry) => [entry.id, entry]));
+    layer.replaceChildren();
+
+    (Array.isArray(milestones) ? milestones : []).forEach((milestone) => {
+        const anchor = diagnosticsById.get(milestone.anchorTaskId);
+        if (!anchor) {
+            return;
+        }
+
+        const fallbackX = ganttInstance && typeof ganttInstance.get_x_from_date === 'function'
+            ? Number(ganttInstance.get_x_from_date(milestone.date)) || 0
+            : 0;
+        const x = Number.isFinite(anchor.x) && Number.isFinite(anchor.width)
+            ? anchor.x + anchor.width
+            : fallbackX;
+        const y = Number.isFinite(anchor.y) && Number.isFinite(anchor.height)
+            ? anchor.y + (anchor.height / 2)
+            : 0;
+        const group = createSvgElement('g', 'gantt-milestone-marker');
+        group.setAttribute('transform', `translate(${x}, ${y})`);
+        group.setAttribute('data-milestone-id', milestone.id || '');
+
+        const diamond = createSvgElement('rect', 'gantt-milestone-marker__diamond');
+        diamond.setAttribute('x', '-6');
+        diamond.setAttribute('y', '-6');
+        diamond.setAttribute('width', '12');
+        diamond.setAttribute('height', '12');
+        diamond.setAttribute('rx', '1.5');
+        diamond.setAttribute('ry', '1.5');
+        diamond.setAttribute('transform', 'rotate(45)');
+
+        const tooltip = createSvgElement('title');
+        tooltip.textContent = milestone.name || 'Milestone';
+
+        group.append(diamond, tooltip);
+        layer.appendChild(group);
+    });
+}
+
 function stabilizeGanttRender(
     chartHost,
     tasks,
     {
+        milestones = [],
         collapsedSummaryIds = new Set(),
         collapsedSolutionGroupIds = new Set(),
         onToggleSummary,
@@ -5806,26 +6833,43 @@ function stabilizeGanttRender(
                 rect.setAttribute('y', String(nextY));
                 rect.setAttribute('height', String(nextHeight));
                 if (task?.color) rect.style.setProperty('fill', task.color, 'important');
-                rect.style.setProperty('opacity', '1', 'important');
-                rect.style.setProperty('fill-opacity', '1', 'important');
-                rect.style.setProperty('stroke', 'rgba(15, 23, 42, 0.28)', 'important');
+                rect.style.setProperty('opacity', String(task?.barOpacity ?? 1), 'important');
+                rect.style.setProperty('fill-opacity', String(task?.barFillOpacity ?? 0.96), 'important');
+                rect.style.setProperty('stroke', task?.barStrokeColor || darkenHexColor(task?.color || '#64748B', 0.34), 'important');
                 rect.style.setProperty(
                     'stroke-width',
-                    isCollapsedSummary || isCollapsedSolutionGroup
-                        ? '1.5'
-                        : task?.isSolutionGroup
-                            ? '1.4'
-                            : task?.isSummary
-                                ? '1.3'
-                                : '1'
+                    String(
+                        isCollapsedSummary || isCollapsedSolutionGroup
+                            ? Math.max(1.8, Number(task?.barStrokeWidth) || 2)
+                            : Number(task?.barStrokeWidth) || (task?.isSolutionGroup ? 2 : task?.isSummary ? 1.6 : 1.4)
+                    ),
+                    'important'
                 );
+                rect.style.setProperty('stroke-dasharray', task?.barStrokeDasharray && task.barStrokeDasharray !== 'none' ? task.barStrokeDasharray : 'none', 'important');
+                rect.style.setProperty('stroke-linecap', 'round', 'important');
 
                 if (progressRect) {
                     const progressBaseY = Number(progressRect.dataset.baseY || progressRect.getAttribute('y') || baseY);
+                    const barX = Number(rect.getAttribute('x') || 0);
+                    const barWidth = Math.max(0, Number(rect.getAttribute('width') || 0));
+                    const normalizedProgress = Math.max(0, Math.min(100, Number(task?.progress) || 0));
+                    const progressWidth = Math.max(0, Math.min(barWidth, (barWidth * normalizedProgress) / 100));
+                    const showPartialProgress = Boolean(task?.progressIsPartial) && progressWidth > 0;
+                    const rectRadiusX = rect.getAttribute('rx') || String(Math.max(4, Math.min(8, nextHeight / 2)));
+                    const rectRadiusY = rect.getAttribute('ry') || rectRadiusX;
                     progressRect.dataset.baseY = String(progressBaseY);
+                    progressRect.setAttribute('x', String(barX));
                     progressRect.setAttribute('y', String(nextY));
+                    progressRect.setAttribute('width', showPartialProgress ? String(progressWidth) : '0');
                     progressRect.setAttribute('height', String(nextHeight));
-                    if (task?.color) progressRect.style.setProperty('fill', task.color, 'important');
+                    progressRect.setAttribute('rx', rectRadiusX);
+                    progressRect.setAttribute('ry', rectRadiusY);
+                    progressRect.style.setProperty('display', showPartialProgress ? 'inline' : 'none', 'important');
+                    progressRect.style.setProperty('pointer-events', 'none', 'important');
+                    progressRect.style.setProperty('stroke', 'none', 'important');
+                    progressRect.style.setProperty('opacity', showPartialProgress ? '1' : '0', 'important');
+                    progressRect.style.setProperty('fill-opacity', showPartialProgress ? String(task?.progressFillOpacity ?? 1) : '0', 'important');
+                    progressRect.style.setProperty('fill', task?.progressColor || darkenHexColor(task?.color || '#64748B', 0.2), 'important');
                 }
 
                 label = syncTaskBarLabel(wrapper, rect, task) || label;
@@ -5845,6 +6889,13 @@ function stabilizeGanttRender(
                 // Enable pointer-events so outside-right labels can bubble clicks to chartHost
                 label.style.cursor = label.textContent ? 'pointer' : 'default';
                 label.style.pointerEvents = 'auto';
+                if (task?.isSolutionGroup && task?.connectorColor) {
+                    label.style.setProperty('fill', getConnectorTextAccentColor(task.connectorColor), 'important');
+                    label.style.fontWeight = '600';
+                } else {
+                    label.style.removeProperty('fill');
+                    label.style.fontWeight = '400';
+                }
 
                 // Action label handles collapse for both solution groups and summary tasks
                 const taskActionLabel = (task?.isSolutionGroup || task?.isSummary)
@@ -5859,6 +6910,13 @@ function stabilizeGanttRender(
                     taskActionLabel.setAttribute('tabindex', '0');
                     taskActionLabel.setAttribute('aria-expanded', isCollapsed ? 'false' : 'true');
                     taskActionLabel.setAttribute('aria-label', `${isCollapsed ? 'Expand' : 'Collapse'} ${task?.name || task?.labelText || ''}`);
+                    if (task?.isSolutionGroup && task?.connectorColor) {
+                        taskActionLabel.style.setProperty('fill', getConnectorTextAccentColor(task.connectorColor), 'important');
+                        taskActionLabel.style.fontWeight = '600';
+                    } else {
+                        taskActionLabel.style.removeProperty('fill');
+                        taskActionLabel.style.fontWeight = '400';
+                    }
                     taskActionLabel.style.cursor = 'pointer';
                     taskActionLabel.style.pointerEvents = 'auto';
                     taskActionLabel.dataset.toggleType = task?.isSolutionGroup ? 'solution-group' : 'summary';
@@ -5895,6 +6953,8 @@ function stabilizeGanttRender(
                 visibility: rect ? window.getComputedStyle(rect).visibility : null
             };
         });
+
+        syncGanttMilestoneMarkers(svg, milestones, diagnostics, chartHost.__ganttInstance || null);
 
         const svgHeight = Math.ceil(Math.max(
             Number(svg.getAttribute('height')) || 0,
@@ -5978,7 +7038,16 @@ function stabilizeGanttRender(
     window.setTimeout(scheduleInspect, 400);
 }
 
-function createDurationEditor(row, { onSaveDuration, onResetDuration } = {}) {
+function createDurationEditor(row, { projectStartDate, onSaveDuration, onResetDuration } = {}) {
+    const timelineProjectStartDate = projectStartDate || getProjectStartDate();
+    const currentStartDate = getRowCalendarStartDate(row, timelineProjectStartDate);
+    const currentEndDate = getRowCalendarDueDate(row, timelineProjectStartDate);
+    const defaultStartDate = startOfDay(getBusinessDateTimeForWeek(row.defaultStartWeek, timelineProjectStartDate));
+    const defaultEndDate = startOfDay(
+        addBusinessHours(defaultStartDate, row.defaultDurationBusinessHours || durationWeeksToBusinessHours(row.defaultDurationWeeks)).getTime() - (60 * 1000)
+    );
+    const initialDurationDays = Math.max(1, Math.round((row.durationBusinessHours || HOURS_PER_DAY) / HOURS_PER_DAY));
+    const defaultDurationDays = Math.max(1, Math.round((row.defaultDurationBusinessHours || HOURS_PER_DAY) / HOURS_PER_DAY));
     const section = createElement('section', 'gantt-duration-editor');
     section.append(
         createText('h4', 'Task schedule', 'gantt-duration-editor-title'),
@@ -5986,11 +7055,19 @@ function createDurationEditor(row, { onSaveDuration, onResetDuration } = {}) {
     );
 
     const summary = createElement('div', 'gantt-duration-summary');
+    const currentStartSummary = createText('span', `Current start: ${formatDateForTable(currentStartDate)}`, 'gantt-duration-summary-value');
+    const defaultStartSummary = createText('span', `Default start: ${formatDateForTable(defaultStartDate)}`, 'gantt-duration-summary-default');
+    const currentEndSummary = createText('span', `Current end: ${formatDateForTable(currentEndDate)}`, 'gantt-duration-summary-value');
+    const defaultEndSummary = createText('span', `Default end: ${formatDateForTable(defaultEndDate)}`, 'gantt-duration-summary-default');
+    const currentDurationSummary = createText('span', `Current duration: ${formatDurationLabel(initialDurationDays, 'days')}`, 'gantt-duration-summary-value');
+    const defaultDurationSummary = createText('span', `Default duration: ${formatDurationLabel(defaultDurationDays, 'days')}`, 'gantt-duration-summary-default');
     summary.append(
-        createText('span', `Current start: Week ${formatWeekOffset(row.startWeek)}`, 'gantt-duration-summary-value'),
-        createText('span', `Default start: Week ${formatWeekOffset(row.defaultStartWeek)}`, 'gantt-duration-summary-default'),
-        createText('span', `Current duration: ${row.durationLabel}`, 'gantt-duration-summary-value'),
-        createText('span', `Default duration: ${row.defaultDurationLabel}`, 'gantt-duration-summary-default')
+        currentStartSummary,
+        defaultStartSummary,
+        currentEndSummary,
+        defaultEndSummary,
+        currentDurationSummary,
+        defaultDurationSummary
     );
     section.appendChild(summary);
 
@@ -6001,101 +7078,85 @@ function createDurationEditor(row, { onSaveDuration, onResetDuration } = {}) {
     const controls = createElement('div', 'gantt-duration-controls');
 
     const startField = createElement('label', 'gantt-duration-field-control');
-    startField.appendChild(createText('span', 'Start Week', 'gantt-detail-label'));
-    const startWeekInput = createElement('input', 'gantt-duration-input');
-    startWeekInput.type = 'number';
-    startWeekInput.min = String(START_WEEK_MIN);
-    startWeekInput.step = '0.1';
-    startWeekInput.inputMode = 'decimal';
-    startWeekInput.value = String(sanitizeStartWeekInputValue(row.startWeek));
-    startField.appendChild(startWeekInput);
+    startField.appendChild(createText('span', 'Start date', 'gantt-detail-label'));
+    const startDateInput = createElement('input', 'gantt-duration-input gantt-detail-text-input');
+    startDateInput.type = 'date';
+    startDateInput.value = formatDateForInput(currentStartDate);
+    startField.appendChild(startDateInput);
 
-    const valueField = createElement('label', 'gantt-duration-field-control');
-    valueField.appendChild(createText('span', 'Duration', 'gantt-detail-label'));
-    const durationInput = createElement('input', 'gantt-duration-input');
-    durationInput.type = 'number';
-    durationInput.min = '0.5';
-    durationInput.step = '0.5';
-    durationInput.inputMode = 'decimal';
-    durationInput.value = formatCompactNumber(row.durationValue);
-    valueField.appendChild(durationInput);
+    const endField = createElement('label', 'gantt-duration-field-control');
+    endField.appendChild(createText('span', 'End date', 'gantt-detail-label'));
+    const endDateInput = createElement('input', 'gantt-duration-input gantt-detail-text-input');
+    endDateInput.type = 'date';
+    endDateInput.value = formatDateForInput(currentEndDate);
+    endField.appendChild(endDateInput);
 
-    const unitField = createElement('label', 'gantt-duration-field-control');
-    unitField.appendChild(createText('span', 'Unit', 'gantt-detail-label'));
-    const unitSelect = createElement('select', 'gantt-duration-select');
-    [
-        ['hours', 'Hours'],
-        ['days', 'Days'],
-        ['weeks', 'Weeks']
-    ].forEach(([value, label]) => {
-        const option = document.createElement('option');
-        option.value = value;
-        option.textContent = label;
-        option.selected = row.durationUnit === value;
-        unitSelect.appendChild(option);
-    });
-    unitField.appendChild(unitSelect);
+    const durationField = createElement('label', 'gantt-duration-field-control');
+    durationField.appendChild(createText('span', 'Duration (days)', 'gantt-detail-label'));
+    const durationDaysInput = createElement('input', 'gantt-duration-input gantt-detail-text-input');
+    durationDaysInput.type = 'number';
+    durationDaysInput.min = '1';
+    durationDaysInput.step = '1';
+    durationDaysInput.inputMode = 'numeric';
+    durationDaysInput.value = String(initialDurationDays);
+    durationField.appendChild(durationDaysInput);
 
-    controls.append(startField, valueField, unitField);
+    controls.append(startField, endField, durationField);
     section.appendChild(controls);
+    section.appendChild(createText('p', 'Date, owner, status, and duration changes sync straight into the planner.', 'gantt-duration-note gantt-duration-note--sync'));
 
-    const presets = createElement('div', 'gantt-duration-presets');
-    const presetButtons = DURATION_VALUE_PRESETS.map((presetValue) => {
-        const button = createElement('button', 'gantt-duration-preset');
-        button.type = 'button';
-        button.dataset.durationPreset = String(presetValue);
-        button.addEventListener('click', () => {
-            durationInput.value = formatCompactNumber(presetValue);
-        });
-        presets.appendChild(button);
-        return button;
-    });
+    const readCurrentSchedule = (source = 'duration') => {
+        const fallbackStartDate = coerceToBusinessDay(startDateInput.value) || currentStartDate;
+        let nextStartDate = new Date(fallbackStartDate.getTime());
+        let nextDurationDays = Math.max(1, Math.round(Number(durationDaysInput.value) || initialDurationDays));
+        let nextEndDate = coerceToBusinessDay(endDateInput.value) || addBusinessDays(nextStartDate, Math.max(0, nextDurationDays - 1));
 
-    const syncPresetLabels = () => {
-        const unit = normalizeDurationUnit(unitSelect.value);
-        presetButtons.forEach((button) => {
-            const presetValue = Number(button.dataset.durationPreset);
-            button.textContent = formatDurationLabel(presetValue, unit);
-        });
+        if (source === 'end') {
+            if (nextEndDate < nextStartDate) {
+                nextEndDate = new Date(nextStartDate.getTime());
+            }
+            nextDurationDays = getInclusiveBusinessDaysBetween(nextStartDate, nextEndDate);
+            durationDaysInput.value = String(nextDurationDays);
+        } else {
+            nextEndDate = addBusinessDays(nextStartDate, Math.max(0, nextDurationDays - 1));
+            endDateInput.value = formatDateForInput(nextEndDate);
+        }
+
+        startDateInput.value = formatDateForInput(nextStartDate);
+        currentStartSummary.textContent = `Current start: ${formatDateForTable(nextStartDate)}`;
+        currentEndSummary.textContent = `Current end: ${formatDateForTable(nextEndDate)}`;
+        currentDurationSummary.textContent = `Current duration: ${formatDurationLabel(nextDurationDays, 'days')}`;
+
+        return {
+            startWeek: getStartWeekFromDate(nextStartDate, timelineProjectStartDate),
+            value: nextDurationDays,
+            unit: 'days'
+        };
     };
-    syncPresetLabels();
-    unitSelect.addEventListener('change', syncPresetLabels);
-    section.appendChild(presets);
+
+    const syncSchedule = (source = 'duration') => {
+        const nextSchedule = readCurrentSchedule(source);
+        resetButton.disabled = false;
+        onSaveDuration?.(row.id, nextSchedule, { refreshDetail: false });
+    };
+
+    startDateInput.addEventListener('change', () => syncSchedule('start'));
+    endDateInput.addEventListener('change', () => syncSchedule('end'));
+    durationDaysInput.addEventListener('change', () => syncSchedule('duration'));
+    durationDaysInput.addEventListener('keydown', (event) => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            syncSchedule('duration');
+        }
+    });
 
     const actions = createElement('div', 'gantt-duration-actions');
-    const saveButton = createElement('button', 'app-button app-button--accent');
-    saveButton.type = 'button';
-    saveButton.textContent = 'Update schedule';
-
     const resetButton = createElement('button', 'app-button');
     resetButton.type = 'button';
     resetButton.textContent = 'Reset custom schedule';
     resetButton.disabled = !row.hasDirectScheduleOverride;
-
-    const applyScheduleChange = () => {
-        const nextStartWeek = sanitizeStartWeekInputValue(startWeekInput.value);
-        const nextDurationValue = sanitizeDurationInputValue(durationInput.value);
-        startWeekInput.value = String(nextStartWeek);
-        durationInput.value = formatCompactNumber(nextDurationValue);
-        onSaveDuration?.(row.id, {
-            startWeek: nextStartWeek,
-            value: nextDurationValue,
-            unit: unitSelect.value
-        });
-    };
-
-    [startWeekInput, durationInput].forEach((input) => {
-        input.addEventListener('keydown', (event) => {
-            if (event.key === 'Enter') {
-                event.preventDefault();
-                applyScheduleChange();
-            }
-        });
-    });
-    saveButton.addEventListener('click', applyScheduleChange);
     resetButton.addEventListener('click', () => onResetDuration?.(row.id));
-
-    actions.append(saveButton, resetButton);
+    actions.appendChild(resetButton);
     section.appendChild(actions);
     return section;
 }
@@ -6115,7 +7176,7 @@ function buildDetailFieldEntries(row = {}, allRowsById = new Map()) {
         ['Solution', row.detailFields?.Solution || row.solutionName || 'Shared onboarding plan'],
         ['Task type', row.detailFields?.['Task type'] || row.taskType || 'Task'],
         ['Owner', row.detailFields?.Owner || row.owner || '—'],
-        ['Status', row.status || row.detailFields?.Status || 'Planned'],
+        ['Status', row.status || row.detailFields?.Status || 'Not Started'],
         ['Phase', row.phase || row.detailFields?.Phase || '—'],
         ['Resource Type', row.detailFields?.['Resource Type'] || row.resourceType || '—'],
         ['Impact', row.impact || row.detailFields?.Impact || '—'],
@@ -6545,11 +7606,14 @@ function createSizingEditor(row, { onSaveSizing } = {}) {
     updateNoteText();
     renderMessages(draft);
     return section;
-}function renderDetailPanel(
+}
+
+function renderDetailPanel(
     target,
     row,
     {
         allRowsById = new Map(),
+        projectStartDate,
         onClose,
         onSaveDuration,
         onResetDuration,
@@ -6597,7 +7661,7 @@ function createSizingEditor(row, { onSaveSizing } = {}) {
     const header = createElement('div', 'gantt-detail-header');
     header.append(
         meta,
-        createText('h3', [row.number, row.step].filter(Boolean).join(' '), 'gantt-detail-title'),
+        createText('h3', row.isSolutionGroup ? getRowPrimaryLabel(row) : [row.number, row.step].filter(Boolean).join(' '), 'gantt-detail-title'),
         createText('p', row.description || row.task, 'gantt-detail-description')
     );
 
@@ -6711,6 +7775,12 @@ function createSizingEditor(row, { onSaveSizing } = {}) {
     statusGroup.appendChild(statusField);
     formGrid.appendChild(statusGroup);
 
+    const syncSidebarFieldChange = (nextFields = {}) => {
+        onSaveField?.(row.id, nextFields, { refreshDetail: false });
+    };
+    ownerField.addEventListener('change', () => syncSidebarFieldChange({ owner: ownerField.value }));
+    statusField.addEventListener('change', () => syncSidebarFieldChange({ status: statusField.value }));
+
     const dependencyGroup = createElement('div', 'gantt-detail-form-field gantt-detail-form-field--wide');
     dependencyGroup.appendChild(createText('span', 'Dependencies', 'gantt-detail-label'));
     const dependencyHint = createText(
@@ -6766,7 +7836,7 @@ function createSizingEditor(row, { onSaveSizing } = {}) {
                 ? normalizeOwnerLabel(row.defaultOwner, { allowEmpty: true, preserveCustom: true })
                 : ownerField.value;
             payload.status = resetToDefaults
-                ? normalizeStatusLabel(row.defaultStatus || 'Planned')
+                ? normalizeStatusLabel(row.defaultStatus || 'Not Started')
                 : statusField.value;
             payload.dependencies = resetToDefaults
                 ? [...(Array.isArray(row.defaultDependencies) ? row.defaultDependencies : [])]
@@ -6789,7 +7859,7 @@ function createSizingEditor(row, { onSaveSizing } = {}) {
         descriptionField.value = row.defaultDescription || '';
         if (isTaskFieldEditingEnabled) {
             ownerField.value = normalizeOwnerLabel(row.defaultOwner, { allowEmpty: true, preserveCustom: true });
-            statusField.value = normalizeStatusLabel(row.defaultStatus || 'Planned');
+            statusField.value = normalizeStatusLabel(row.defaultStatus || 'Not Started');
             const defaultDependencyIds = new Set(Array.isArray(row.defaultDependencies) ? row.defaultDependencies : []);
             dependencyList.querySelectorAll('input[type="checkbox"]').forEach((input) => {
                 input.checked = defaultDependencyIds.has(input.value);
@@ -6818,6 +7888,21 @@ function createSizingEditor(row, { onSaveSizing } = {}) {
         });
         childSection.appendChild(childList);
         extra.appendChild(childSection);
+    }
+    if (row.description || row.task || row.docUrl) {
+        const instructionsSection = createElement('div', 'gantt-detail-extra-section');
+        instructionsSection.appendChild(createText('h4', 'Setup instructions', 'gantt-detail-extra-title'));
+        const instructionCopy = createText('p', row.description || row.task || 'Review the linked Microsoft Sentinel guidance for this onboarding step.', 'gantt-detail-extra-copy');
+        instructionsSection.appendChild(instructionCopy);
+        if (row.docUrl) {
+            const docLink = createElement('a', 'gantt-detail-doc-link');
+            docLink.href = row.docUrl;
+            docLink.target = '_blank';
+            docLink.rel = 'noopener noreferrer';
+            docLink.textContent = '📄 Documentation';
+            instructionsSection.appendChild(docLink);
+        }
+        extra.appendChild(instructionsSection);
     }
     const sizingEditor = createSizingEditor(row, { onSaveSizing });
     if (sizingEditor) {
@@ -6851,7 +7936,7 @@ function createSizingEditor(row, { onSaveSizing } = {}) {
         closeButton,
         header,
         fieldGrid,
-        ...(row.isSolutionGroup ? [] : [createDurationEditor(row, { onSaveDuration, onResetDuration })]),
+        ...(row.isSolutionGroup ? [] : [createDurationEditor(row, { projectStartDate, onSaveDuration, onResetDuration })]),
         extra
     );
     target.appendChild(card);
@@ -6878,6 +7963,9 @@ function createMobileList(rows, onSelect, { collapsedSummaryIds = new Set(), col
         if (row.isCustomSchedule) classNames.push('has-custom-duration');
 
         const button = createElement('button', classNames.join(' '));
+        if (row.isSolutionGroup) {
+            applyConnectorAccentSurface(button, row.connectorColor);
+        }
         button.type = 'button';
         button.dataset.taskId = row.id;
         if (row.isSummary) {
@@ -6886,15 +7974,21 @@ function createMobileList(rows, onSelect, { collapsedSummaryIds = new Set(), col
 
         const titleRow = createElement('span', 'gantt-mobile-item-title-row');
         if (row.isSolutionGroup) {
+            const groupLabel = getRowPrimaryLabel(row);
             const solutionGroupLabel = createElement('span', 'gantt-solution-group-title-inline');
-            solutionGroupLabel.appendChild(createText('span', getRowDisplayLabel(row, collapsedSummaryIds, collapsedSolutionGroupIds), 'gantt-mobile-item-title'));
+            const label = createText('span', getRowDisplayLabel(row, collapsedSummaryIds, collapsedSolutionGroupIds), 'gantt-mobile-item-title');
+            applyConnectorAccentLabel(label, row.connectorColor);
+            solutionGroupLabel.appendChild(label);
 
             const actionButton = createElement('button', 'gantt-solution-group-action-button gantt-solution-group-action-button--mobile');
             actionButton.type = 'button';
             actionButton.textContent = getSolutionGroupActionLabel(collapsedSolutionGroupIds.has(row.id));
-            actionButton.title = `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`;
-            actionButton.setAttribute('aria-label', `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`);
+            actionButton.title = `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${groupLabel}`;
+            actionButton.setAttribute('aria-label', `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${groupLabel}`);
             actionButton.setAttribute('aria-expanded', collapsedSolutionGroupIds.has(row.id) ? 'false' : 'true');
+            if (row.connectorColor) {
+                actionButton.style.color = getConnectorTextAccentColor(row.connectorColor);
+            }
             bindPrimaryActivation(actionButton, () => {
                 setActiveTask('');
                 onToggleSolutionGroup?.(row.id);
@@ -6949,7 +8043,7 @@ function createGanttSidebar(
     const header = createElement('div', 'gantt-sidebar-header');
     header.append(
         createText('div', 'Task', 'gantt-sidebar-cell gantt-sidebar-header-cell gantt-sidebar-header-cell--task'),
-        createText('div', 'Dates', 'gantt-sidebar-cell gantt-sidebar-header-cell gantt-sidebar-header-cell--dates')
+        createText('div', 'Status', 'gantt-sidebar-cell gantt-sidebar-header-cell gantt-sidebar-header-cell--status')
     );
     const scroll = createElement('div', 'gantt-sidebar-scroll');
     const surface = createElement('div', 'gantt-sidebar-surface');
@@ -6992,12 +8086,15 @@ function createGanttSidebar(
             if ((row.isSummary && collapsedSummaryIds.has(row.id)) || (row.isSolutionGroup && collapsedSolutionGroupIds.has(row.id))) {
                 rowElement.classList.add('is-collapsed');
             }
+            if (row.isSolutionGroup) {
+                applyConnectorAccentSurface(rowElement, row.connectorColor);
+            }
             rowElement.dataset.taskId = row.id;
             rowElement.style.top = `${top}px`;
             rowElement.style.height = `${height}px`;
             rowElement.tabIndex = 0;
             rowElement.setAttribute('role', 'button');
-            rowElement.setAttribute('aria-label', `Open details for ${row.step}`);
+            rowElement.setAttribute('aria-label', `Open details for ${row.isSolutionGroup ? getRowPrimaryLabel(row) : row.step}`);
 
             const taskCell = createElement('div', 'gantt-sidebar-cell gantt-sidebar-cell--task');
             const titleRow = createElement('div', 'gantt-sidebar-title-row');
@@ -7005,7 +8102,10 @@ function createGanttSidebar(
                 const toggle = createElement('button', 'gantt-sidebar-toggle gantt-sidebar-toggle--group');
                 toggle.type = 'button';
                 toggle.textContent = collapsedSolutionGroupIds.has(row.id) ? SOLUTION_GROUP_COLLAPSED_PREFIX : SOLUTION_GROUP_EXPANDED_PREFIX;
-                toggle.setAttribute('aria-label', `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${row.step}`);
+                toggle.setAttribute('aria-label', `${collapsedSolutionGroupIds.has(row.id) ? 'Expand' : 'Collapse'} ${getRowPrimaryLabel(row)}`);
+                if (row.connectorColor) {
+                    toggle.style.color = getConnectorTextAccentColor(row.connectorColor);
+                }
                 bindPrimaryActivation(toggle, () => onToggleSolutionGroup?.(row.id));
                 titleRow.appendChild(toggle);
             } else if (row.isSummary) {
@@ -7020,21 +8120,19 @@ function createGanttSidebar(
             }
 
             const titleStack = createElement('div', 'gantt-sidebar-title-stack');
-            titleStack.append(
-                createText('span', row.number, 'gantt-sidebar-row-number'),
-                createText('span', row.step, 'gantt-sidebar-task-label')
-            );
+            const sidebarNumber = createText('span', row.isSolutionGroup ? (row.connectorDisplayNumber || row.number) : row.number, 'gantt-sidebar-row-number');
+            const sidebarLabel = createText('span', row.isSolutionGroup ? (row.solutionName || row.step) : row.step, 'gantt-sidebar-task-label');
+            if (row.isSolutionGroup) {
+                applyConnectorAccentLabel(sidebarLabel, row.connectorColor);
+            }
+            titleStack.append(sidebarNumber, sidebarLabel);
             titleRow.appendChild(titleStack);
             taskCell.appendChild(titleRow);
 
-            const datesCell = createElement('div', 'gantt-sidebar-cell gantt-sidebar-cell--dates');
-            datesCell.append(
-                createText('span', row.startDateLabel, 'gantt-sidebar-date gantt-sidebar-date--start'),
-                createText('span', '→', 'gantt-sidebar-date-separator'),
-                createText('span', row.dueDateLabel, 'gantt-sidebar-date gantt-sidebar-date--due')
-            );
+            const statusCell = createElement('div', 'gantt-sidebar-cell gantt-sidebar-cell--status');
+            statusCell.appendChild(createStatusIndicator(row.status));
 
-            rowElement.append(taskCell, datesCell);
+            rowElement.append(taskCell, statusCell);
 
             const activateRow = (event) => {
                 const targetElement = getEventElementTarget(event);
@@ -7119,6 +8217,40 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
     let activeTab = getStoredPlannerActiveTab();
     const viewsReady = { table: false, gantt: false };
     const viewDirty = { table: true, gantt: true };
+    let activeOwnerFilter = '';
+    const ownerFilterSelectRefs = [];
+
+    const applyOwnerFilter = (value) => {
+        activeOwnerFilter = value;
+        ownerFilterSelectRefs.forEach((sel) => {
+            if (sel.value !== value) sel.value = value;
+        });
+        viewDirty.table = true;
+        viewDirty.gantt = true;
+        renderActiveView();
+    };
+
+    const createOwnerFilterControl = () => {
+        const field = createElement('label', 'owner-filter-field');
+        const label = createText('span', 'Owner', 'gantt-view-mode-label');
+        const select = createElement('select', 'owner-filter-select');
+        select.setAttribute('aria-label', 'Filter by owner role');
+        const allOption = document.createElement('option');
+        allOption.value = '';
+        allOption.textContent = 'All roles';
+        select.appendChild(allOption);
+        OWNER_OPTIONS.forEach((role) => {
+            const option = document.createElement('option');
+            option.value = role;
+            option.textContent = role;
+            select.appendChild(option);
+        });
+        select.value = activeOwnerFilter;
+        ownerFilterSelectRefs.push(select);
+        select.addEventListener('change', () => applyOwnerFilter(select.value));
+        field.append(label, select);
+        return { field, select };
+    };
 
     const tabShell = createElement('div', 'planner-tabs');
     const tabList = createElement('div', 'planner-tab-list');
@@ -7134,9 +8266,14 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
 
     const tableShell = createElement('div', 'planner-table-shell');
     const tableSummaryHost = createElement('div', 'gantt-summary-host');
+    const tableToolbar = createElement('div', 'gantt-toolbar');
     const tableHelper = createText('p', 'Spreadsheet view for quick edits. Click any task row to open the detail panel, edit owners and status inline, or use the toolbar + Add task action to add connector-level work.', 'gantt-toolbar-copy');
+    const tableToolbarActions = createElement('div', 'gantt-toolbar-actions');
+    const tableOwnerFilter = createOwnerFilterControl();
+    tableToolbarActions.appendChild(tableOwnerFilter.field);
+    tableToolbar.append(tableHelper, tableToolbarActions);
     const tableHost = createElement('div', 'planner-table-host');
-    tableShell.append(tableSummaryHost, tableHelper, tableHost);
+    tableShell.append(tableSummaryHost, tableToolbar, tableHost);
     tablePanel.appendChild(tableShell);
 
     const ganttShell = createElement('div', 'gantt-planner-shell gantt-planner-shell--timeline');
@@ -7145,22 +8282,25 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
     const ganttToolbarCopy = createText('p', 'Timeline-only view with dependency arrows and headers. Click any bar to open the task detail panel on the right.', 'gantt-toolbar-copy');
     const ganttToolbarActions = createElement('div', 'gantt-toolbar-actions');
     const zoomControls = createViewModeToggles(ganttInstanceRef);
+    const ganttOwnerFilter = createOwnerFilterControl();
     const autoFitButton = createElement('button', 'app-button app-button--subtle gantt-toolbar-fit');
     autoFitButton.type = 'button';
     autoFitButton.textContent = 'Auto-fit';
-    ganttToolbarActions.append(zoomControls.field, autoFitButton);
+    ganttToolbarActions.append(zoomControls.field, ganttOwnerFilter.field, autoFitButton);
     ganttControls.append(ganttToolbarCopy, ganttToolbarActions);
 
-    const ganttBody = createElement('div', 'gantt-layout gantt-layout--timeline-only');
+    const ganttLegendHost = createElement('div', 'gantt-connector-legend-host');
+    const ganttBody = createElement('div', 'gantt-layout');
     const sidebarHost = createElement('div', 'gantt-sidebar-column');
+    const splitDivider = createElement('div', 'gantt-split-divider');
     const chartColumn = createElement('div', 'gantt-chart-column');
     const chartScroll = createElement('div', 'gantt-chart-scroll');
     const chartHost = createElement('div', 'gantt-chart-host');
     const mobileListHost = createElement('div', 'gantt-mobile-list-host');
     chartScroll.appendChild(chartHost);
     chartColumn.append(chartScroll, mobileListHost);
-    ganttBody.append(chartColumn);
-    ganttShell.append(ganttSummaryHost, ganttControls, ganttBody);
+    ganttBody.append(sidebarHost, splitDivider, chartColumn);
+    ganttShell.append(ganttSummaryHost, ganttControls, ganttLegendHost, ganttBody);
     ganttPanel.appendChild(ganttShell);
 
     const detailOverlay = createElement('div', 'gantt-detail-overlay');
@@ -7223,6 +8363,7 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
     const refreshSummaryHeaders = () => {
         tableSummaryHost.replaceChildren(createSummaryHeader(planData));
         ganttSummaryHost.replaceChildren(createSummaryHeader(planData));
+        ganttLegendHost.replaceChildren();
         syncToolbarState();
     };
 
@@ -7277,6 +8418,7 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
         syncActiveTaskState();
         renderDetailPanel(detailHost, row, {
             allRowsById: taskMap,
+            projectStartDate: planData.projectStartDate,
             onClose: closeDetail,
             onSaveDuration: handleDurationSave,
             onResetDuration: handleDurationReset,
@@ -7293,7 +8435,39 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
         }
     };
 
-    const buildVisiblePlan = () => createVisiblePlanData(planData, collapsedSummaryIds, collapsedSolutionGroupIds);
+    const buildVisiblePlan = () => {
+        const visiblePlan = createVisiblePlanData(planData, collapsedSummaryIds, collapsedSolutionGroupIds);
+        if (!activeOwnerFilter) return visiblePlan;
+
+        const matchedOwnerRowIds = new Set(
+            visiblePlan.rows
+                .filter((r) => !r.isSolutionGroup && !r.isSummary && r.owner === activeOwnerFilter)
+                .map((r) => r.id)
+        );
+        const matchedParentIds = new Set(
+            visiblePlan.rows
+                .filter((r) => matchedOwnerRowIds.has(r.id) && r.parentId)
+                .map((r) => r.parentId)
+        );
+        const matchedGroupIds = new Set(
+            visiblePlan.rows
+                .filter((r) => matchedOwnerRowIds.has(r.id) || matchedParentIds.has(r.id))
+                .map((r) => r.solutionGroupId)
+                .filter(Boolean)
+        );
+
+        const filteredRows = visiblePlan.rows.filter((r) => {
+            if (r.isSolutionGroup) return matchedGroupIds.has(r.id);
+            if (r.isSummary) return matchedParentIds.has(r.id);
+            return matchedOwnerRowIds.has(r.id);
+        });
+
+        const filteredRowIds = new Set(filteredRows.map((r) => r.id));
+        const filteredTasks = visiblePlan.tasks.filter((t) => filteredRowIds.has(t.id));
+        const filteredMilestones = visiblePlan.milestones.filter((m) => filteredRowIds.has(m.anchorTaskId));
+
+        return { rows: filteredRows, tasks: filteredTasks, milestones: filteredMilestones };
+    };
 
     const renderTableView = ({ focusInlineField } = {}) => {
         const visiblePlan = buildVisiblePlan();
@@ -7344,6 +8518,16 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
         const visiblePlan = buildVisiblePlan();
         clearRenderedGanttView();
 
+        sidebarController = createGanttSidebar(visiblePlan.rows, (taskId) => openTaskDetail(taskId), {
+            collapsedSummaryIds,
+            collapsedSolutionGroupIds,
+            onToggleSummary: toggleSummary,
+            onToggleSolutionGroup: toggleSolutionGroup,
+            onHoverTask: setHoveredTask
+        });
+        sidebarHost.replaceChildren(sidebarController.panel);
+        sidebarController.setActiveTask(activeTaskId);
+
         mobileListController = createMobileList(visiblePlan.rows, (taskId) => openTaskDetail(taskId), {
             collapsedSummaryIds,
             collapsedSolutionGroupIds,
@@ -7379,7 +8563,7 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
                         const row = visibleRowMap.get(ctx.task.id);
                         if (!row) return false;
 
-                        ctx.set_title(escapeHtml(row.step));
+                        ctx.set_title(escapeHtml(getRowPrimaryLabel(row)));
                         ctx.set_subtitle(escapeHtml(`${row.phase} · ${row.status}`));
                         ctx.set_details([
                             `Start: ${row.startDateLabel}`,
@@ -7398,6 +8582,7 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
                     onSelectTask: (taskId) => openTaskDetail(taskId)
                 });
                 stabilizeGanttRender(chartHost, visiblePlan.tasks, {
+                    milestones: visiblePlan.milestones,
                     collapsedSummaryIds,
                     collapsedSolutionGroupIds,
                     onToggleSummary: toggleSummary,
@@ -7483,13 +8668,15 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
         ensureViewRendered(activeTab);
     };
 
-    const handleDurationSave = (taskId, nextSchedule) => {
+    const handleDurationSave = (taskId, nextSchedule, { refreshDetail = true } = {}) => {
         const row = taskMap.get(taskId);
         if (!row?.isScheduleEditable) return;
         saveTaskDurationOverride(row, nextSchedule);
         rebuildPlanData();
         refreshPlannerViewsAfterDataChange();
-        openTaskDetail(taskId, { focusPanel: false });
+        if (refreshDetail) {
+            openTaskDetail(taskId, { focusPanel: false });
+        }
     };
 
     const handleDurationReset = (taskId) => {
@@ -7554,13 +8741,15 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
         }
     };
 
-    const handleDetailFieldSave = (taskId, nextFields) => {
+    const handleDetailFieldSave = (taskId, nextFields, { refreshDetail = true } = {}) => {
         const row = taskMap.get(taskId);
         if (!row) return;
         saveTaskFieldOverride(row, nextFields);
         rebuildPlanData();
         refreshPlannerViewsAfterDataChange();
-        openTaskDetail(taskId, { focusPanel: false });
+        if (refreshDetail) {
+            openTaskDetail(taskId, { focusPanel: false });
+        }
     };
 
     const handleAddTopLevelTask = (taskId = activeTaskId) => {

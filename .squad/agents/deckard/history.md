@@ -221,3 +221,13 @@ Supporting specs also merged:
 - **luv-uberbox-sizing.md** — Windows row height estimation using structure-based model (chrome, pools, agent lines, overflow).
 
 All specs now canonical in `decisions.md` and ready for team reference.
+
+### 2026-06-03T16:42:31+02:00 — Field Pack Metadata Added to solutions.json
+
+- Added `fieldPack` property to all 43 connectors that require infrastructure sizing/detail fields. Zero connectors missed; zero existing properties touched.
+- Four pack types assigned: `syslog-cef` (31 connectors), `windows-ama` (4), `wec-wef` (2), `ama-custom-logs` (5), `cribl-intermediary` (1).
+- Key resolution: `windows-firewall` and `windows-firewall-via-ama` correctly assigned to `ama-custom-logs` (pfirewall.log text path via AMA custom logs), not `windows-ama` (Windows Event Log channel path). The `windows-ama` pack is strictly for Event Log channel connectors.
+- Added `ganttTaskOverrides.sourceConfigSubtasks` to 7 high-priority connectors: `cisco-asa-2`, `azure-cloud-ngfw-by-palo-alto-networks`, `f5-networks`, `common-event-format`, `windows-security-events`, `windows-forwarded-events`, `sysmon-via-ama`.
+- All pre-existing properties (`capacity_type`, `server_population_kind`, `planner`, `permissions`, etc.) fully preserved — additive change only.
+- Pattern established: `fieldPack` is the selector key for which sizing/detail form the planner renders; `ganttTaskOverrides` carries connector-specific Gantt task variants (PC-02 subtasks, duration overrides).
+- Key file: `data/solutions.json`; decision: `.squad/decisions/inbox/deckard-fieldpack-assignments.md`

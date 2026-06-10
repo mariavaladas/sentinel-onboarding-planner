@@ -11,9 +11,40 @@
     <script src="https://cdn.jsdelivr.net/npm/frappe-gantt@1.2.2/dist/frappe-gantt.umd.js" integrity="sha384-IDc4p6+i79ghSfjvAaNuErpikTLBxt5+HDmubQFyD2jwSFpfST/JeaX8fFaqCrgJ" crossorigin="anonymous"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/exceljs/4.4.0/exceljs.min.js" integrity="sha512-dlPw+ytv/6JyepmelABrgeYgHI0O+frEwgfnPdXDTOIZz+eDgfW07QXG02/O8COfivBdGNINy+Vex+lYmJ5rxw==" crossorigin="anonymous" referrerpolicy="no-referrer"></script>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/frappe-gantt@1.2.2/dist/frappe-gantt.css" integrity="sha384-6Kr9I0SBSJBCaLDsBKf2b/P1Vt0Y/RPHiq8c6phK4Z6wZjw/l6bNLvXds4iXxq5R" crossorigin="anonymous">
-    <link rel="stylesheet" href="css/style.css">
+    <script>
+        (() => {
+            const storageKey = 'sentinelPlanner.theme';
+            let theme = 'dark';
+
+            try {
+                const savedTheme = window.localStorage.getItem(storageKey);
+                if (savedTheme === 'light' || savedTheme === 'dark') {
+                    theme = savedTheme;
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    theme = 'light';
+                }
+            } catch {
+                theme = 'dark';
+            }
+
+            document.documentElement.setAttribute('data-theme', theme);
+            document.documentElement.style.colorScheme = theme;
+        })();
+    </script>
+    <link rel="stylesheet" href="css/style.css?v=16">
 </head>
 <body>
+    <div class="workspace-warning-banner" id="workspaceConnectionWarning" role="alert" aria-live="assertive" hidden>
+        <div class="workspace-warning-banner__content">
+            <span class="workspace-warning-banner__icon" aria-hidden="true">⚠️</span>
+            <p class="workspace-warning-banner__message" data-workspace-warning-message>Your workspace connection has expired. Reconnect to refresh your environment data.</p>
+        </div>
+        <div class="workspace-warning-banner__actions">
+            <button type="button" class="app-button app-button--warning" id="workspaceConnectionReconnect">Reconnect</button>
+            <button type="button" class="workspace-warning-banner__dismiss" id="workspaceConnectionDismiss" aria-label="Dismiss workspace connection warning">×</button>
+        </div>
+    </div>
+
     <div class="app-container">
         <header class="app-header">
             <div class="header-brand">
@@ -23,7 +54,13 @@
                     <p class="header-subtitle">Plan Sentinel onboarding scope, sequencing, and handoff before implementation starts.</p>
                 </div>
             </div>
-            <button type="button" class="app-button app-button--subtle" id="resetPlannerState">Reset saved progress</button>
+            <div class="header-actions">
+                <button type="button" class="app-button app-button--subtle theme-toggle" id="themeToggle" aria-pressed="false" aria-label="Switch theme">
+                    <span class="theme-toggle__icon" id="themeToggleIcon" aria-hidden="true">☀️</span>
+                    <span class="theme-toggle__label" id="themeToggleLabel">Light mode</span>
+                </button>
+                <button type="button" class="app-button app-button--subtle" id="resetPlannerState">Reset saved progress</button>
+            </div>
         </header>
 
         <div class="progress-container">
@@ -69,7 +106,7 @@
                         <div class="workspace-connect-divider"><span>Optional</span></div>
                         <div class="workspace-connect-card">
                             <h3>🔗 Connect to an existing workspace</h3>
-                            <p>Import your existing connectors so new sources are shown alongside what's already deployed.</p>
+                            <p>Connect your workspace to see deployed connectors, verify permissions, and get recommendations tailored to your environment.</p>
                             <div class="token-instructions" id="tokenInstructions">
                                 <p class="token-help">Run this in your terminal to get an access token:</p>
                                 <code class="token-cmd" onclick="copyTokenCmd()">az account get-access-token --resource https://management.azure.com --query accessToken -o tsv</code>
@@ -99,7 +136,7 @@
                                     </select>
                                 </div>
                             </div>
-                            <div class="workspace-status" id="workspaceStatus"></div>
+                            <div class="workspace-status" id="workspaceStatus" aria-live="polite"></div>
                         </div>
                     </div>
 
@@ -374,8 +411,16 @@
 
                     <div class="preselected-notice" id="preselectionBanner" hidden>
                         <span class="notice-icon">ℹ️</span>
-                        <span>Recommended solutions are highlighted from your environment choices, and any workspace-connected packages stay checked while you build the plan.</span>
+                        <div class="notice-content">
+                            <span>Solutions based on your environment selection are highlighted, and any workspace-connected packages stay checked while you build the plan.</span>
+                        </div>
                     </div>
+
+                    <ul class="notice-legend">
+                        <li><span class="notice-legend-icon legend-star">★</span> Solution includes at least one analytics rule — higher detection value out of the box.</li>
+                        <li><span class="notice-legend-icon legend-featured">★ FEATURED</span> Published as a featured solution in the Microsoft Sentinel Content Hub.</li>
+                        <li><span class="notice-legend-icon legend-connected">✓</span> Already connected in your selected workspace — no additional setup required.</li>
+                    </ul>
 
                     <div class="nlp-input-section" id="nlpSection" hidden>
                         <div class="nlp-container">
@@ -453,7 +498,6 @@
         </footer>
     </div>
 
-    <script type="module" src="js/app.js"></script>
+    <script type="module" src="js/app.js?v=16"></script>
 </body>
 </html>
-

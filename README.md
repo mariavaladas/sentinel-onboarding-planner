@@ -30,7 +30,8 @@ Choose the platforms and vendors you expect to bring into Microsoft Sentinel.
 
 ### Step 5: Planner
 - Review the interactive **Gantt chart** with Day / Week / Month views
-- Edit task durations inline from the left grid, or open a task row/bar to adjust start week and full schedule details while untouched tasks still auto-shift
+- Edit task durations inline from the left grid, or open a task row/bar to adjust start/end dates, owners, status, and linked documentation while untouched tasks still auto-shift
+- Track delivery milestones with diamond markers across the timeline
 - Switch to task cards for milestone, owner, dependency, and effort detail
 - **Export** the onboarding plan to Excel in a DEX-style project plan format
 

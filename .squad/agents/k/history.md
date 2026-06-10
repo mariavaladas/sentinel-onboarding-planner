@@ -145,3 +145,89 @@ K delivered end-to-end Cribl ingestion feature:
 - **Patterns:** Keep the Cribl checkbox defaulted on only when the environment vendor is selected, clear saved `criblIngestion` flags when the vendor is removed, and let topology split shared Windows/Linux/Syslog rows by route (`standard` vs `cribl`) so the same capacity snapshot can drive both UI state and shared DCR placement.
 - **User preferences:** Preserve the existing dark-theme drawer layout, grey out collector VM placement instead of hiding it when Cribl handles ingestion, and keep Cribl resource sizing out of scope while still showing Sentinel-facing DCR demand.
 - **Key file paths:** `index.html`, `js/modules/solutions.js`, `js/modules/capacity.js`, `js/modules/topology.js`, `js/gantt-planner.js`, `css/style.css`, `data/solutions.json`, `.squad/decisions/inbox/k-cribl-integration.md`.
+
+### 2026-06-02T11:20:47.206+02:00 — Topology straight-line routing
+- **Architecture decisions:** Step 4 topology now treats `azure_native` and `direct` source rows as sentinel-aligned rows, giving their uber-boxes extra internal height/width so those source cards can sit directly under the Sentinel-aligned intermediary node instead of being forced into the main horizontal pack.
+- **Patterns:** React Flow edges should use `step` routing for topology connections, while shared/source intermediaries continue to align from row center via `getLayoutCenterX()` and the second-pass band layout rebuild.
+- **User preferences:** Favor visibly straight vertical/horizontal connectors over curved diagonals, and accept larger zone containers when that keeps Azure resource / native connector lines cleaner.
+- **Key file paths:** `js/modules/topology.js`, `css/style.css`, `.squad/decisions/inbox/k-topology-straight-lines.md`.
+
+### 2026-06-02T14:20:53Z — GitHub-hosted logo rollout
+- **Architecture decisions:** Environment cards, Step 3 solution badges, and Step 4 topology source nodes now prefer remote GitHub-hosted logos, but every surface preserves its prior emoji or generic-icon fallback when the image is missing or the request fails.
+- **Patterns:** Use safe DOM/React image error handlers instead of inline HTML events, keep fallback markup rendered but hidden by default, and centralize reusable platform logo URLs for topology so dark-theme icon swaps stay consistent across Azure, Microsoft 365, Windows, Linux, Cribl, AWS, and GCP contexts.
+- **User preferences:** Prefer authentic vendor/product marks over local assets, keep the dark theme readable with subtle badge surfaces, and treat GitHub/network failures as non-breaking visual degradations instead of hard errors.
+- **Key file paths:** `index.html`, `js/app.js`, `js/modules/solutions.js`, `js/modules/topology.js`, `css/style.css`, `data/solutions.json`, `.squad/decisions/inbox/k-logo-implementation.md`.
+
+### 2026-06-03T18:16:38+02:00 — Field-pack Gantt engine integration fixes
+- **Architecture decisions:** `js/gantt-planner.js` now imports `js/modules/gantt-tasks.js`, renders shared field-pack infrastructure rows from the generated Phase 1 task set, and converts generated per-connector tasks into `planner.setup_tasks` only for connectors with explicit `fieldPack` metadata so legacy connector plans still use the existing planner path.
+- **Patterns:** Treat `solution.fieldPack` as the authoritative classification in `inferFieldPack()`, keep heuristics only as fallback, and map generated connector tasks back through the existing solution-group renderer so collapse state, custom task persistence, and closeout flow stay intact.
+- **Bug guards:** Fixed the CEF infra chain to 01→02→03→04→05, moved `microsoft-sysmon-for-linux` onto the syslog/CEF path in the task engine, and split the WFE abbreviations to `WFE` vs `WFEA` to avoid generated task ID collisions.
+- **Key file paths:** `js/gantt-planner.js`, `js/modules/gantt-tasks.js`, `.squad/decisions/inbox/k-bug-fixes.md`.
+
+### 2026-06-04T10:16:15.522+02:00 — Workspace-scoped connector state reset
+- Step 3 connector "connected" badges must reflect only the currently selected workspace. When tenant, subscription, or resource group selection resets the workspace, `setConnectedSolutionIds([])` must run immediately so stale localStorage-backed connector state never leaks into the unselected workspace state.
+- **Key file paths:** `js/app.js`, `.squad/decisions/inbox/k-workspace-connector-state.md`.
+
+### 2026-06-04T11:55:30.000+02:00 — Expired workspace connection UX
+- Persist only non-secret workspace connection metadata (`status`, `selectedWorkspace`, `tokenExpiresAt`, validation timestamp) in `js/app.js`; never persist the Azure bearer token itself.
+- If cached `connectedSolutionIds` are restored without a live token, or if Azure calls return 401 / unauthorized, treat the workspace connection as expired: clear connected solution IDs immediately, show a top warning banner, and surface a warning status in the welcome card.
+- The workspace value-copy on the welcome page lives in `index.html` inside the Step 1 `.workspace-connect-card` paragraph.
+- **Key file paths:** `index.html`, `css/style.css`, `js/app.js`, `.squad/decisions/inbox/k-expired-connection-ux.md`.
+
+### 2026-06-05T11:36:58.415+02:00 — Connected connector count filtering
+- **Architecture decisions:** Workspace discovery in `js/app.js` should treat `Microsoft.SecurityInsights/dataConnectors` as the source of truth for Step 3 connected-state, and only table-derived synthetic connectors may be used as a fallback when the API reports no active connector resources.
+- **Patterns:** Filter data connector resources by explicit active state (`properties.dataTypes[*].state`, `connected` booleans, status/connection-state fields) before mapping to local solution IDs; do not union active-table inference with live connector resources or generic tables like `CommonSecurityLog` can fan out into multiple false-positive solution matches.
+- **User preferences:** Keep the workspace-connected badges aligned with what the Sentinel Data Connectors blade shows instead of inflating counts from inferred ingestion tables.
+- **Key file paths:** `js/app.js`, `js/modules/solutions.js`, `.squad/decisions/inbox/k-connector-count-fix.md`.
+
+### 2026-06-05T11:48:00.721+02:00 — Workspace validation CTA gate
+- **Architecture decisions:** Step 1 welcome CTAs now key off an explicit transient workspace-validation state in `js/app.js`, so a workspace is only considered usable after connector discovery confirms it and stale async responses cannot overwrite a newer selection.
+- **Patterns:** Clear `selectedWorkspace` and connected-solution state immediately when the workspace dropdown changes, disable Start Planning / Resume at Topology while validation is pending, and pair async workspace validation with a monotonically increasing request id before re-enabling those buttons.
+- **User preferences:** Preserve the existing wait-and-continue flow for users who do nothing, but make premature clicks impossible and show a visible loading spinner instead of surfacing a misleading no-workspace warning.
+- **Key file paths:** `js/app.js`, `css/style.css`, `.squad/decisions/inbox/k-race-condition-fix.md`.
+
+### 2026-06-05T12:03:53.524+02:00 — Topology filters and persisted layout
+- **Architecture decisions:** Step 4 topology now renders from a filtered connector subset (`All` / `Connected` / `New`), restores draggable React Flow node positions from workspace-scoped localStorage before mount, and clears that saved layout with a dedicated reset action.
+- **Patterns:** Standard source nodes must render every connector row with no `+N more` truncation, and their row-height estimator must scale from the full connector count so the zone uber-boxes expand instead of clipping content.
+- **User preferences:** Keep `All` as the default view, place the new controls in the topology header without affecting exports, and prefer taller dark-theme source/group boxes over hiding connectors.
+- **Key file paths:** `js/modules/topology.js`, `css/style.css`, `.squad/decisions/inbox/k-topology-ux-enhancements.md`.
+
+### 2026-06-05T12:15:22.150+02:00 — Workspace connector accuracy + unmatched topology coverage
+- **Architecture decisions:** Workspace discovery in `js/app.js` now treats every Sentinel `dataConnector` resource returned for the selected workspace as connected inventory, unions that API inventory with table-derived connector hints, and passes a connector-summary payload into `js/modules/solutions.js` so topology can show both mapped solutions and synthetic unmatched connectors.
+- **Patterns:** Keep `filterActiveWorkspaceDataConnectors()` only as a confidence signal, deduplicate workspace connectors by kind / friendly-name before unioning table-derived hints, and surface unmatched connectors as synthetic topology-only solution objects instead of silently dropping them.
+- **User preferences:** Match the Sentinel Data Connectors blade first, keep the connected/new topology badges and filters intact, and show a small header-level diagnostic badge with the workspace connector breakdown instead of hiding count mismatches in the console only.
+- **Key file paths:** `js/app.js`, `js/modules/solutions.js`, `js/modules/topology.js`, `css/style.css`, `.squad/decisions/inbox/k-connector-accuracy.md`.
+
+### 2026-06-09T15:36:29+02:00 — Active/Stale/New connector status with last-log timestamps
+- **Architecture decisions:** The Usage KQL query now projects `DataType, LastLog` (max TimeGenerated) so the planner knows when each table last received data, not just that it exists. `queryWorkspace` was extended with a `returnRows` option returning `{columns, rows}` so callers can parse multi-column results without changing the function's default behavior. `solutionLastLogMap` (solutionId → ISO timestamp) is built inside `resolveConnectedSolutionIds` by tagging table-derived connector objects with `._lastLog` during `buildConnectorsFromDataTypes`, then resolving those per-connector timestamps to solution IDs during the standard connector-to-solution lookup loop. The map is exposed as `window.connectorLastSeenMap` (plain object) immediately after `setConnectedSolutionsFromWorkspace` runs so topology.js can read it without a new import.
+- **Patterns:** Tri-state status: **Active** (✅ green, log within 24h), **Stale** (⚠️ amber, log older than 24h), **New** (✨ cyan, no DCR). Status badges are composed in `getConnectorStatusMeta` using `formatLastSeen()` — a pure relative-time formatter (Xm/Xh/Xd ago). Graceful degradation: if the Usage query fails and the Tables API fallback is used, `lastLogMap` stays `null`, connector objects get `._lastLog = null`, and topology shows the legacy `✓ Connected` badge with no timestamp. Badge text is produced dynamically (`base.badgeText + ' · ' + relTime`) so there is no hard-coded format in the status config.
+- **User preferences:** "Connected" just means the DCR resource exists — users were confused. Active/Stale gives them a clear live-data vs stale-config distinction. Dark-theme green (#4caf50) for Active, amber (#ff9800) for Stale. Light-theme overrides included.
+- **Key file paths:** `js/app.js` (queryWorkspace, buildConnectorsFromDataTypes, selectWorkspaceDiscoveryConnectors, both call sites), `js/modules/solutions.js` (resolveConnectedSolutionIds, setConnectedSolutionsFromWorkspace, setConnectedSolutionIds, new getSolutionLastLog export), `js/modules/topology.js` (CONNECTOR_STATUS_CONFIG, formatLastSeen, getConnectorStatusMeta), `css/style.css` (active/stale badge + item + light-theme rules), `index.html` (cache-bust v=4).
+
+### 2026-06-10T11:18:31+02:00 — Discovered infrastructure VM rendering in topology
+
+- **Architecture decisions:** Added `buildDiscoveredInfrastructureNodes()` as a pure function inside the topology rendering scope that reads `window.discoveredInfrastructure?.vms` and produces ReactFlow nodes + edges without touching any existing path. Two new custom node types: `discoveredVm` (individual VM card) and `discoveredInfraSummary` (aggregate count/EPS badge next to the Sentinel node). Both registered in the `nt` nodeTypes map and guarded by an early return when the global is absent or empty.
+- **Positioning logic:** Syslog/CEF VMs (`syslog-collector`, `cef-collector`, `hybrid-syslog` roles) anchor to the center-X of `syslog_cef` rows; Windows VMs anchor to `windows_events` rows. Y-position reuses the first matching planned collector VM placement from `collectorVmPlacementById` (same Y = side-by-side layout). When no planned collector exists the fallback is `getTopLayerY(max(1, topDcrLayerIndex-1))`. If syslog and windows VMs coexist they are staggered one `intermediaryLayerGapY` apart to prevent overlap.
+- **Edge convention:** Discovered VM → Sentinel edges are solid green (`#22c55e`, 2px, step routing). Arc machines receive a dashed green border (`rf-discovered-vm-node--arc`). Planned collector VM edges remain unchanged (dashed blue).
+- **CSS:** New dark-theme-safe `.rf-discovered-vm-node`, `.rf-discovered-infra-summary` block with green gradient background, plus light-theme overrides added immediately after the sentinel CSS block in `css/style.css`.
+- **Data contract dependency:** Sebastian (app.js) populates `window.discoveredInfrastructure`; topology is purely additive and zero-risk when the global is absent.
+- **Key file paths:** `js/modules/topology.js`, `css/style.css`.
+
+
+
+- **BUG 1 (topology.js `classifySolution`):** `fieldPack` was not checked in `classifySolution`. Firewall solutions with `fieldPack: "syslog-cef"` (Zscaler, CheckPoint, FortiGate, Barracuda) were classified as `api` instead of `syslog_cef`, so no source-to-collector edges were drawn. Fix: extract `fieldPack` after `solutionId` and add `fieldPack === 'syslog-cef'` as first condition in the syslog_cef branch (mirrors the check already in `solutionUsesCollectorVm`).
+- **BUG 2 (solutions.js BUG-ENV-002 — stale localStorage):** `CONNECTED_SOLUTIONS_STORAGE_KEY` in `solutions.js` is written on every workspace sync and read back by `app.js` on startup, causing stale green "connected" badges in fresh sessions. Fix: at module-level init, if `sessionStorage.sentinelPlanner.activeWorkspace` is not set, wipe the localStorage key before `app.js` can read it. `setConnectedSolutionsFromWorkspace` sets the sessionStorage flag so reloads within the same session still see the data.
+- **BUG 3 (solutions.js BUG-SOL-001 — Linux never recommends Syslog):** `matchesVendorSignature` for the `linux` case only matched on name/solutionId text. The Syslog connector has `fieldPack: "syslog-cef"` and tag `syslog` but its name is just "Syslog" — not "Linux Syslog". Fix: extract `fieldPack` in `matchesVendorSignature` and add `fieldPack === 'syslog-cef'` and `tags.includes('syslog')` to the `linux` case.
+- **BUG 4 (solutions.js BUG-SOL-002 — GCP incorrectly recommends Google Workspace):** `matchesVendorSignature` for `gcp` was refined in a prior pass but still lacked a negative filter. Fix: refactored to a block statement computing `isGcp` (specific GCP tags/ids including `google-cloud` tag) and `isWorkspace` (id/tags containing `workspace`/`gsuite`), returning `isGcp && !isWorkspace`.
+- **Pattern:** `fieldPack` is the canonical signal for syslog/CEF classification — always check it alongside infrastructure and tags.
+- **Key file paths:** `js/modules/topology.js` (classifySolution ~line 979), `js/modules/solutions.js` (matchesVendorSignature ~line 683, module-level init ~line 1086, setConnectedSolutionsFromWorkspace ~line 1381), `index.html` (cache-bust bumped to v=10).
+
+### 2026-06-10T12:48:29+02:00 — Layer uber box foundation
+- **Architecture decisions:** Step 4 topology now reuses `uberBox` with a `variant: 'layer'` payload to render named layer background bands for Sources, Collection, Transformation, and Workspace behind the existing zone boxes. Because Phase 0 must preserve the current top/bottom topology geometry, the renderer creates one full-width band per occupied segment (`top`, `bottom`, `center`) instead of forcing a single continuous rectangle that would swallow unrelated nodes.
+- **Patterns:** Layer membership is derived from node type after layout (`source` + zone `uberBox` → Sources; `server` / `collectorVm` / `pathBox` / `cribl` / discovered VM cards → Collection; `dcr` → Transformation; `sentinel` + infra summary → Workspace). Build the layer boxes after saved node positions are applied so background bands stay aligned to the current diagram state, and keep them export-safe/non-interactive with `pointerEvents: 'none'`, `zIndex: -2`, plus light/dark theme CSS variants.
+- **Key file paths:** `js/modules/topology.js`, `css/style.css`, `js/app.js`, `index.html`, `.squad/decisions/inbox/k-layer-uber-boxes.md`.
+
+### 2026-06-10T13:15:00+02:00 — Cribl collection-layer routing refactor
+- **Architecture decisions:** Step 4 no longer fabricates a standalone Cribl topology when `cribl-stream` is selected without any routed source. Cribl now renders as a band-scoped shared collection-layer node (`shared-cribl-node-top` / `shared-cribl-node-bottom`) that sits between routed sources and route-specific shared DCRs.
+- **Patterns:** Shared Cribl routes must reserve a DCR layer (`rowHasDcr()` stays true for `ROUTE_CRIBL` rows), render the precomputed `cribl*DcrPlan` entries, and connect `Source → Cribl → Custom DCR (Logs Ingestion API) → Sentinel` without relying on a Sentinel right-side sidecar handle. Treat Cribl as collision-managed in the intermediary layer and keep source-to-Cribl mapping explicit per band/source ID to avoid dangling edges.
+- **Key file paths:** `js/modules/topology.js`, `index.html`, `js/app.js`, `js/gantt-planner.js`, `js/modules/export.js`, `js/modules/search.js`, `js/modules/solutions.js`, `.squad/decisions/inbox/k-cribl-collection-layer.md`.

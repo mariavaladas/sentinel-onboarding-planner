@@ -179,3 +179,90 @@ K successfully implemented Start Week editing in the planner, enabling editable 
 ## 2026-05-22T13:09:00Z — Session gantt-fixes-and-solutions
 
 **Team Update:** Both K and Sebastian completed assigned work. Decisions merged and logged.
+
+### 2026-05-26T13:52:33.092+02:00: Step 3 search relevance tightening
+**What I changed:**
+- Narrowed `getSolutionSearchableText()` to solution identity metadata only: name, tags, export group, and third-party category label.
+- Removed description and onboarding notes from the search index so dependency/prerequisite mentions do not pull unrelated connectors into results.
+- Added live filtered counts to Step 3 panel and third-party section headings so headings reflect the cards still visible after search.
+
+**Patterns discovered:**
+- Long-form catalog text is useful for detail views but too noisy for keyword filtering because many solutions mention adjacent Microsoft products in implementation notes.
+- Search trust improves when the index is limited to the fields users actually treat as connector identity.
+
+**User preferences and key files:**
+- QA wanted Step 3 search to favor precision over broad text recall and expected section counts to track the filtered state.
+- Key file: `js/modules/solutions.js`.
+
+### 2026-05-26T14:02:43.261+02:00: Step 3 search event-chain hardening
+**What I verified:**
+- Traced the full keystroke path: `#nlpInput` input events in `js/app.js` debounce into `handleNlpInput()` in `js/modules/search.js`, which now always calls `applySolutionSearch()` before rendering suggestion chips.
+- Confirmed `applyStep3Filters()` in `js/modules/solutions.js` iterates all `.solution-item[data-id]` cards and toggles `card.hidden` directly, then hides empty sections and refreshes filtered counts.
+- Headless browser validation at `http://localhost:8080` showed `crowdstrike` reduced Step 3 from 488 visible cards to 1 visible card with zero runtime exceptions; clearing the input restored all 488 cards and all section counts.
+
+**What I changed:**
+- Refactored `js/modules/search.js` so card filtering no longer depends on the suggestions container existing; the filter pass now runs first and the suggestions list is just a secondary UI render.
+- Guarded suggestion-tag toggles against missing cards so quick-add clicks cannot break the search flow during re-render timing.
+
+**Key files:**
+- `js/modules/search.js`
+- `js/modules/solutions.js`
+
+### 2026-06-10T10:30:00Z: Syslog/CEF fieldPack metadata fix — 53 solutions patched
+
+**What I changed:**
+- Added `"fieldPack": "syslog-cef"` to 53 solutions in `data/solutions.json` that were sending logs via Syslog or CEF (Linux VM collector path) but were missing this field.
+- The 5 task-specified solutions patched: `zscaler`, `checkpoint`, `fortinet-forti-gate-next-generation-firewall-connector-for-microsoft-sentinel`, `barracuda-cloud-gen-firewall`, `cisco-aci`.
+- Additional Syslog/CEF sources also patched (all confirmed via description text "Syslog via AMA" or "CEF via AMA"): Sophos, SonicWall, Palo Alto CDL, Juniper SRX, Akamai Security Events, Arista Awake Security, Aruba ClearPass, Blackberry Cylance Protect, Broadcom Symantec DLP, Cisco ISE, Cisco Secure Cloud Analytics, Cisco SEG, Cisco UCS, Cisco WSA, Citrix ADC, Citrix WAF, Claroty, CyberArk PAM, Digital Guardian DLP, Exabeam Advanced Analytics, FireEye Network Security, Forcepoint CASB/CSG/NGFW, GitLab, Illumio Core, Infoblox (Cloud Connector & NIOS), ISC BIND, Ivanti UEM, McAfee ePO & NSP, Nasuni, Netwrix Auditor, Nozomi Networks, OpenVPN, Oracle DB Audit, OSSEC, Ping Federate, Pulse Connect Secure, RSA SecurID, Trend Micro (Apex One, Deep Security, TippingPoint), Vectra AI Detect, VMware ESXi.
+- `zscaler-private-access-zpa` deliberately excluded — uses Custom logs via AMA, not syslog/CEF.
+- `sysmon-via-ama` deliberately excluded — Windows path uses WEF/DCR; only Linux path uses syslog; mixed transport does not cleanly map to the Linux VM collector topology node.
+- Total `fieldPack: "syslog-cef"` entries in catalog went from 31 → 84.
+
+**Patterns discovered:**
+- The `fieldPack` field lives at the top level of the solution object alongside `is_connector`, `category`, and `isFeatured`, always as the last field before the closing `}`.
+- Solutions that say "This solution is dependent on the Syslog/Common Event Format solution containing the Syslog/CEF via AMA connector" are reliable syslog-cef candidates; solutions using "Custom logs via AMA" or "Azure Monitor HTTP Data Collector API" or "Logic Apps" are not.
+- Used `scripts/patch_fieldpack.py` for the bulk edit (preserved for reference).
+
+**Key files:**
+- `data/solutions.json`
+- `scripts/patch_fieldpack.py`
+
+### 2026-06-10T11:13:38+02:00: DCR/VM Discovery API Layer
+
+**What I added:**
+- `resourceGraphQuery(subscriptionId, query)` helper (near line 666) — a thin POST wrapper for Azure Resource Graph that uses `workspaceConnectionState.accessToken` directly (not `azureFetch`, which only does GET).
+- `discoverExistingInfrastructure(subscriptionId, resourceGroupName, workspaceName)` async function (after `getWorkspaceTablesViaArm`) — runs five queries in sequence: two Resource Graph (DCRs targeting workspace, then DCR associations), one Resource Graph (VM size/OS details), two KQL (EPS per computer, CEF source devices). All queries are individually wrapped in `safeGraph`/`safeKql` helpers that log a warning and set `status: 'partial'` instead of throwing, making the entire feature non-fatal.
+- Fire-and-forget call added at both workspace connection points (fresh connect and auto-reconnect), each preserving the pre-existing synchronous `renderTopologyStep()` call for the immediate render before discovery completes.
+- `window.discoveredInfrastructure` populated with `{ vms[], summary{}, discoveredAt, status }` shape agreed in the spec.
+- `index.html` cache-bust bumped from v=11 to v=12.
+
+**Architecture decisions:**
+- Used two separate Resource Graph queries (workspace DCRs first, then all associations) rather than a JOIN because Resource Graph's `insightsresources` and `resources` tables cannot be joined in a single query without `join kind=inner` across table scopes, which often hits size limits in large subscriptions.
+- Filtered associations to only those whose `dcrId` matches a workspace-targeting DCR before making the VM detail query, keeping the third Resource Graph query small.
+- Role classification gives cef-collector precedence over syslog-collector on Linux (a VM forwarding CEF is more specific than one running syslog), and prefers hybrid-* roles for Arc machines.
+
+**Patterns discovered:**
+- `resourceGraphQuery` cannot reuse `azureFetch` because Resource Graph requires a POST with a JSON body, while `azureFetch` is a GET-only helper with no body parameter.
+- Both the primary connect handler and the auto-reconnect handler share the same `subscriptionId`, `resourceGroupName`, `workspaceName` variable names in scope, so the fire-and-forget call is identical at both sites.
+
+**Key files:**
+- `js/app.js` — `resourceGraphQuery` helper, `discoverExistingInfrastructure` function, two fire-and-forget insertion points
+- `index.html` — v=12 cache-bust
+
+### 2026-06-10T12:47:19.578+02:00: Cribl routing refactor analysis
+
+**What I traced:**
+- `ROUTE_CRIBL` in `js/modules/topology.js` already splits Windows/Linux/Syslog rows, suppresses collector VMs for Cribl-routed rows, and selects separate shared-plan objects for the Cribl route.
+- The renderer still places `shared-cribl-node` at `sentinelY` as a right-side sidecar and uses a special `buildCriblToSentinelEdge()` path, so the visible chain stops at `Source → Cribl → Sentinel`.
+- `buildSharedPlans()` already computes `criblWindowsDcrPlan`, `criblLinuxDcrPlan`, and `criblSyslogDcrPlan`, but `addSharedDcrEntries()` never renders them and `rowHasDcr()` explicitly returns false for Cribl-routed shared paths, so the DCR layer is skipped.
+
+**Patterns discovered:**
+- `data/solutions.json` contains 16 `cribl_eligible` solution records plus the separate `cribl-stream` intermediary record (`fieldPack: "cribl-intermediary"`), but the current effective route flag only lands on the capacity-bearing Windows/Linux/firewall family records.
+- Vendor rows such as Barracuda are marked Cribl-eligible in data, yet the current capacity/profile gating does not give those rows their own `criblIngestion` route state; that gap matters if the product wants the Barracuda row itself to render through Cribl.
+- The current standalone Cribl-only workaround in topology (`groups.cribl`) conflicts with the transport-layer model and should be replaced by upstream blocking or an empty-state message.
+
+**Key files:**
+- `js/modules/topology.js`
+- `data/solutions.json`
+- `docs/topology-spec.md`
+- `.squad/decisions/inbox/sebastian-cribl-refactor-plan.md`

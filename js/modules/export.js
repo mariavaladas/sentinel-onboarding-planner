@@ -1,4 +1,4 @@
-import { buildGanttPlanData, getCurrentGanttPlanData, PHASE_BAR_COLOR } from '../gantt-planner.js';
+import { buildGanttPlanData, getCurrentGanttPlanData, PHASE_BAR_COLOR } from '../gantt-planner.js?v=16';
 
 const LEFT_HEADERS = ['Task name', 'Phase', 'Start date', 'End date', 'Duration (days)', 'Dependencies'];
 const LEFT_COLUMN_WIDTHS = [34, 24, 14, 14, 14, 28];

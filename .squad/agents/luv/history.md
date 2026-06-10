@@ -8,7 +8,32 @@
 
 ## Learnings
 
+- **2026-06-08T12:06:13.373+02:00 — Gantt parallel rendering fix review learnings**
+  - The core scheduling contract in `buildGanttPlanData` is two-pass: (1) row construction with estimated positions, (2) `applyRowDisplayOverrides` dependency-resolution pass. The second pass is what actually enforces correct scheduling — initial `startWeek` values in rows are estimates only.
+  - `applyRowDisplayOverrides` (line 2285) iterates rows in array order and builds `appliedRowsById` incrementally. Infrastructure rows always appear before connector rows in the array, so `getDependencyEndWeek` will find them resolved when processing connectors. This is the mechanism that makes `joinRowId` delays correct for `usesGeneratedTasks=true` connectors.
+  - `readSolutionGroupState` determines override vs. baseline by comparing stored `startWeek` against the current `defaultStartWeek` (i.e., `baselineStartWeek`). After the parallel fix all connectors in the same bucket share the same `baselineStartWeek`, so any stored value that previously equalled the sequential cursor will now differ from the new (earlier) parallel baseline and be treated as a user override. This is the primary state-migration risk.
+  - `applySolutionGroupShift` is a safe no-op when `shiftWeeks=0` (line 3517 guard). Same-start-week groups with no user overrides pass through unchanged.
+  - `latestSolutionEndWeek` uses the shifted `terminalRow.endWeek` from row construction — it may underestimate for generated-tasks connectors delayed by `joinRowId`. The Training row's `allSolutionTerminalIds` dependency list in `applyRowDisplayOverrides` corrects this downstream.
+  - `previousPhaseBaselineEnd` is estimation-based (no user overrides factored in); actual cross-phase scheduling is enforced by `previousPhaseTerminalIds` dependency chains in `applyRowDisplayOverrides`, not by `parallelStartWeek`.
+  - Key file path for this area: `js/gantt-planner.js` (fix: 3835–3862, build: 3780–3921, dep-resolve: 2285–2358).
+
 (Session learnings will be appended here)
+
+- **2026-06-10T14:30:17.276+02:00 — Topology layer box QA audit learnings**
+  - `topIntermediaryOffsetY` is **280** in current code (line 1033), NOT 72 as the spec says and NOT 160 as Maria assumed. The spec (topology-spec.md) is significantly out of date on all spacing constants.
+  - `intermediaryLayerGapY = 200` (code) vs 152 (spec); `topSentinelGapY = 160` (code) vs 96 (spec); `bottomSentinelGapY = 160` (code) vs 120 (spec).
+  - The current `layerConfigs` in `createLayerBoxNodes()` (line 1988–1996) misclassifies `'cribl'` and `'pathBox'` into `transformation`/`transformation-bottom` instead of `collection`/`collection-bottom`. This causes Cribl (rendered at `bandBottomY + 80`) to appear 177px ABOVE the transformation box it was classified into, because gap enforcement pushes the transformation box below collection.
+  - Bottom-band collectorVm Y formula at line 1794 (`getBottomLayerY(1) - intermediaryLayerGapY * 0.5`) has WRONG DIRECTION. Bottom band sources have larger Y than DCRs (Sentinel is center, sources are at max Y), so collectorVm must use `+ not -` from DCR Y. Current formula puts it 100px above the DCR (towards Sentinel), causing a 20px physical overlap and a backwards edge routing.
+  - `bottomSourceGapY = 140` is 4px too small to accommodate a collectorVm (120px) plus any gap between DCR and sources. Needs to be at least 220–260 if a collectorVm placement between DCR and sources is required.
+  - The `collection-bottom` layer box bug is a cascade from the wrong collectorVm Y: collectorVm lands above DCR → collection-bottom box spans the DCR zone → transformation-bottom is gap-enforced into an 80px stub far above the actual DCR nodes.
+  - Key file: `js/modules/topology.js` lines 1033–1037 (spacing constants), 1475–1476 (getTopLayerY/getBottomLayerY), 1655 (Cribl Y), 1794 (bottom collectorVm Y), 1987–1996 (layerConfigs in createLayerBoxNodes). QA report: `.squad/agents/luv/topology-qa-report.md`.
+
+- **2026-06-02T11:20:47.206+02:00 — environment / solutions / topology QA learnings**
+  - Step 2 defaults still originate from the seeded `selectedVendors` set in `js/modules/solutions.js` plus the `restoreSelectedVendors()` fallback in `js/app.js`; always verify both the initial state and the restore path when recommendation defaults look wrong.
+  - Step 3 recommendation quality is gated by `hasMinimumContent()` before vendor matching, which suppresses canonical connectors with light packaged content such as `linux-syslog`, `checkpoint`, `fortinet-forti-gate-next-generation-firewall-connector-for-microsoft-sentinel`, and `ping-one`.
+  - Workspace-connected solution state is unintentionally rehydrated from `CONNECTED_SOLUTIONS_STORAGE_KEY` in `js/modules/solutions.js`, even though the adjacent comment says it should be session-only.
+  - Step 4 shared Syslog/CEF collector rendering is split between `buildSyslogCefCollectorPlan()` and the per-row node creation block in `js/modules/topology.js`; this is the hotspot for duplicate collector nodes and bad Azure-band edge routing.
+  - Key file paths: `js/app.js`, `js/modules/solutions.js`, `js/modules/topology.js`, `js/modules/capacity.js`, `data/solutions.json`, `test-results/test-report-env-sol-topo.md`.
 
 - **2026-06-01T13:42 — Sizing specs merged into decisions archive**
   - `luv-uberbox-sizing.md` was merged into `decisions.md` as part of K's Cribl integration session. This spec provides the Windows row height estimation model for topology uber-boxes: structure-based calculation using nodeChrome (56), poolGap (10), sectionBase (104), solutionBox (33), solutionGap (6), arcAgentExtra (28), bottomSlack (18). Accounts for extra Arc Agent line on on-prem pools. Keeps non-Windows rows at shared 220px baseline.
@@ -195,3 +220,17 @@
   - `estimateRowHeight()` for `windows_events` should track the rendered pool-card box model instead of a coarse `poolCount > 2` switch: node chrome is ~56px, inter-pool spacing is 10px, a base pool section is ~104px, and each solution box adds ~33px plus 6px between stacked solutions.
   - The on-prem Windows variant is taller because each non-WEC pool renders an extra Arc Agent line; that adds ~28px per pool and must be keyed off zone/role, not just the number of pools.
   - QA sanity check for the new formula: representative estimates land at `358px` for Azure (2 pools, 1 solution each) and `589px` for On-Prem (3 pools, 1 solution each with Arc), which keeps the intended bottom slack near the ~30px target.
+
+- **2026-06-03 — Exhaustive QA pass: topology, gantt-tasks.js engine, solutions, cross-module integration**
+  - **Most critical finding:** `gantt-tasks.js` (the newly-built Gantt task engine) is never imported by any file in the project. Zero imports in `gantt-planner.js`, `app.js`, or any other module. The entire engine — `buildGanttPlan`, `calculatePlanDuration`, all task catalogs — is dead code and never runs. B-001 written to decisions inbox.
+  - **CEF task chain bug:** `CEF-INFRA-05.dependsOn` points to `CEF-INFRA-03` instead of `CEF-INFRA-04`, making tasks 04 and 05 run in parallel when they must be sequential.
+  - **Three-way classification conflict on `microsoft-sysmon-for-linux`:** topology.js calls it `linux_server`, gantt-tasks.js assigns Windows AMA infra tasks, solutions.json says `fieldPack: 'syslog-cef'`. All three disagree.
+  - **Abbreviation collision:** both `windows-forwarded-events` and `windows-forwarded-events-via-ama` resolve to `WFE` in KNOWN_ABBREVS. The runtime deduplication counter will non-deterministically rename one to `WFE-2`.
+  - **`inferFieldPack()` ignores `solution.fieldPack`:** 43 solutions in solutions.json have an explicit `fieldPack`, but the inference function reads `server_population_kind`, `cribl_eligible`, and `tags` only. The explicit field is orphaned.
+  - **React/ReactFlow CDN scripts lack SRI hashes:** index.html lines 7–10 use unpkg.com without `integrity=` attributes. frappe-gantt and exceljs do have SRI. Inconsistency. Violates decisions.md policy.
+  - **Duration override key excluded from reset:** `sentinelPlanner.taskDurationOverrides.v1` is not in `PLANNER_STORAGE_KEYS`, so custom durations survive a "Reset saved progress" action.
+  - **Connected solutions persist to localStorage** despite prior session-only intent (I-005 — same underlying issue flagged in 2026-06-02 session, still present).
+  - **`inferFieldPack()` fallback misclassifies API/cloud connectors** as `syslog-cef`, assigning Linux forwarder infra tasks to cloud-native API connectors.
+  - **fieldPack coverage in solutions.json is only 9%** (43/489 records). 446 solutions rely entirely on runtime inference once the engine is connected.
+  - **Primary report:** `docs/testing-report-2026-06-03.md`
+  - **Key file paths:** `js/modules/gantt-tasks.js`, `js/modules/topology.js`, `js/gantt-planner.js`, `js/app.js`, `js/modules/solutions.js`, `data/solutions.json`, `index.html`
