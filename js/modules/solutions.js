@@ -1,4 +1,4 @@
-import { clearConnectorCriblIngestion, getConnectorCapacitySnapshot, saveConnectorCapacityValues } from '../gantt-planner.js';
+import { clearConnectorCriblIngestion, getConnectorCapacitySnapshot, saveConnectorCapacityValues } from '../gantt-planner.js?v=9';
 import {
     createDefaultSizingDraft,
     estimateWecServersForSourceComputers,
@@ -16,7 +16,7 @@ import {
     WEC_RECOMMENDED_RAM_GB,
     WEC_TYPICAL_CLIENTS_MAX,
     WEC_TYPICAL_CLIENTS_MIN
-} from './capacity.js';
+} from './capacity.js?v=9';
 
 const INTEGER_FORMATTER = new Intl.NumberFormat('en-US');
 
@@ -105,6 +105,10 @@ export const selectedCategories = new Set();
 export const selectedSolutions = new Set();
 export const selectedVendors = new Set(['azure', 'microsoft365']);
 export const connectedSolutionIds = new Set();
+export const deprecatedConnectedSolutionIds = new Map(); // solutionId → { connectorName, reason }
+export let workspaceSyntheticSolutions = [];
+export let workspaceConnectorSummary = null;
+let solutionLastLogMap = new Map(); // solutionId → ISO timestamp of last log received
 
 const SELECTED_SOLUTIONS_STORAGE_KEY = 'sentinelPlanner.selectedSolutions';
 const CONNECTED_SOLUTIONS_STORAGE_KEY = 'sentinelPlanner.connectedSolutionIds';
@@ -115,34 +119,102 @@ const sessionExplicitSolutionSelections = new Set();
 let hasNormalizedCriblConnectorSelections = false;
 const connectorKindToSolutionIds = {
     azureactivedirectory: ['microsoft-entra-id'],
+    microsoftentraid: ['microsoft-entra-id'],
+    entraidassets: ['microsoft-entra-id-assets'],
+    microsoftentraidassets: ['microsoft-entra-id-assets'],
+    azureadidentityprotection: ['microsoft-entra-id-protection'],
+    microsoftentraidprotection: ['microsoft-entra-id-protection'],
     office365: ['microsoft-365'],
+    m365assets: ['microsoft-365-assets'],
+    microsoft365assets: ['microsoft-365-assets'],
+    exchangeonline: ['microsoft-exchange-security-exchange-online'],
+    microsoftbusinessapplications: ['microsoft-business-applications'],
+    powerplatform: ['microsoft-business-applications'],
     microsoftthreatprotection: ['defender-xdr'],
     microsoftdefenderxdr: ['defender-xdr'],
+    microsoft365defender: ['defender-xdr'],
+    m365defender: ['defender-xdr'],
     microsoftdefenderforendpoint: ['microsoft-defender-for-endpoint'],
+    microsoftdefenderadvancedthreatprotection: ['microsoft-defender-for-endpoint'],
+    mdatp: ['microsoft-defender-for-endpoint'],
     microsoftdefenderforidentity: ['microsoft-defender-for-identity'],
+    azureadvancedthreatprotection: ['microsoft-defender-for-identity'],
     microsoftcloudappsecurity: ['defender-for-cloud-apps'],
     microsoftdefenderforcloudapps: ['defender-for-cloud-apps'],
+    azuresecuritycenter: ['defender-for-cloud'],
+    microsoftdefenderforcloud: ['defender-for-cloud'],
     microsoftdefenderforoffice365: ['defender-for-office-365'],
+    officeatp: ['defender-for-office-365'],
+    microsoftcopilot: ['microsoft-copilot'],
+    powerbi: ['microsoft-power-bi'],
+    microsoftpowerbi: ['microsoft-power-bi'],
+    microsoftproject: ['microsoft-project'],
+    microsoftpurview: ['microsoft-purview'],
+    purviewinformationprotection: ['microsoft-purview-information-protection'],
+    microsoftinformationprotection: ['microsoft-purview-information-protection'],
+    microsoftpurviewinformationprotection: ['microsoft-purview-information-protection'],
+    sysmonforlinux: ['microsoft-sysmon-for-linux'],
+    microsoftsysmonforlinux: ['microsoft-sysmon-for-linux'],
+
+    azureactivity: ['azure-activity'],
+    azurefirewall: ['azure-firewall'],
+    azurekeyvault: ['azure-key-vault'],
+    azurekubernetesservice: ['azure-kubernetes-service'],
+    azurenetworksecuritygroup: ['azure-network-security-group'],
+    azurewaf: ['azure-waf'],
+    azuredevopsauditing: ['azure-devops-auditing'],
+    azureeventhubs: ['azure-event-hubs'],
+    azurelogicapps: ['azure-logic-apps'],
+    azurestorage: ['azure-storage'],
+    azurestreamanalytics: ['azure-stream-analytics'],
+    azureresourcegraph: ['azure-resource-graph'],
+    azureservicebus: ['azure-service-bus'],
+    azurebatchaccount: ['azure-batch-account'],
+    azurecognitivesearch: ['azure-cognitive-search'],
+    azureddosprotection: ['azure-ddos-protection'],
+    azuresql: ['azure-sql-database-solution-for-sentinel'],
+    azuresqldatabase: ['azure-sql-database-solution-for-sentinel'],
+
     windowsforwardedevents: ['windows-forwarded-events', 'windows-security-events'],
     securityevents: ['windows-security-events'],
+    windowssecurityevents: ['windows-security-events'],
     syslog: ['linux-syslog'],
     amazonwebservicesaws: ['aws'],
     awscloudtrail: ['aws'],
+    awss3: ['aws'],
     gcpauditlogs: ['google-cloud-platform-audit-logs'],
+
     crowdstrikefalcon: ['crowdstrike'],
     crowdstrike: ['crowdstrike'],
+    crowdstrikefalconendpointprotection: ['crowdstrike'],
     checkpoint: ['checkpoint'],
     fortinet: ['fortinet-forti-gate-next-generation-firewall-connector-for-microsoft-sentinel'],
-    okta: ['okta'],
+    fortigate: ['fortinet-forti-gate-next-generation-firewall-connector-for-microsoft-sentinel'],
     zscaler: ['zscaler'],
-    cyberark: ['cyberark'],
+    zscalerinternetaccess: ['zscaler'],
+    cyberark: ['cyber-ark-privilege-access-manager-pam-events'],
     ciscoasa: ['cisco-asa-2'],
     ciscoumbrella: ['cisco-umbrella'],
     ciscoise: ['cisco-ise'],
     pingone: ['ping-one'],
     pingfederate: ['ping-federate'],
     trendmicrovisionone: ['trend-micro-vision-one'],
-    trendmicrodeepsecurity: ['trend-micro-deep-security']
+    trendmicrodeepsecurity: ['trend-micro-deep-security'],
+    threatintelligence: ['threat-intelligence'],
+    threatintelligencetaxii: ['threat-intelligence'],
+    microsoftthreatintelligence: ['threat-intelligence', 'microsoft-defender-threat-intelligence'],
+    microsoftdefenderthreatintelligence: ['threat-intelligence', 'microsoft-defender-threat-intelligence'],
+    microsoftdefenderforiot: ['io-tot-threat-monitoringwith-defenderfor-io-t'],
+    iotsecurity: ['io-tot-threat-monitoringwith-defenderfor-io-t'],
+    dynamics365: ['dynamics-365'],
+    oktasso: ['okta-single-sign-on'],
+    boxeventsccp: ['box'],
+    box: ['box'],
+
+    // DataType-based mappings (from workspace Usage table queries)
+    commonsecuritylog: ['cisco-asa-2', 'checkpoint', 'fortinet-forti-gate-next-generation-firewall-connector-for-microsoft-sentinel', 'zscaler', 'palo-alto-networks'],
+    azurediagnostics: ['azure-activity'],
+    dns: ['windows-dns-events']
 };
 
 const solutionDataUrls = [
@@ -152,6 +224,122 @@ const solutionDataUrls = [
     'data/solutions.json',
     './data/solutions.json'
 ];
+const GENERAL_SENTINEL_DOC_URL = 'https://learn.microsoft.com/en-us/azure/sentinel/';
+
+// Maps solution IDs to the correct Microsoft Learn /data-connectors/{slug} path segment.
+// An entry mapped to null means no specific doc page exists — the general Sentinel URL is used instead.
+// Entries are required wherever the solution ID does not match the published Microsoft Learn URL slug.
+const CONNECTOR_DOC_SLUG_OVERRIDES = new Map([
+    ['windows-security-events',                          'windows-security-events-via-ama'],
+    ['windows-firewall-via-ama',                         'windows-firewall-events-via-ama'],
+    ['windows-forwarded-events-via-ama',                 null],
+    ['sysmon-via-ama',                                   null],
+    ['linux-syslog',                                     'syslog-via-ama'],
+    ['common-event-format',                              'common-event-format-cef'],
+    ['defender-xdr',                                     'microsoft-defender-xdr'],
+    ['defender-for-cloud',                               'microsoft-defender-for-cloud'],
+    ['defender-for-cloud-apps',                          'microsoft-defender-for-cloud-apps'],
+    ['defender-for-office-365',                          'microsoft-defender-for-office-365'],
+    ['crowdstrike',                                      'crowdstrike-falcon-data-replicator'],
+    ['aws',                                              'amazon-web-services'],
+    ['aws-security-hub',                                 null],
+    ['aws-vpc-flow-logs',                                null],
+    ['aws-eks',                                          null],
+    ['aws-elb',                                          null],
+    ['aws-cloud-front',                                  null],
+    ['aws-access-logs',                                  null],
+    ['google-workspace-reports',                         'google-workspace-g-suite'],
+    ['google-cloud-platform-audit-logs',                 null],
+    ['threat-intelligence',                              'threat-intelligence-taxii'],
+    ['threat-intelligence-new',                          'threat-intelligence-upload-api'],
+    ['cisco-asa-2',                                      'cisco-asa'],
+    ['palo-alto-cortex-xdr-ccp',                         'palo-alto-networks-firewall'],
+    ['palo-alto-prisma-cloud-2',                         'palo-alto-prisma-cloud-cspm'],
+    ['azure-cloud-ngfw-by-palo-alto-networks',           null],
+    ['microsoft-exchange-security-exchange-on-premises', null],
+    ['microsoft-exchange-security-exchange-online',      null],
+    ['microsoft-business-applications',                  null],
+    ['microsoft-power-bi',                               null],
+    ['microsoft-365-assets',                             null],
+    ['microsoft-entra-id-assets',                        null],
+    ['microsoft-copilot',                                null],
+]);
+
+function slugifySentinelDocPath(value = '') {
+    return String(value || '')
+        .trim()
+        .toLowerCase()
+        .replace(/&/g, ' and ')
+        .replace(/[()]/g, ' ')
+        .replace(/[^a-z0-9]+/g, '-')
+        .replace(/^-+|-+$/g, '');
+}
+
+function isOfficialSentinelDocUrl(value = '') {
+    return /^https:\/\/learn\.microsoft\.com\/[a-z-]+\/azure\/sentinel(?:\/|$)/i.test(String(value || '').trim());
+}
+
+function resolveSolutionDocumentationUrl(solution = {}) {
+    const configuredUrl = [
+        solution?.docUrl,
+        solution?.planner?.docUrl,
+        solution?.planner?.documentation_url,
+        solution?.documentation_url
+    ]
+        .map((value) => String(value || '').trim())
+        .find((value) => isOfficialSentinelDocUrl(value));
+
+    if (configuredUrl) {
+        return configuredUrl;
+    }
+
+    if (solution?.is_connector || Number(solution?.connectors) > 0) {
+        const solutionId = String(solution?.id || '').trim().toLowerCase();
+
+        if (CONNECTOR_DOC_SLUG_OVERRIDES.has(solutionId)) {
+            const overrideSlug = CONNECTOR_DOC_SLUG_OVERRIDES.get(solutionId);
+            return overrideSlug
+                ? `https://learn.microsoft.com/en-us/azure/sentinel/data-connectors/${overrideSlug}`
+                : GENERAL_SENTINEL_DOC_URL;
+        }
+
+        const connectorSlug = slugifySentinelDocPath(solutionId || solution?.name);
+        if (connectorSlug) {
+            return `https://learn.microsoft.com/en-us/azure/sentinel/data-connectors/${connectorSlug}`;
+        }
+    }
+
+    return GENERAL_SENTINEL_DOC_URL;
+}
+
+function applySolutionDocumentationMetadata(solution = {}) {
+    if (!solution || typeof solution !== 'object') {
+        return solution;
+    }
+
+    const docUrl = resolveSolutionDocumentationUrl(solution);
+    solution.docUrl = docUrl;
+    solution.planner = {
+        ...(solution?.planner || {}),
+        docUrl,
+        documentation_url: docUrl
+    };
+    return solution;
+}
+
+function normalizeSolutionCatalog(catalog = null) {
+    if (!catalog || typeof catalog !== 'object') {
+        return catalog;
+    }
+
+    Object.values(catalog?.categories || {}).forEach((category) => {
+        (category?.solutions || []).forEach((solution) => {
+            applySolutionDocumentationMetadata(solution);
+        });
+    });
+
+    return catalog;
+}
 
 const vendorToSolutions = {
     aws: ['aws'],
@@ -241,6 +429,63 @@ function setCatalogInfo(text) {
 
 function getAllSolutions() {
     return Object.values(solutionsData?.categories || {}).flatMap((category) => category.solutions || []);
+}
+
+function normalizeWorkspaceSyntheticIdPart(value = '') {
+    return String(value || '').trim().toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+
+function getWorkspaceConnectorDisplayName(connector = {}) {
+    return connector?.raw?.properties?.friendlyName
+        || connector?.properties?.friendlyName
+        || connector?.raw?.name
+        || connector?.name
+        || connector?.raw?.kind
+        || connector?.kind
+        || 'Unmatched connector';
+}
+
+function buildWorkspaceSyntheticSolution(connector = {}, index = 0) {
+    const idSeed = [
+        connector?.kind,
+        connector?.raw?.kind,
+        connector?.name,
+        connector?.raw?.name,
+        getWorkspaceConnectorDisplayName(connector),
+        index + 1
+    ]
+        .map(normalizeWorkspaceSyntheticIdPart)
+        .filter(Boolean)
+        .join('-');
+
+    return {
+        id: `unmatched-${idSeed || `connector-${index + 1}`}`,
+        name: getWorkspaceConnectorDisplayName(connector),
+        category: 'other',
+        tags: ['workspace-unmatched', 'other'],
+        export_metadata: { group: 'Other' },
+        infrastructure: ['workspace-connector'],
+        is1P: false,
+        _unmatched: true,
+        _workspaceConnectorStatus: 'connected',
+        _workspaceConnector: connector?.raw || connector
+    };
+}
+
+function cloneWorkspaceConnectorSummary(summary = null) {
+    return summary && typeof summary === 'object'
+        ? { ...summary }
+        : null;
+}
+
+function applyWorkspaceDiscoveryMetadata({ syntheticSolutions = [], summary = null } = {}) {
+    workspaceSyntheticSolutions = Array.isArray(syntheticSolutions) ? syntheticSolutions.slice() : [];
+    workspaceConnectorSummary = cloneWorkspaceConnectorSummary(summary);
+
+    if (typeof window !== 'undefined') {
+        window.workspaceSyntheticSolutions = workspaceSyntheticSolutions.slice();
+        window.workspaceConnectorSummary = cloneWorkspaceConnectorSummary(workspaceConnectorSummary);
+    }
 }
 
 function getThirdPartyCategoryId(solution = {}) {
@@ -489,6 +734,7 @@ function matchesVendorSignature(vendor, solution) {
     const name = (solution.name || '').toLowerCase();
     const solutionId = String(solution?.id || '').toLowerCase();
     const tags = (solution.tags || []).map((tag) => String(tag).toLowerCase());
+    const fieldPack = String(solution?.fieldPack || '').trim().toLowerCase();
 
     switch (vendor) {
         case 'azure':
@@ -506,18 +752,31 @@ function matchesVendorSignature(vendor, solution) {
         case 'windows':
             return tags.includes('windows') || name.includes('windows');
         case 'linux':
-            // Fix: SOL-001 — Linux should still recommend the Syslog connector even though the solution name omits "Linux".
-            return solutionId === 'linux-syslog' || tags.includes('linux') || name.includes('linux');
+            // BUG-SOL-001: Also match on fieldPack and syslog tag — the Syslog connector is named
+            // "Syslog" (not "Linux Syslog"), so name/tag text matching alone misses it.
+            return solutionId === 'linux-syslog'
+                || fieldPack === 'syslog-cef'
+                || tags.includes('linux')
+                || tags.includes('syslog')
+                || name.includes('linux');
         case 'aws':
             return tags.includes('aws') || name.includes('aws') || name.includes('amazon');
-        case 'gcp':
-            // Fix: SOL-002 — only treat Google Cloud Platform solutions as GCP matches, not Google Workspace content.
-            return solutionId.startsWith('google-cloud-platform-')
+        case 'gcp': {
+            // BUG-SOL-002: Match only genuine GCP solutions; explicitly exclude Google Workspace
+            // content (ids/tags containing 'workspace' or 'gsuite') to avoid false recommendations.
+            const isGcp = solutionId.startsWith('google-cloud-platform-')
                 || solutionId === 'google-kubernetes-engine'
                 || solutionId === 'google-apigee'
                 || tags.includes('gcp')
+                || tags.includes('google-cloud')
+                || tags.includes('google cloud platform')
                 || name.includes('google cloud platform')
                 || name.includes('google kubernetes engine');
+            const isWorkspace = solutionId.includes('workspace')
+                || solutionId.includes('gsuite')
+                || tags.includes('workspace');
+            return isGcp && !isWorkspace;
+        }
         case 'crowdstrike':
             return name.includes('crowdstrike') || name.includes('crowd strike') || tags.some((tag) => tag.includes('crowdstrike'));
         case 'paloalto':
@@ -700,19 +959,52 @@ function normalizeLookupValue(value = '') {
     return String(value).toLowerCase().replace(/[^a-z0-9]+/g, '');
 }
 
+const DEPRECATED_PATTERNS = [/\[deprecated\]/i, /legacy\s*agent/i, /via\s*legacy/i];
+
+function isConnectorDeprecated(connector = {}) {
+    const friendlyName = connector?.properties?.friendlyName || '';
+    const connectorName = connector?.name || '';
+    const title = connector?.properties?.connectorUiConfig?.title || '';
+    const candidates = [friendlyName, connectorName, title];
+
+    for (const text of candidates) {
+        if (DEPRECATED_PATTERNS.some((pattern) => pattern.test(text))) {
+            return text;
+        }
+    }
+    return '';
+}
+
+function getDeprecationReason(connectorDisplayName = '') {
+    if (/legacy\s*agent/i.test(connectorDisplayName)) {
+        return 'Uses legacy agent — migrate to AMA-based connector';
+    }
+    if (/azure\s*functions?/i.test(connectorDisplayName)) {
+        return 'Uses Azure Functions (legacy HTTP API) — migrate to CCF-based connector';
+    }
+    return 'Deprecated — check for a modern replacement connector';
+}
+
 function getConnectorLookupValues(connector = {}) {
     const properties = connector?.properties || {};
     const uiConfig = properties?.connectorUiConfig || {};
     const dataTypes = properties?.dataTypes ? Object.keys(properties.dataTypes) : [];
+    const dataTypesToConnect = Array.isArray(properties?.dataTypesToConnect)
+        ? properties.dataTypesToConnect.map((dt) => dt?.name).filter(Boolean)
+        : [];
 
     return [
         connector?.kind,
         connector?.name,
+        connector?.type?.split('/')?.pop(),
         properties?.friendlyName,
         properties?.connectorName,
+        properties?.connectorDefinitionName,
+        properties?.dataConnectorDefinitionName,
         uiConfig?.title,
         uiConfig?.id,
-        ...dataTypes
+        ...dataTypes,
+        ...dataTypesToConnect
     ].filter(Boolean);
 }
 
@@ -843,43 +1135,313 @@ export function syncCriblEnvironmentSelection({ persist = true, clearCapacity = 
 
 restoreSolutionIds(SELECTED_SOLUTIONS_STORAGE_KEY, selectedSolutions, 'selected solutions');
 
+// BUG-ENV-002: Prevent stale connected-solution badges from showing when no workspace is active.
+// setConnectedSolutionsFromWorkspace sets sessionStorage.sentinelPlanner.activeWorkspace when a live
+// workspace connection is made. If that flag is absent on module load (fresh tab / new session),
+// wipe the persisted connected-solution list so app.js cannot re-hydrate ghost green badges.
+if (canUseLocalStorage() && typeof window !== 'undefined') {
+    if (!window.sessionStorage?.getItem('sentinelPlanner.activeWorkspace')) {
+        window.localStorage.removeItem(CONNECTED_SOLUTIONS_STORAGE_KEY);
+    }
+}
+
+function getMostRecentIsoTimestamp(candidates = []) {
+    let freshestIso = '';
+    let freshestTime = Number.NEGATIVE_INFINITY;
+
+    (Array.isArray(candidates) ? candidates : [candidates]).forEach((candidate) => {
+        const normalizedCandidate = String(candidate || '').trim();
+        if (!normalizedCandidate) {
+            return;
+        }
+        const candidateTime = new Date(normalizedCandidate).getTime();
+        if (!Number.isFinite(candidateTime) || candidateTime <= freshestTime) {
+            return;
+        }
+        freshestTime = candidateTime;
+        freshestIso = normalizedCandidate;
+    });
+
+    return freshestIso || null;
+}
+
+function getConnectorLastLogTimestamp(connector = {}) {
+    if (!connector || typeof connector !== 'object') {
+        return null;
+    }
+
+    const properties = connector?.properties || {};
+    const nestedDataTypeTimestamps = properties?.lastDataReceivedDataTypes && typeof properties.lastDataReceivedDataTypes === 'object'
+        ? Object.values(properties.lastDataReceivedDataTypes).map((value) => {
+            if (typeof value === 'string') {
+                return value;
+            }
+            if (!value || typeof value !== 'object') {
+                return null;
+            }
+            return value.lastDataReceived
+                || value.lastDataReceivedTime
+                || value.lastLog
+                || value.timeGenerated
+                || value.timestamp
+                || null;
+        })
+        : [];
+
+    return getMostRecentIsoTimestamp([
+        connector?._lastLog,
+        connector?.lastDataReceived,
+        connector?.lastDataReceivedTime,
+        connector?.lastLog,
+        properties?.lastDataReceived,
+        properties?.lastDataReceivedTime,
+        properties?.lastLog,
+        properties?.timeGenerated,
+        properties?.timestamp,
+        properties?.metadata?.lastDataReceived,
+        properties?.metadata?.lastLog,
+        properties?.status?.lastDataReceived,
+        properties?.status?.lastLog,
+        ...nestedDataTypeTimestamps
+    ]);
+}
+
+function applyFreshestSolutionLastLog(targetMap = new Map(), solutionId = '', lastLog = '') {
+    const normalizedSolutionId = String(solutionId || '').trim();
+    const normalizedLastLog = String(lastLog || '').trim();
+    const nextLastLogTime = normalizedLastLog ? new Date(normalizedLastLog).getTime() : Number.NaN;
+    if (!normalizedSolutionId || !Number.isFinite(nextLastLogTime)) {
+        return;
+    }
+
+    const existingLastLog = targetMap.get(normalizedSolutionId);
+    const existingLastLogTime = existingLastLog ? new Date(existingLastLog).getTime() : Number.NEGATIVE_INFINITY;
+    if (nextLastLogTime <= existingLastLogTime) {
+        return;
+    }
+
+    targetMap.set(normalizedSolutionId, normalizedLastLog);
+}
+
+function getMatchedSolutionIdsForLookupValues(lookupValues = [], allSolutions = [], availableIds = new Set(), allowedSolutionIds = null) {
+    const matchedSolutionIds = new Set();
+
+    (Array.isArray(lookupValues) ? lookupValues : []).forEach((lookupValue) => {
+        (connectorKindToSolutionIds[lookupValue] || []).forEach((solutionId) => {
+            if (!availableIds.has(solutionId)) {
+                return;
+            }
+            if (allowedSolutionIds instanceof Set && !allowedSolutionIds.has(solutionId)) {
+                return;
+            }
+            matchedSolutionIds.add(solutionId);
+        });
+
+        allSolutions.forEach((solution) => {
+            const normalizedId = normalizeLookupValue(solution.id);
+            const normalizedName = normalizeLookupValue(solution.name);
+            const normalizedTags = (solution.tags || []).map(normalizeLookupValue);
+
+            if (lookupValue !== normalizedId && lookupValue !== normalizedName && !normalizedTags.includes(lookupValue)) {
+                return;
+            }
+            if (allowedSolutionIds instanceof Set && !allowedSolutionIds.has(solution.id)) {
+                return;
+            }
+            matchedSolutionIds.add(solution.id);
+        });
+    });
+
+    return matchedSolutionIds;
+}
+
+function solutionMatchesGenericTableBackfill(solution = {}, tableKind = '') {
+    const normalizedTableKind = normalizeLookupValue(tableKind);
+    if (!normalizedTableKind) {
+        return false;
+    }
+
+    const solutionId = String(solution?.id || '').trim().toLowerCase();
+    const fieldPack = String(solution?.fieldPack || '').trim().toLowerCase();
+    const tags = (solution?.tags || []).map((tag) => String(tag || '').toLowerCase());
+    const infra = [
+        solution?.onboarding?.infrastructure,
+        solution?.onboarding?.infrastructure_required,
+        solution?.requiredInfrastructure
+    ].flatMap((value) => Array.isArray(value) ? value : [])
+        .map((value) => String(value || '').trim().toLowerCase())
+        .filter(Boolean);
+    const lookupText = [solution?.name, solution?.description, tags.join(' '), infra.join(' ')]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+    const usesCollectorPath = solutionId === 'linux-syslog'
+        || fieldPack === 'syslog-cef'
+        || infra.includes('linux-forwarder')
+        || /\bsyslog\b|\bcef\b|common event format/.test(lookupText);
+
+    if (!usesCollectorPath) {
+        return false;
+    }
+
+    if (normalizedTableKind === 'syslog') {
+        return solutionId === 'linux-syslog'
+            || /\bsyslog\b/.test(lookupText)
+            || fieldPack === 'syslog-cef'
+            || infra.includes('linux-forwarder');
+    }
+
+    if (normalizedTableKind === 'commonsecuritylog') {
+        return fieldPack === 'syslog-cef'
+            || /\bcef\b|common event format/.test(lookupText)
+            || infra.includes('linux-forwarder');
+    }
+
+    return false;
+}
+
+function applyTableConnectorLastLogBackfill(localSolutionLastLogMap = new Map(), discoveryMeta = {}, allowedSolutionIds = new Set()) {
+    const tableConnectorLastLogs = Array.isArray(discoveryMeta?.tableConnectorLastLogs)
+        ? discoveryMeta.tableConnectorLastLogs
+        : [];
+    if (!tableConnectorLastLogs.length || !(allowedSolutionIds instanceof Set) || allowedSolutionIds.size === 0) {
+        return;
+    }
+
+    const allSolutions = getAllSolutions();
+    const availableIds = new Set(allSolutions.map((solution) => solution.id));
+    tableConnectorLastLogs.forEach((entry) => {
+        const lookupValues = [entry?.kind, entry?.name]
+            .map(normalizeLookupValue)
+            .filter(Boolean);
+        if (!lookupValues.length) {
+            return;
+        }
+
+        const matchedSolutionIds = getMatchedSolutionIdsForLookupValues(
+            lookupValues,
+            allSolutions,
+            availableIds,
+            allowedSolutionIds
+        );
+        const genericTableKind = lookupValues.find((value) => value === 'syslog' || value === 'commonsecuritylog') || '';
+        if (genericTableKind) {
+            allSolutions.forEach((solution) => {
+                if (!availableIds.has(solution.id)) {
+                    return;
+                }
+                if (allowedSolutionIds instanceof Set && !allowedSolutionIds.has(solution.id)) {
+                    return;
+                }
+                if (!solutionMatchesGenericTableBackfill(solution, genericTableKind)) {
+                    return;
+                }
+                matchedSolutionIds.add(solution.id);
+            });
+        }
+
+        matchedSolutionIds.forEach((solutionId) => {
+            applyFreshestSolutionLastLog(localSolutionLastLogMap, solutionId, entry?.lastLog);
+        });
+    });
+}
+
 function resolveConnectedSolutionIds(connectors = []) {
     const allSolutions = getAllSolutions();
     const availableIds = new Set(allSolutions.map((solution) => solution.id));
     const resolvedIds = new Set();
+    const unmatchedConnectors = [];
+    const deprecatedMatches = new Map(); // solutionId → { connectorName, reason }
+    const localSolutionLastLogMap = new Map(); // solutionId → ISO timestamp
+    let matchedConnectorCount = 0;
 
     connectors.forEach((connector) => {
         const lookupValues = getConnectorLookupValues(connector).map(normalizeLookupValue).filter(Boolean);
+        const deprecatedLabel = isConnectorDeprecated(connector);
+        const matchedSolutionIds = getMatchedSolutionIdsForLookupValues(lookupValues, allSolutions, availableIds);
+        const matched = matchedSolutionIds.size > 0;
+        const connectorLastLog = getConnectorLastLogTimestamp(connector);
 
-        lookupValues.forEach((lookupValue) => {
-            (connectorKindToSolutionIds[lookupValue] || []).forEach((solutionId) => {
-                if (availableIds.has(solutionId)) {
-                    resolvedIds.add(solutionId);
+        matchedSolutionIds.forEach((solutionId) => resolvedIds.add(solutionId));
+
+        if (matched) {
+            matchedConnectorCount += 1;
+            // Propagate the freshest connector timestamp from normalized metadata or raw connector payloads.
+            matchedSolutionIds.forEach((solutionId) => {
+                applyFreshestSolutionLastLog(localSolutionLastLogMap, solutionId, connectorLastLog);
+            });
+        }
+
+        if (deprecatedLabel && matched) {
+            const reason = getDeprecationReason(deprecatedLabel);
+            matchedSolutionIds.forEach((solutionId) => {
+                if (!deprecatedMatches.has(solutionId)) {
+                    deprecatedMatches.set(solutionId, { connectorName: deprecatedLabel, reason });
                 }
             });
+        }
 
-            allSolutions.forEach((solution) => {
-                const normalizedId = normalizeLookupValue(solution.id);
-                const normalizedName = normalizeLookupValue(solution.name);
-                const normalizedTags = (solution.tags || []).map(normalizeLookupValue);
-
-                if (lookupValue === normalizedId || lookupValue === normalizedName || normalizedTags.includes(lookupValue)) {
-                    resolvedIds.add(solution.id);
-                }
+        if (!matched) {
+            unmatchedConnectors.push({
+                kind: connector?.kind,
+                name: connector?.name,
+                lookupValues,
+                raw: { kind: connector?.kind, name: connector?.name, type: connector?.type, properties: { friendlyName: connector?.properties?.friendlyName, connectorDefinitionName: connector?.properties?.connectorDefinitionName } }
             });
-        });
+        }
     });
 
-    return resolvedIds;
+    const syntheticSolutions = unmatchedConnectors.map((connector, index) => buildWorkspaceSyntheticSolution(connector, index));
+
+    if (unmatchedConnectors.length > 0) {
+        console.warn('[Sentinel Planner] Unmatched connectors from workspace (could not map to local solutions):', unmatchedConnectors);
+    }
+    if (deprecatedMatches.size > 0) {
+        console.warn(`[Sentinel Planner] ${deprecatedMatches.size} connected solution(s) via deprecated/legacy connectors:`, Object.fromEntries(deprecatedMatches));
+    }
+    console.info(`[Sentinel Planner] Resolved ${matchedConnectorCount} connector(s) to ${resolvedIds.size} solution(s) from ${connectors.length} workspace connector(s).`, Array.from(resolvedIds));
+
+    // Update the module-level deprecated tracking
+    deprecatedConnectedSolutionIds.clear();
+    deprecatedMatches.forEach((info, solutionId) => deprecatedConnectedSolutionIds.set(solutionId, info));
+
+    return {
+        resolvedIds,
+        unmatchedConnectors,
+        syntheticSolutions,
+        deprecatedMatches,
+        matchedConnectorCount,
+        solutionLastLogMap: localSolutionLastLogMap
+    };
 }
 
 export function getConnectedSolutionIds() {
     return new Set(connectedSolutionIds);
 }
 
-export function setConnectedSolutionIds(solutionIds = []) {
+export function getWorkspaceSyntheticSolutions() {
+    return workspaceSyntheticSolutions.slice();
+}
+
+export function getWorkspaceConnectorSummary() {
+    return cloneWorkspaceConnectorSummary(workspaceConnectorSummary);
+}
+
+export function getSolutionLastLog(solutionId = '') {
+    return solutionLastLogMap.get(String(solutionId).trim()) || null;
+}
+
+export function setConnectedSolutionIds(solutionIds = [], options = {}) {
     connectedSolutionIds.clear();
     solutionIds.filter(Boolean).forEach((solutionId) => connectedSolutionIds.add(solutionId));
+
+    if (!options?.preserveWorkspaceDiscovery) {
+        deprecatedConnectedSolutionIds.clear();
+        solutionLastLogMap = new Map();
+        if (typeof window !== 'undefined') window.connectorLastSeenMap = {};
+        applyWorkspaceDiscoveryMetadata();
+    }
+
     persistConnectedSolutionIds();
     updateStep3Button();
 
@@ -890,8 +1452,50 @@ export function setConnectedSolutionIds(solutionIds = []) {
     return getConnectedSolutionIds();
 }
 
-export function setConnectedSolutionsFromWorkspace(connectors = []) {
-    return setConnectedSolutionIds(Array.from(resolveConnectedSolutionIds(connectors)));
+export function setConnectedSolutionsFromWorkspace(connectors = [], discoveryMeta = {}) {
+    // Mark this session as having a live workspace connection so the stale-data guard
+    // (BUG-ENV-002) allows future localStorage persistence to be re-hydrated on reload.
+    if (typeof window !== 'undefined') {
+        window.sessionStorage?.setItem('sentinelPlanner.activeWorkspace', '1');
+    }
+
+    const resolution = resolveConnectedSolutionIds(connectors);
+    const connectedIds = setConnectedSolutionIds(Array.from(resolution.resolvedIds), { preserveWorkspaceDiscovery: true });
+
+    // Store the lastLog map and expose it globally for the topology view.
+    // Backfill from table-derived last-log metadata so API-backed connectors still show
+    // Activity/Stale badges even when the ARM connector resource omits per-table timestamps.
+    solutionLastLogMap = resolution.solutionLastLogMap || new Map();
+    applyTableConnectorLastLogBackfill(solutionLastLogMap, discoveryMeta, resolution.resolvedIds);
+    if (typeof window !== 'undefined') {
+        window.connectorLastSeenMap = Object.fromEntries(solutionLastLogMap);
+    }
+
+    const summary = {
+        apiConnectorCount: Math.max(0, Number(discoveryMeta.apiConnectorCount) || 0),
+        uniqueApiConnectorCount: Math.max(0, Number(discoveryMeta.uniqueApiConnectorCount) || 0),
+        activeApiConnectorCount: Math.max(0, Number(discoveryMeta.activeApiConnectorCount) || 0),
+        tableConnectorCount: Math.max(0, Number(discoveryMeta.tableConnectorCount) || 0),
+        additionalTableConnectorCount: Math.max(0, Number(discoveryMeta.additionalTableConnectorCount) || 0),
+        discoveryConnectorCount: Math.max(0, Number(discoveryMeta.discoveryConnectorCount ?? connectors.length) || 0),
+        mappedConnectorCount: resolution.matchedConnectorCount,
+        mappedSolutionIdCount: resolution.resolvedIds.size,
+        unmatchedConnectorCount: resolution.unmatchedConnectors.length,
+        totalShownInTopology: resolution.resolvedIds.size + resolution.syntheticSolutions.length,
+        usageQueryFailed: Boolean(discoveryMeta.usageQueryFailed),
+        usedTableFallback: Boolean(discoveryMeta.usedTableFallback)
+    };
+
+    applyWorkspaceDiscoveryMetadata({
+        syntheticSolutions: resolution.syntheticSolutions,
+        summary
+    });
+
+    return {
+        ...resolution,
+        connectedIds,
+        summary
+    };
 }
 
 // Connected solution state is restored during app startup and refreshed from workspace discovery when available.
@@ -1415,6 +2019,19 @@ function createSizingEditor(solution, profile, snapshot = {}) {
         return nextDraft;
     };
     const draft = buildDraft(profile.values);
+    const hasSavedWecSizingValues = Boolean(
+        profile.populationKind === 'wec'
+        && profile.values
+        && typeof profile.values === 'object'
+        && (
+            Object.prototype.hasOwnProperty.call(profile.values, 'servers')
+            || Object.prototype.hasOwnProperty.call(profile.values, 'onPremPercent')
+        )
+    );
+    if (profile.populationKind === 'wec' && draft.isDefault && !hasSavedWecSizingValues) {
+        draft.servers = '';
+        draft.onPremPercent = '';
+    }
     let activeRelationMode = profile.hasRelationChoice
         ? (profile.relation === 'additional' ? 'additional' : 'same')
         : profile.relation || 'standalone';
@@ -1742,21 +2359,33 @@ function createSizingEditor(solution, profile, snapshot = {}) {
             );
             sourceComputersField.field.classList.add('solution-sizing-field--wide');
 
+            const setSourceComputersHelper = (text, { isRecommendation = false } = {}) => {
+                sourceComputersField.helper.classList.toggle('solution-sizing-helper--recommendation', isRecommendation);
+                if (isRecommendation) {
+                    sourceComputersField.helper.innerHTML = `<strong>${text}</strong>`;
+                    return;
+                }
+                sourceComputersField.helper.textContent = text;
+            };
+
             const updateSourceComputerEstimate = () => {
                 const rawValue = String(sourceComputersInput.value ?? '').trim();
                 if (!rawValue) {
-                    sourceComputersField.helper.textContent = `Optional helper — uses ~${formatInteger(WEC_RECOMMENDED_CLIENTS_PER_SERVER)} source computers per WEC server.`;
+                    setSourceComputersHelper(`Optional helper — uses ~${formatInteger(WEC_RECOMMENDED_CLIENTS_PER_SERVER)} source computers per WEC server.`);
                     return;
                 }
 
                 const sourceComputers = Number(rawValue);
                 if (!Number.isFinite(sourceComputers) || sourceComputers < 0) {
-                    sourceComputersField.helper.textContent = 'Enter 0 or more source computers to estimate the recommended WEC count.';
+                    setSourceComputersHelper('Enter 0 or more source computers to estimate the recommended WEC count.');
                     return;
                 }
 
                 const estimatedWecServers = estimateWecServersForSourceComputers(sourceComputers);
-                sourceComputersField.helper.textContent = `Estimated: ${formatInteger(estimatedWecServers)} WEC server${estimatedWecServers === 1 ? '' : 's'} needed (at ~${formatInteger(WEC_RECOMMENDED_CLIENTS_PER_SERVER)} clients per server).`;
+                setSourceComputersHelper(
+                    `Estimated: ${formatInteger(estimatedWecServers)} WEC server${estimatedWecServers === 1 ? '' : 's'} needed (at ~${formatInteger(WEC_RECOMMENDED_CLIENTS_PER_SERVER)} clients per server).`,
+                    { isRecommendation: true }
+                );
             };
 
             sourceComputersInput.addEventListener('input', updateSourceComputerEstimate);
@@ -2201,20 +2830,24 @@ function renderSolutionSizingSection(solutionCard, solution, { capacitySnapshot 
 
     const isSelected = selectedSolutions.has(solutionId);
     const isConnected = connectedSolutionIds.has(solutionId);
+    const isDeprecatedConnected = deprecatedConnectedSolutionIds.has(solutionId);
     const isIncluded = isSelected || isConnected;
     const checkbox = solutionCard.querySelector('.solution-item-check');
     const solutionName = solutionCard.dataset.name || 'solution';
     const solution = solutionCard.__solutionData;
 
     solutionCard.classList.toggle('selected', isSelected);
-    solutionCard.classList.toggle('already-connected', isConnected);
+    solutionCard.classList.toggle('already-connected', isConnected && !isDeprecatedConnected);
+    solutionCard.classList.toggle('legacy-connected', isDeprecatedConnected);
     solutionCard.classList.toggle('is-sizing-panel-active', isSizingDrawerOpen && activeSizingSolutionId === solutionId);
 
     if (checkbox instanceof HTMLInputElement) {
         checkbox.checked = isIncluded;
         checkbox.disabled = isConnected;
         checkbox.setAttribute('aria-label', `${isIncluded ? 'Included' : 'Include'} ${solutionName} in the onboarding plan`);
-        checkbox.title = isConnected ? `${solutionName} is already connected in the workspace` : '';
+        checkbox.title = isDeprecatedConnected
+            ? `${solutionName} is connected via a deprecated connector — consider migrating`
+            : isConnected ? `${solutionName} is already connected in the workspace` : '';
     }
 
     if (solution) {
@@ -2289,15 +2922,29 @@ function createSolutionItem(solution, recommendedIds = new Set()) {
     if (isRecommended) {
         const recommendedText = document.createElement('span');
         recommendedText.className = 'solution-item-recommended-inline';
-        recommendedText.textContent = '— Recommended';
+        recommendedText.textContent = '— Based on your environment selection';
         name.appendChild(recommendedText);
     }
 
     if (connectedSolutionIds.has(solution.id)) {
-        const connBadge = document.createElement('span');
-        connBadge.className = 'existing-connector-badge';
-        connBadge.textContent = '✓ Connected';
-        name.appendChild(connBadge);
+        const deprecatedInfo = deprecatedConnectedSolutionIds.get(solution.id);
+        if (deprecatedInfo) {
+            const legacyBadge = document.createElement('span');
+            legacyBadge.className = 'existing-connector-badge existing-connector-badge--legacy';
+            legacyBadge.textContent = '⚠ Legacy';
+            legacyBadge.title = deprecatedInfo.reason;
+            name.appendChild(legacyBadge);
+
+            const migrateHint = document.createElement('span');
+            migrateHint.className = 'solution-item-migrate-hint';
+            migrateHint.textContent = deprecatedInfo.reason;
+            name.appendChild(migrateHint);
+        } else {
+            const connBadge = document.createElement('span');
+            connBadge.className = 'existing-connector-badge';
+            connBadge.textContent = '✓ Connected';
+            name.appendChild(connBadge);
+        }
     }
 
     const connectorCount = getConnectorCount(solution);
@@ -2307,7 +2954,11 @@ function createSolutionItem(solution, recommendedIds = new Set()) {
 
     const meta = document.createElement('div');
     meta.className = 'solution-item-meta';
-    meta.textContent = `${connectorCount} connectors · ${analyticRuleCount} rules · ${workbookCount} workbooks · ${playbookCount} playbooks`;
+    if (connectorCount <= 0) {
+        meta.textContent = `Content Pack · ${analyticRuleCount} rules · ${workbookCount} workbooks · ${playbookCount} playbooks`;
+    } else {
+        meta.textContent = `${connectorCount} connectors · ${analyticRuleCount} rules · ${workbookCount} workbooks · ${playbookCount} playbooks`;
+    }
 
     const tags = document.createElement('div');
     tags.className = 'solution-tags';
@@ -2643,7 +3294,7 @@ export async function loadSolutionData() {
                 continue;
             }
 
-            solutionsData = await response.json();
+            solutionsData = normalizeSolutionCatalog(await response.json());
             updateCatalogSummary();
             return solutionsData;
         } catch (error) {
