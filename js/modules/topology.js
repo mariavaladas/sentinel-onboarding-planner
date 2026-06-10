@@ -1,5 +1,6 @@
 import { getConnectorCapacitySnapshot } from '../gantt-planner.js';
 import { getSolutionCapacityProfile, DEFAULT_COLLECTOR_VM_ZONE, DEFAULT_WINDOWS_ONPREM_PERCENT, DEFAULT_LINUX_ONPREM_PERCENT, FIREWALL_VM_EPS_CAPACITY, DEFAULT_FIREWALL_EPS, normalizeCollectorVmZone } from './capacity.js';
+import { connectedSolutionIds } from './solutions.js';
 
 // topology.js — SIEM ingestion topology visualization using React Flow
 
@@ -830,6 +831,10 @@ export function renderTopology(selectedSolutions, containerEl) {
     const { ReactFlow: RF, ReactFlowProvider, Controls, Background, Handle, Position } = window.ReactFlow;
     const capacitySnapshot = getConnectorCapacitySnapshot(selectedSolutions);
 
+    const isSourceConnected = (solutions = []) =>
+        Array.isArray(solutions) && solutions.length > 0 &&
+        solutions.every((sol) => connectedSolutionIds.has(String(sol?.id || '').trim().toLowerCase()));
+
     const renderServerOsIcon = (os = 'windows', className = 'rf-inline-os-icon') => {
         if (os === 'linux') {
             return h('svg', {
@@ -897,6 +902,13 @@ export function renderTopology(selectedSolutions, containerEl) {
         borderColor: hexToRgba(color, isDefault ? 0.18 : 0.28),
         background: hexToRgba(color, isDefault ? 0.08 : 0.12)
     });
+
+    const renderStatusChip = (status) => {
+        if (!status) return null;
+        return h('span', { className: `rf-status-chip rf-status-chip--${status}` },
+            status === 'existing' ? 'EXISTING' : 'NEW'
+        );
+    };
 
     const HANDLE_IDS = {
         sourceTop: 'source-top',
@@ -1035,7 +1047,7 @@ export function renderTopology(selectedSolutions, containerEl) {
   const sentinelNodeWidth = 220;
   const sentinelNodeHeight = 132;
   const criblSentinelGapX = 88;
-  const topIntermediaryOffsetY = 280;
+  const topIntermediaryOffsetY = 340;
   const intermediaryLayerGapY = 200;
   const topSentinelGapY = 250;
   const bottomSentinelGapY = 250;
@@ -1663,7 +1675,8 @@ export function renderTopology(selectedSolutions, containerEl) {
               color: PATH_CONFIGS.cribl.color,
               icon: PATH_CONFIGS.cribl.sourceIcon,
               logoUrl: PATH_CONFIGS.cribl.logoUrl,
-              label: 'Cribl Stream'
+              label: 'Cribl Stream',
+              status: 'new'
           },
           style: {
               width: pathNodeWidth,
@@ -1688,7 +1701,8 @@ export function renderTopology(selectedSolutions, containerEl) {
               color: PATH_CONFIGS.cribl.color,
               icon: PATH_CONFIGS.cribl.sourceIcon,
               logoUrl: PATH_CONFIGS.cribl.logoUrl,
-              label: 'Cribl Stream'
+              label: 'Cribl Stream',
+              status: 'new'
           },
           style: {
               width: pathNodeWidth,
@@ -1725,6 +1739,11 @@ export function renderTopology(selectedSolutions, containerEl) {
           capacityLabel = `${totalExistingVMs} VM${totalExistingVMs !== 1 ? 's' : ''} · ${parts.join(', ')}`;
       }
       const measuredEpsLabel = measuredEps > 0 ? `~${formatEps(measuredEps)} EPS measured (24h)` : null;
+      // Position existing VMs below its syslog_cef source (not at diagramLeftX which is below Windows)
+      const syslogCefSource = zoneLayouts
+          .flatMap(({ rows = [] }) => rows.filter(r => r.type === 'syslog_cef'))
+          [0];
+      const existingVmsX = syslogCefSource ? syslogCefSource.x : diagramLeftX;
       nodes.push({
           id: EXISTING_VMS_NODE_ID,
           type: 'collectorVm',
@@ -1733,16 +1752,24 @@ export function renderTopology(selectedSolutions, containerEl) {
               band: 'top',
               vmCount: totalExistingVMs,
               capacityLabel,
-              measuredEpsLabel
+              measuredEpsLabel,
+              status: 'existing'
           },
           position: {
-              x: diagramLeftX,
+              x: existingVmsX,
               y: topBandLayout.bandBottomY + 80
           },
           style: { width: collectorVmWidth }
       });
       syslogDcrEntries.forEach((entry) => {
           edges.push(buildMiddleEdge(EXISTING_VMS_NODE_ID, entry.id, PATH_CONFIGS.syslog_cef.color, 'top'));
+      });
+      // Connect syslog/CEF sources (firewalls) → existing Linux VM collectors
+      const syslogCefSourceIds = zoneLayouts
+          .flatMap(({ rows = [] }) => rows.filter(r => r.type === 'syslog_cef'))
+          .map(r => r.sourceId || getTopologySourceId(r.type, r.zone, r.route));
+      syslogCefSourceIds.forEach((srcId) => {
+          edges.push(buildSourceToMiddleEdge(srcId, EXISTING_VMS_NODE_ID, PATH_CONFIGS.syslog_cef.color, 'top'));
       });
   }
 
@@ -1774,7 +1801,8 @@ export function renderTopology(selectedSolutions, containerEl) {
       position: { x: sentinelX, y: sentinelY },
       data: {
           workspace: 'Log Analytics Workspace',
-          hasSidecarTarget: false
+          hasSidecarTarget: false,
+          status: 'existing'
       },
       style: { width: sentinelNodeWidth },
       draggable: true
@@ -1792,7 +1820,8 @@ export function renderTopology(selectedSolutions, containerEl) {
           data: {
               ...entry.data,
               color: entry.color,
-              band: position.band
+              band: position.band,
+              status: 'new'
           },
           style: { width: dcrNodeWidth },
           draggable: true
@@ -1821,7 +1850,8 @@ export function renderTopology(selectedSolutions, containerEl) {
                   windowsPools: entry.windowsPools,
                   color: pc.color,
                   useRightHandle: Boolean(entry.collectorVm),
-                  usePoolGrid: entry.type === 'windows_events' && usesWindowsPoolGrid(entry.windowsPools)
+                  usePoolGrid: entry.type === 'windows_events' && usesWindowsPoolGrid(entry.windowsPools),
+                  status: isSourceConnected(entry.solutions) ? 'existing' : 'new'
               },
               position: { x: entry.x, y: entry.y },
               style: { width: sourceWidth }
@@ -1844,7 +1874,8 @@ export function renderTopology(selectedSolutions, containerEl) {
                               vmCount: sharedPlan?.vmCount || 0,
                               capacityLabel: sharedPlan
                                   ? `${formatEps(sharedPlan.totalEps)} EPS [max: ${formatTopologyCount(FIREWALL_VM_EPS_CAPACITY)} EPS/VM]`
-                                  : ''
+                                  : '',
+                              status: 'new'
                           },
                           position: {
                               x: entry.collectorVm.x,
@@ -1895,7 +1926,8 @@ export function renderTopology(selectedSolutions, containerEl) {
                                   vmCount: sharedPlan?.vmCount || 0,
                                   capacityLabel: sharedPlan
                                       ? `${formatEps(sharedPlan.totalEps)} EPS [max: ${formatTopologyCount(FIREWALL_VM_EPS_CAPACITY)} EPS/VM]`
-                                      : ''
+                                      : '',
+                                  status: 'new'
                               },
                               position: {
                                   x: entry.collectorVm ? entry.collectorVm.x : (entry.x + sourceWidth + collectorVmOffsetX),
@@ -1940,7 +1972,8 @@ export function renderTopology(selectedSolutions, containerEl) {
                   data: {
                       label: typeof pc.dcr === 'string' ? pc.dcr : (pc.dcr.label || 'DCR'),
                       color: pc.color,
-                      band: sourceBand
+                      band: sourceBand,
+                      status: 'new'
                   },
                   style: { width: dcrNodeWidth },
                   draggable: true
@@ -1963,7 +1996,8 @@ export function renderTopology(selectedSolutions, containerEl) {
                       topologyType: entry.type,
                       environment: entry.zone,
                       band: sourceBand,
-                      serverIndicators: buildServerIndicatorsForGroup(entry.type, entry.solutions, capacitySnapshot, entry.zone)
+                      serverIndicators: buildServerIndicatorsForGroup(entry.type, entry.solutions, capacitySnapshot, entry.zone),
+                      status: 'new'
                   },
                   position: getIntermediaryPosition(entry, serverNodeWidth, serverLayerIndex),
                   style: { width: serverNodeWidth }
@@ -1993,7 +2027,8 @@ export function renderTopology(selectedSolutions, containerEl) {
                       label: boxLabel,
                       color: pc.color,
                       icon: boxIcon,
-                      band: sourceBand
+                      band: sourceBand,
+                      status: 'new'
                   },
                   position: (!pc.dcr && index === pathBoxes.length - 1)
                       ? { x: clampNodeX(sentinelCenterX - (pathNodeWidth / 2), pathNodeWidth), y: (entry.band === 'bottom' ? getBottomLayerY(firstBoxLayerIndex + index) : getTopLayerY(firstBoxLayerIndex + index)) }
@@ -2093,6 +2128,18 @@ export function renderTopology(selectedSolutions, containerEl) {
 
   applyDistributedHandlePorts();
 
+  // Grey out and de-animate edges where both endpoints are existing infrastructure
+  const existingNodeIds = new Set(nodes.filter((n) => n.data?.status === 'existing').map((n) => n.id));
+  edges.forEach((edge) => {
+      if (existingNodeIds.has(edge.source) && existingNodeIds.has(edge.target)) {
+          edge.animated = false;
+          edge.style = { ...edge.style, stroke: '#6B7280' };
+          if (edge.markerEnd) {
+              edge.markerEnd = { ...edge.markerEnd, color: '#6B7280' };
+          }
+      }
+  });
+
   function createLayerBoxNodes(existingNodes = []) {
       const layerConfigs = [
           { name: 'sources', label: '📡 SOURCES', color: '#f59e0b', types: new Set(['source', 'uberBox']), band: 'top' },
@@ -2118,12 +2165,13 @@ export function renderTopology(selectedSolutions, containerEl) {
           case 'source':
               return sourceNodeHeight;
           case 'server':
-          case 'collectorVm':
               return 120;
+          case 'collectorVm':
+              return 160;
           case 'dcr':
           case 'pathBox':
           case 'cribl':
-              return 100;
+              return 130;
           case 'sentinel':
               return sentinelNodeHeight;
           default:
@@ -2131,6 +2179,7 @@ export function renderTopology(selectedSolutions, containerEl) {
           }
       };
       const sentinelMidY = sentinelY + (sentinelNodeHeight / 2);
+      console.log('[LAYER DEBUG] sentinelY:', sentinelY, 'sentinelMidY:', sentinelMidY);
 
       // Pass 1: compute raw bounds for each layer
       const layerBounds = layerConfigs.map((layer) => {
@@ -2142,6 +2191,11 @@ export function renderTopology(selectedSolutions, containerEl) {
               if (layer.band === 'top') return nodeY < sentinelMidY;
               return nodeY >= sentinelMidY && node?.type !== 'sentinel';
           });
+          if (layer.name === 'transformation') {
+              const allDcrNodes = (Array.isArray(existingNodes) ? existingNodes : []).filter(n => n?.type === 'dcr');
+              console.log('[LAYER DEBUG] transformation top: matchingNodes=', matchingNodes.length, 'allDcrNodes=', allDcrNodes.length);
+              allDcrNodes.forEach(n => console.log('[LAYER DEBUG]   dcr', n.id, 'y=', n.position?.y, 'vs sentinelMidY=', sentinelMidY, 'passes?', Number(n.position?.y) < sentinelMidY));
+          }
           if (!matchingNodes.length) return { layer, empty: true };
 
           let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -2189,12 +2243,10 @@ export function renderTopology(selectedSolutions, containerEl) {
               boxTop = minY - 75;
               boxBottom = maxY + 45;
           } else {
-              boxLeft = refMinX;
-              boxRight = refMaxX;
-              // HARD RULE: this layer MUST start below the previous layer's bottom edge
-              const prevName = topOrder[topOrder.indexOf(name) - 1];
-              const prevBottom = computedBoxes[prevName]?.boxBottom || sourcesBottomEdge;
-              boxTop = Math.max(minY - 75, prevBottom + LAYER_GAP);
+              boxLeft = Math.min(refMinX, bounds.minX - 50);
+              boxRight = Math.max(refMaxX, bounds.maxX + 50);
+              // Start box above its own nodes, allowing slight overlap with previous layer if needed
+              boxTop = minY - 45;
               // Ensure box extends to contain nodes AND has minimum height
               boxBottom = Math.max(maxY + 45, boxTop + 80);
           }
@@ -2215,16 +2267,12 @@ export function renderTopology(selectedSolutions, containerEl) {
               boxTop = minY - 75;
               boxBottom = maxY + 45;
           } else {
-              boxLeft = refBottomMinX;
-              boxRight = refBottomMaxX;
-              // HARD RULE: this layer MUST end above the previous layer's top edge
-              const prevName = bottomOrder[bottomOrder.indexOf(name) - 1];
-              const prevTopEdge = computedBoxes[prevName]?.boxTop;
-              boxBottom = prevTopEdge !== undefined
-                  ? Math.min(maxY + 45, prevTopEdge - LAYER_GAP)
-                  : maxY + 45;
+              boxLeft = Math.min(refBottomMinX, bounds.minX - 50);
+              boxRight = Math.max(refBottomMaxX, bounds.maxX + 50);
+              // End box below its own nodes, allowing slight overlap with previous layer if needed
+              boxBottom = maxY + 45;
               // Ensure box has minimum height (extends upward)
-              boxTop = Math.min(minY - 75, boxBottom - 80);
+              boxTop = Math.min(minY - 45, boxBottom - 80);
           }
           computedBoxes[name] = { boxLeft, boxRight, boxTop, boxBottom };
       });
@@ -2269,6 +2317,14 @@ export function renderTopology(selectedSolutions, containerEl) {
 
     containerEl.innerHTML = `
         <div class="topo-container">
+            <div class="topo-toolbar">
+                <button type="button" class="topo-toolbar-btn" id="topoResetLayout">🔄 Reset Layout</button>
+                <div class="topo-toolbar-filters">
+                    <button type="button" class="topo-toolbar-btn topo-filter-btn active" data-filter="all">All</button>
+                    <button type="button" class="topo-toolbar-btn topo-filter-btn" data-filter="connected">✓ Existing</button>
+                    <button type="button" class="topo-toolbar-btn topo-filter-btn" data-filter="new">+ New</button>
+                </div>
+            </div>
             <div id="reactflow-topology" class="topo-flow-wrapper"></div>
             <div class="topo-legend">
                 <div class="topo-legend-title">Legend — Ingestion Methods</div>
@@ -2298,7 +2354,7 @@ export function renderTopology(selectedSolutions, containerEl) {
     };
 
     function SourceNode({ data }) {
-        const { solutions, pc, type, zone, band = 'top', windowsPools, color, useRightHandle = false, usePoolGrid = false } = data;
+        const { solutions, pc, type, zone, band = 'top', windowsPools, color, useRightHandle = false, usePoolGrid = false, status } = data;
         const isWindows = type === 'windows_events';
         const nodeColor = color || pc.color;
         const items = solutions.slice(0, 5).map((s, i) =>
@@ -2362,7 +2418,7 @@ export function renderTopology(selectedSolutions, containerEl) {
             : standardContent;
         const activeVerticalHandle = band === 'bottom' ? HANDLE_IDS.sourceTop : HANDLE_IDS.sourceBottom;
 
-        return h('div', { className: `rf-source-node${usePoolGrid ? ' rf-source-node--wide' : ''}` },
+        return h('div', { className: `rf-source-node${usePoolGrid ? ' rf-source-node--wide' : ''}${status ? ` rf-node--${status}` : ''}` },
             h(Handle, { id: HANDLE_IDS.sourceTop, type: 'source', position: Position.Top, style: getHandleStyle(pc.color, 8, useRightHandle || activeVerticalHandle !== HANDLE_IDS.sourceTop) }),
             h(Handle, { id: HANDLE_IDS.sourceRight, type: 'source', position: Position.Right, style: getHandleStyle(pc.color, 8, !useRightHandle) }),
             h('div', { className: 'rf-source-node-title' },
@@ -2376,6 +2432,7 @@ export function renderTopology(selectedSolutions, containerEl) {
                 h('span', { className: 'rf-source-node-title-text' }, pc.sourceLabel)
             ),
             ...sourceContent,
+            status ? h('div', { className: 'rf-node-footer' }, renderStatusChip(status)) : null,
             h(Handle, { id: HANDLE_IDS.sourceBottom, type: 'source', position: Position.Bottom, style: getHandleStyle(pc.color, 8, useRightHandle || activeVerticalHandle !== HANDLE_IDS.sourceBottom) })
         );
     }
@@ -2397,7 +2454,7 @@ export function renderTopology(selectedSolutions, containerEl) {
     function CriblNode({ data }) {
         const acceptsTop = Boolean(data?.acceptsTop);
         const acceptsBottom = Boolean(data?.acceptsBottom);
-        return h('div', { className: 'rf-cribl-node', style: { height: '100%' } },
+        return h('div', { className: `rf-cribl-node${data.status ? ` rf-node--${data.status}` : ''}`, style: { height: '100%' } },
             h(Handle, { id: HANDLE_IDS.sourceLeft, type: 'source', position: Position.Left, style: getHandleStyle(data.color, 6, false) }),
             ...renderDistributedHandles('target', 'top', data.color, getPortHandleCount(data, 'target', 'top'), 6, !acceptsTop),
             ...renderDistributedHandles('target', 'bottom', data.color, getPortHandleCount(data, 'target', 'bottom'), 6, !acceptsBottom),
@@ -2409,6 +2466,7 @@ export function renderTopology(selectedSolutions, containerEl) {
                 fallbackClassName: 'rf-path-logo-fallback'
             }),
             h('span', null, data.label || 'Cribl Stream'),
+            data.status ? renderStatusChip(data.status) : null,
             ...renderDistributedHandles('source', 'top', data.color, getPortHandleCount(data, 'source', 'top'), 6, true),
             ...renderDistributedHandles('source', 'bottom', data.color, getPortHandleCount(data, 'source', 'bottom'), 6, true)
         );
@@ -2422,7 +2480,7 @@ export function renderTopology(selectedSolutions, containerEl) {
             && (data.topologyType === 'windows_events' || data.topologyType === 'syslog_cef');
         const band = data.band || 'top';
 
-        return h('div', { className: 'rf-server-node', style: { borderColor: data.color } },
+        return h('div', { className: `rf-server-node${data.status ? ` rf-node--${data.status}` : ''}`, style: { borderColor: data.color } },
             h(Handle, { id: HANDLE_IDS.targetTop, type: 'target', position: Position.Top, style: getHandleStyle(data.color, 6, band === 'bottom') }),
             h(Handle, { id: HANDLE_IDS.targetBottom, type: 'target', position: Position.Bottom, style: getHandleStyle(data.color, 6, band !== 'bottom') }),
             h(Handle, { id: HANDLE_IDS.targetLeft, type: 'target', position: Position.Left, style: getHandleStyle(data.color, 6, true) }),
@@ -2450,6 +2508,7 @@ export function renderTopology(selectedSolutions, containerEl) {
                         : null
                 )
                 : null,
+            data.status ? h('div', { className: 'rf-node-footer' }, renderStatusChip(data.status)) : null,
             h(Handle, { id: HANDLE_IDS.sourceTop, type: 'source', position: Position.Top, style: getHandleStyle(data.color, 6, band !== 'bottom') }),
             h(Handle, { id: HANDLE_IDS.sourceBottom, type: 'source', position: Position.Bottom, style: getHandleStyle(data.color, 6, band === 'bottom') }),
             h(Handle, { id: HANDLE_IDS.sourceRight, type: 'source', position: Position.Right, style: getHandleStyle(data.color, 6, true) })
@@ -2490,7 +2549,7 @@ export function renderTopology(selectedSolutions, containerEl) {
         const targetActiveSide = band === 'bottom' ? 'bottom' : 'top';
         const sourceActiveSide = band === 'bottom' ? 'top' : 'bottom';
 
-        return h('div', { className: `rf-dcr-node${hasDetails ? ' rf-dcr-node--with-sources' : ''}`, style: { borderColor: data.color, color: data.color } },
+        return h('div', { className: `rf-dcr-node${hasDetails ? ' rf-dcr-node--with-sources' : ''}${data.status ? ` rf-node--${data.status}` : ''}`, style: { borderColor: data.color, color: data.color } },
             ...renderDistributedHandles('target', 'top', data.color, getPortHandleCount(data, 'target', 'top'), 5, targetActiveSide !== 'top'),
             ...renderDistributedHandles('target', 'bottom', data.color, getPortHandleCount(data, 'target', 'bottom'), 5, targetActiveSide !== 'bottom'),
             h(Handle, { id: HANDLE_IDS.targetLeft, type: 'target', position: Position.Left, style: getHandleStyle(data.color, 5, true) }),
@@ -2512,6 +2571,7 @@ export function renderTopology(selectedSolutions, containerEl) {
             metricLabel
                 ? h('div', { className: 'rf-dcr-detail rf-dcr-detail--metric' }, metricLabel)
                 : null,
+            data.status ? h('div', { className: 'rf-node-footer' }, renderStatusChip(data.status)) : null,
             ...renderDistributedHandles('source', 'top', data.color, getPortHandleCount(data, 'source', 'top'), 5, sourceActiveSide !== 'top'),
             ...renderDistributedHandles('source', 'bottom', data.color, getPortHandleCount(data, 'source', 'bottom'), 5, sourceActiveSide !== 'bottom'),
             h(Handle, { id: HANDLE_IDS.sourceRight, type: 'source', position: Position.Right, style: getHandleStyle(data.color, 5, true) })
@@ -2520,10 +2580,11 @@ export function renderTopology(selectedSolutions, containerEl) {
 
     function CollectorVmNode({ data }) {
         const band = data.band || 'top';
+        const targetActiveSide = band === 'bottom' ? 'bottom' : 'top';
         const sourceActiveSide = band === 'bottom' ? 'top' : 'bottom';
-        return h('div', { className: 'rf-server-node', style: { borderColor: data.color } },
-            h(Handle, { id: HANDLE_IDS.targetTop, type: 'target', position: Position.Top, style: getHandleStyle(data.color, 6, true) }),
-            h(Handle, { id: HANDLE_IDS.targetBottom, type: 'target', position: Position.Bottom, style: getHandleStyle(data.color, 6, true) }),
+        return h('div', { className: `rf-server-node${data.status ? ` rf-node--${data.status}` : ''}`, style: { borderColor: data.color } },
+            ...renderDistributedHandles('target', 'top', data.color, getPortHandleCount(data, 'target', 'top'), 6, targetActiveSide !== 'top'),
+            ...renderDistributedHandles('target', 'bottom', data.color, getPortHandleCount(data, 'target', 'bottom'), 6, targetActiveSide !== 'bottom'),
             h(Handle, { id: HANDLE_IDS.targetLeft, type: 'target', position: Position.Left, style: getHandleStyle(data.color, 6) }),
             h('div', { className: 'rf-server-icon', style: { color: data.color } }, renderServerOsIcon('linux', 'rf-inline-os-icon rf-inline-os-icon--large')),
             h('div', { className: 'rf-server-label' }, 'Linux VM (collector)'),
@@ -2543,6 +2604,7 @@ export function renderTopology(selectedSolutions, containerEl) {
             data.measuredEpsLabel
                 ? h('div', { className: 'rf-dcr-detail rf-dcr-detail--metric', style: { color: '#10B981', fontWeight: 600 } }, data.measuredEpsLabel)
                 : null,
+            data.status ? h('div', { className: 'rf-node-footer' }, renderStatusChip(data.status)) : null,
             ...renderDistributedHandles('source', 'top', data.color, getPortHandleCount(data, 'source', 'top'), 6, sourceActiveSide !== 'top'),
             ...renderDistributedHandles('source', 'bottom', data.color, getPortHandleCount(data, 'source', 'bottom'), 6, sourceActiveSide !== 'bottom'),
             h(Handle, { id: HANDLE_IDS.sourceRight, type: 'source', position: Position.Right, style: getHandleStyle(data.color, 6, true) })
@@ -2550,7 +2612,7 @@ export function renderTopology(selectedSolutions, containerEl) {
     }
 
     function SentinelNode({ data }) {
-        return h('div', { className: 'rf-sentinel-node' },
+        return h('div', { className: `rf-sentinel-node rf-node--${data.status || 'existing'}` },
             ...renderDistributedHandles('target', 'top', '#0078d4', getPortHandleCount(data, 'target', 'top'), 10),
             ...renderDistributedHandles('target', 'bottom', '#0078d4', getPortHandleCount(data, 'target', 'bottom'), 10),
             h(Handle, { id: HANDLE_IDS.targetRight, type: 'target', position: Position.Right, style: getHandleStyle('#0078d4', 10, !data?.hasSidecarTarget) }),
@@ -2597,4 +2659,34 @@ export function renderTopology(selectedSolutions, containerEl) {
     const topoContainer = document.getElementById('reactflow-topology');
     const root = ReactDOM.createRoot(topoContainer);
     root.render(app);
+
+    // Toolbar: Reset Layout
+    const resetBtn = document.getElementById('topoResetLayout');
+    if (resetBtn) {
+        resetBtn.addEventListener('click', () => {
+            renderTopology(topologySolutions.concat(hasStandaloneCriblSelection ? [{ id: CRIBL_SOLUTION_ID }] : []), containerEl);
+        });
+    }
+
+    // Toolbar: Filter buttons (connected / new / all)
+    const filterBtns = containerEl.querySelectorAll('.topo-filter-btn');
+    filterBtns.forEach((btn) => {
+        btn.addEventListener('click', () => {
+            filterBtns.forEach(b => b.classList.remove('active'));
+            btn.classList.add('active');
+            const filter = btn.dataset.filter;
+            const nodeEls = topoContainer.querySelectorAll('.react-flow__node');
+            nodeEls.forEach((el) => {
+                const isExisting = el.querySelector('.rf-node--existing');
+                const isNew = el.querySelector('.rf-node--new');
+                if (filter === 'all') {
+                    el.style.opacity = '';
+                } else if (filter === 'connected') {
+                    el.style.opacity = isExisting ? '' : '0.2';
+                } else if (filter === 'new') {
+                    el.style.opacity = isNew ? '' : '0.2';
+                }
+            });
+        });
+    });
 }

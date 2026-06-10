@@ -563,9 +563,17 @@ const clearPlannerLocalStorage = () => {
 
 const getSelectedPlanSolutions = () => sortByScore(getSelectedSolutionsData());
 
-const renderTopologyStep = () => {
+const renderTopologyStep = async () => {
+    const container = document.getElementById('architectureDiagram');
+    // If infrastructure discovery is in progress, show loading and wait
+    if (window._infraDiscoveryPromise) {
+        container.innerHTML = '<div style="padding:2rem;text-align:center;color:var(--text-muted)">⏳ Loading existing infrastructure…</div>';
+        try {
+            await window._infraDiscoveryPromise;
+        } catch (_) { /* discovery failure is non-fatal */ }
+    }
     try {
-        renderTopology(getSelectedPlanSolutions(), document.getElementById('architectureDiagram'));
+        renderTopology(getSelectedPlanSolutions(), container);
     } catch (err) {
         console.error('[renderTopologyStep] renderTopology failed:', err);
     }
@@ -1932,18 +1940,16 @@ async function onWorkspaceChange() {
         window.connectedWorkspace = workspaceConnectionState.selectedWorkspace;
         window.connectedSolutions = Array.from(connectedIds);
 
-        // Fire discovery non-blocking — topology will pick it up when ready
-        discoverExistingInfrastructure(subscriptionId, resourceGroupName, workspaceName)
+        // Fire discovery — renderTopologyStep will await this promise
+        window._infraDiscoveryPromise = discoverExistingInfrastructure(subscriptionId, resourceGroupName, workspaceName)
             .then(() => {
                 console.info('[Sentinel Planner] Infrastructure discovery complete:', window.discoveredInfrastructure?.summary);
-                if (getCurrentStep() === 4) {
-                    renderTopologyStep();
-                }
             })
             .catch((err) => {
                 console.warn('[Sentinel Planner] Infrastructure discovery failed (non-fatal):', err.message);
                 window.discoveredInfrastructure = { vms: [], summary: { totalVMs: 0 }, status: 'failed' };
-            });
+            })
+            .finally(() => { window._infraDiscoveryPromise = null; });
 
         if (getCurrentStep() === 4) {
             renderTopologyStep();
@@ -2116,18 +2122,16 @@ async function autoReconnectFromSession() {
         window.connectedWorkspace = savedWorkspace;
         window.connectedSolutions = Array.from(connectedIds);
 
-        // Fire discovery non-blocking — topology will pick it up when ready
-        discoverExistingInfrastructure(subscriptionId, resourceGroupName, workspaceName)
+        // Fire discovery — renderTopologyStep will await this promise
+        window._infraDiscoveryPromise = discoverExistingInfrastructure(subscriptionId, resourceGroupName, workspaceName)
             .then(() => {
                 console.info('[Sentinel Planner] Infrastructure discovery complete:', window.discoveredInfrastructure?.summary);
-                if (getCurrentStep() === 4) {
-                    renderTopologyStep();
-                }
             })
             .catch((err) => {
                 console.warn('[Sentinel Planner] Infrastructure discovery failed (non-fatal):', err.message);
                 window.discoveredInfrastructure = { vms: [], summary: { totalVMs: 0 }, status: 'failed' };
-            });
+            })
+            .finally(() => { window._infraDiscoveryPromise = null; });
 
         if (getCurrentStep() === 4) {
             renderTopologyStep();

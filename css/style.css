@@ -1768,6 +1768,11 @@ body {
 /* Ingestion Topology — React Flow */
 .ingestion-topology { margin: 20px 0; }
 .topo-container { position: relative; padding: 24px 0; }
+.topo-toolbar { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; padding: 8px 12px; border-radius: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); }
+.topo-toolbar-btn { background: var(--bg-card); border: 1px solid var(--border-color); border-radius: 6px; padding: 6px 12px; font-size: 0.78rem; color: var(--text-secondary); cursor: pointer; transition: var(--transition); }
+.topo-toolbar-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
+.topo-toolbar-filters { display: flex; gap: 6px; }
+.topo-filter-btn.active { background: rgba(0, 120, 212, 0.15); color: var(--sentinel-blue); border-color: rgba(0, 120, 212, 0.4); }
 .topo-flow-wrapper { width: 100%; height: 680px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-primary); overflow: hidden; }
 .topo-flow-wrapper .react-flow__background { background: var(--bg-primary) !important; }
 .topo-flow-wrapper .react-flow { background: var(--bg-primary) !important; }
@@ -1838,6 +1843,19 @@ body {
 .rf-sentinel-sub { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
 .rf-sentinel-portal { font-size: 0.7rem; color: var(--text-secondary); margin-top: 8px; border-top: 1px solid var(--border-color); padding-top: 8px; }
 .rf-sentinel-portal code { font-size: 0.65rem; color: var(--sentinel-light-blue); }
+
+/* ─── Existing vs New infrastructure visual states ─── */
+.rf-source-node.rf-node--existing,
+.rf-server-node.rf-node--existing,
+.rf-dcr-node.rf-node--existing,
+.rf-cribl-node.rf-node--existing { opacity: 0.78; border-color: #10B981 !important; border-style: solid !important; }
+.rf-source-node.rf-node--new { border-style: dashed; }
+.rf-server-node.rf-node--new { border-style: dashed; }
+.rf-cribl-node.rf-node--new { border-style: dashed; }
+.rf-status-chip { font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; display: inline-block; }
+.rf-status-chip--existing { background: rgba(16, 185, 129, 0.15); color: #6EE7B7; border: 1px solid rgba(16, 185, 129, 0.35); }
+.rf-status-chip--new { background: rgba(80, 230, 255, 0.1); color: #50E6FF; border: 1px solid rgba(80, 230, 255, 0.3); }
+.rf-node-footer { display: flex; justify-content: flex-end; margin-top: 4px; }
 
 /* Footer */
 .app-footer {
