@@ -140,8 +140,13 @@ function inferWindowsPopulationKind(solution = {}) {
 }
 
 function getConnectorCapacityMetadata(solution = {}) {
-    // Content packs (0 connectors) never need sizing
-    if (Number(solution?.connectors) <= 0) {
+    // Content packs (0 connectors) never need sizing — unless they have explicit
+    // sizing signals (fieldPack, capacity_type, or cribl_eligible) indicating they
+    // rely on a dependent solution's connector but still need infrastructure sizing.
+    if (Number(solution?.connectors) <= 0
+        && !solution?.capacity_type
+        && !solution?.fieldPack
+        && solution?.cribl_eligible !== true) {
         return {
             type: 'none',
             populationKind: '',
@@ -548,7 +553,7 @@ export function classifyConnectorCapacity(solution = {}) {
     return getConnectorCapacityMetadata(solution).type;
 }
 
-export function createDefaultSizingDraft(type = 'none') {
+export function createDefaultSizingDraft(type = 'none', options = {}) {
     if (type === 'windows') {
         return {
             servers: DEFAULT_WINDOWS_SERVERS,
@@ -570,8 +575,12 @@ export function createDefaultSizingDraft(type = 'none') {
     }
 
     if (type === 'firewall') {
+        const measuredEps = options.measuredEps;
+        const eps = (typeof measuredEps === 'number' && measuredEps > 0)
+            ? measuredEps
+            : DEFAULT_FIREWALL_EPS;
         return {
-            eps: DEFAULT_FIREWALL_EPS,
+            eps,
             criblIngestion: false,
             criblIngestionExplicit: false,
             isDefault: true
@@ -620,40 +629,48 @@ export function validateSizingDraft(type = 'none', values = {}) {
     const warnings = [];
 
     if (type === 'windows') {
-        const serversRaw = String(values?.servers ?? values?.serverCount ?? '').trim();
-        const onPremRaw = String(values?.onPremPercent ?? '').trim();
-        const serversValue = Number(serversRaw);
-        const onPremValue = Number(onPremRaw);
+        if (values?.criblIngestion) {
+            // Cribl handles collection — server count / split are not required
+        } else {
+            const serversRaw = String(values?.servers ?? values?.serverCount ?? '').trim();
+            const onPremRaw = String(values?.onPremPercent ?? '').trim();
+            const serversValue = Number(serversRaw);
+            const onPremValue = Number(onPremRaw);
 
-        if (!serversRaw || !Number.isFinite(serversValue) || serversValue < 0) {
-            fieldErrors.servers = 'Enter a valid server count.';
-        }
+            if (!serversRaw || !Number.isFinite(serversValue) || serversValue < 0) {
+                fieldErrors.servers = 'Enter a valid server count.';
+            }
 
-        if (!onPremRaw || !Number.isFinite(onPremValue) || onPremValue < 0 || onPremValue > 100) {
-            fieldErrors.onPremPercent = 'Use a percentage from 0 to 100.';
-        }
+            if (!onPremRaw || !Number.isFinite(onPremValue) || onPremValue < 0 || onPremValue > 100) {
+                fieldErrors.onPremPercent = 'Use a percentage from 0 to 100.';
+            }
 
-        if (!fieldErrors.servers && sanitizeCount(serversValue) === 0) {
-            warnings.push('0 will produce 0 VMs — intentional?');
+            if (!fieldErrors.servers && sanitizeCount(serversValue) === 0) {
+                warnings.push('0 will produce 0 VMs — intentional?');
+            }
         }
     }
 
     if (type === 'linux') {
-        const serversRaw = String(values?.servers ?? values?.serverCount ?? '').trim();
-        const onPremRaw = String(values?.onPremPercent ?? '').trim();
-        const serversValue = Number(serversRaw);
-        const onPremValue = Number(onPremRaw);
+        if (values?.criblIngestion) {
+            // Cribl handles collection — server count / split are not required
+        } else {
+            const serversRaw = String(values?.servers ?? values?.serverCount ?? '').trim();
+            const onPremRaw = String(values?.onPremPercent ?? '').trim();
+            const serversValue = Number(serversRaw);
+            const onPremValue = Number(onPremRaw);
 
-        if (!serversRaw || !Number.isFinite(serversValue) || serversValue < 0) {
-            fieldErrors.servers = 'Enter a valid server count.';
-        }
+            if (!serversRaw || !Number.isFinite(serversValue) || serversValue < 0) {
+                fieldErrors.servers = 'Enter a valid server count.';
+            }
 
-        if (!onPremRaw || !Number.isFinite(onPremValue) || onPremValue < 0 || onPremValue > 100) {
-            fieldErrors.onPremPercent = 'Use a percentage from 0 to 100.';
-        }
+            if (!onPremRaw || !Number.isFinite(onPremValue) || onPremValue < 0 || onPremValue > 100) {
+                fieldErrors.onPremPercent = 'Use a percentage from 0 to 100.';
+            }
 
-        if (!fieldErrors.servers && sanitizeCount(serversValue) === 0) {
-            warnings.push('0 will produce 0 Linux servers — intentional?');
+            if (!fieldErrors.servers && sanitizeCount(serversValue) === 0) {
+                warnings.push('0 will produce 0 Linux servers — intentional?');
+            }
         }
     }
 
@@ -986,6 +1003,13 @@ export function getSizingDetailLines(profile = {}) {
     if (!profile?.result) return [];
 
     if (profile.type === 'windows') {
+        if (profile.criblIngestion) {
+            return [
+                `Scope: ${profile.result.serverDisplayLabel}`,
+                `Mix: ${formatNumber(profile.result.onPremServers)} on-prem · ${formatNumber(profile.result.azureServers)} Azure`,
+                'Cribl handles log collection — no collector VMs needed'
+            ];
+        }
         return [
             `Estimated: ${profile.result.label}`,
             `(${profile.result.reasoning})`,

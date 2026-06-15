@@ -1,4 +1,4 @@
-import { clearConnectorCriblIngestion, getConnectorCapacitySnapshot, saveConnectorCapacityValues } from '../gantt-planner.js?v=16';
+import { clearConnectorCriblIngestion, getConnectorCapacitySnapshot, saveConnectorCapacityValues } from '../gantt-planner.js?v=17';
 import {
     createDefaultSizingDraft,
     estimateWecServersForSourceComputers,
@@ -16,7 +16,7 @@ import {
     WEC_RECOMMENDED_RAM_GB,
     WEC_TYPICAL_CLIENTS_MAX,
     WEC_TYPICAL_CLIENTS_MIN
-} from './capacity.js?v=16';
+} from './capacity.js?v=18';
 
 const INTEGER_FORMATTER = new Intl.NumberFormat('en-US');
 
@@ -212,7 +212,10 @@ const connectorKindToSolutionIds = {
     box: ['box'],
 
     // DataType-based mappings (from workspace Usage table queries)
-    commonsecuritylog: ['cisco-asa-2', 'checkpoint', 'fortinet-forti-gate-next-generation-firewall-connector-for-microsoft-sentinel', 'zscaler', 'palo-alto-networks'],
+    // NOTE: CommonSecurityLog and Syslog are shared/generic tables — they prove "some CEF/syslog data exists"
+    // but NOT which specific product is sending it. Only explicit connector resources (ARM entries)
+    // should mark specific solutions as connected. These generic tables are used ONLY for lastLog
+    // freshness backfill on solutions that are already confirmed connected via other signals.
     azurediagnostics: ['azure-activity'],
     dns: ['windows-dns-events']
 };
@@ -225,10 +228,13 @@ const solutionDataUrls = [
     './data/solutions.json'
 ];
 const GENERAL_SENTINEL_DOC_URL = 'https://learn.microsoft.com/en-us/azure/sentinel/';
+const SENTINEL_CONNECTORS_REFERENCE_URL = 'https://learn.microsoft.com/en-us/azure/sentinel/data-connectors-reference';
 
-// Maps solution IDs to the correct Microsoft Learn /data-connectors/{slug} path segment.
-// An entry mapped to null means no specific doc page exists — the general Sentinel URL is used instead.
-// Entries are required wherever the solution ID does not match the published Microsoft Learn URL slug.
+// Maps solution IDs to the correct documentation URL.
+// Values can be:
+//   - A full URL (starts with 'https://') — used as-is
+//   - A slug string — appended to the /data-connectors/ base path (legacy pattern, redirects to reference page)
+//   - null — no specific doc exists, falls back to general Sentinel URL
 const CONNECTOR_DOC_SLUG_OVERRIDES = new Map([
     ['windows-security-events',                          'windows-security-events-via-ama'],
     ['windows-firewall-via-ama',                         'windows-firewall-events-via-ama'],
@@ -240,7 +246,7 @@ const CONNECTOR_DOC_SLUG_OVERRIDES = new Map([
     ['defender-for-cloud',                               'microsoft-defender-for-cloud'],
     ['defender-for-cloud-apps',                          'microsoft-defender-for-cloud-apps'],
     ['defender-for-office-365',                          'microsoft-defender-for-office-365'],
-    ['crowdstrike',                                      'crowdstrike-falcon-data-replicator'],
+    ['crowdstrike',                                      `${SENTINEL_CONNECTORS_REFERENCE_URL}#crowdstrike-api-data-connector-via-codeless-connector-framework`],
     ['aws',                                              'amazon-web-services'],
     ['aws-security-hub',                                 null],
     ['aws-vpc-flow-logs',                                null],
@@ -253,9 +259,24 @@ const CONNECTOR_DOC_SLUG_OVERRIDES = new Map([
     ['threat-intelligence',                              'threat-intelligence-taxii'],
     ['threat-intelligence-new',                          'threat-intelligence-upload-api'],
     ['cisco-asa-2',                                      'cisco-asa'],
-    ['palo-alto-cortex-xdr-ccp',                         'palo-alto-networks-firewall'],
-    ['palo-alto-prisma-cloud-2',                         'palo-alto-prisma-cloud-cspm'],
-    ['azure-cloud-ngfw-by-palo-alto-networks',           null],
+    ['cisco-meraki-events-via-rest-api',                 `${SENTINEL_CONNECTORS_REFERENCE_URL}#cisco-meraki-using-rest-api`],
+    ['cisco-sd-wan',                                     `${SENTINEL_CONNECTORS_REFERENCE_URL}#cisco-software-defined-wan`],
+    ['cisco-secure-endpoint',                            `${SENTINEL_CONNECTORS_REFERENCE_URL}#cisco-secure-endpoint-via-codeless-connector-framework`],
+    ['cisco-umbrella',                                   `${SENTINEL_CONNECTORS_REFERENCE_URL}#cisco-cloud-security-using-azure-functions`],
+    ['cisco-duo-security',                               `${SENTINEL_CONNECTORS_REFERENCE_URL}#cisco-duo-security-using-azure-functions`],
+    ['cisco-etd',                                        `${SENTINEL_CONNECTORS_REFERENCE_URL}#cisco-etd-using-azure-functions`],
+    ['cisco-firepower-e-streamer',                       null],
+    ['palo-alto-cortex-xdr-ccp',                         `${SENTINEL_CONNECTORS_REFERENCE_URL}#palo-alto-cortex-xdr`],
+    ['palo-alto-cortex-xpanse-ccf',                      `${SENTINEL_CONNECTORS_REFERENCE_URL}#palo-alto-cortex-xpanse-via-codeless-connector-framework`],
+    ['palo-alto-prisma-cloud-2',                         `${SENTINEL_CONNECTORS_REFERENCE_URL}#palo-alto-prisma-cloud-cspm-via-codeless-connector-framework`],
+    ['palo-alto-prisma-cloud-cwpp',                      `${SENTINEL_CONNECTORS_REFERENCE_URL}#palo-alto-prisma-cloud-cwpp-using-rest-api`],
+    ['azure-cloud-ngfw-by-palo-alto-networks',           `${SENTINEL_CONNECTORS_REFERENCE_URL}#azure-cloudngfw-by-palo-alto-networks`],
+    ['barracuda-cloud-gen-firewall',                     `${SENTINEL_CONNECTORS_REFERENCE_URL}#barracuda-cloudgen-firewall`],
+    ['barracuda-waf',                                    `${SENTINEL_CONNECTORS_REFERENCE_URL}#barracuda-waf`],
+    ['fortinet-forti-ndr-cloud',                         `${SENTINEL_CONNECTORS_REFERENCE_URL}#fortinet-fortindr-cloud`],
+    ['fortinet-forti-web-cloud-waf-as-a-service-connector-for-microsoft-sentinel', null],
+    ['proofpoint-on-demand-pod-email-security',          `${SENTINEL_CONNECTORS_REFERENCE_URL}#proofpoint-on-demand-email-security-via-codeless-connector-platform`],
+    ['okta-sso',                                         `${SENTINEL_CONNECTORS_REFERENCE_URL}#okta-single-sign-on-via-codeless-connector-framework`],
     ['microsoft-exchange-security-exchange-on-premises', null],
     ['microsoft-exchange-security-exchange-online',      null],
     ['microsoft-business-applications',                  null],
@@ -297,10 +318,10 @@ function resolveSolutionDocumentationUrl(solution = {}) {
         const solutionId = String(solution?.id || '').trim().toLowerCase();
 
         if (CONNECTOR_DOC_SLUG_OVERRIDES.has(solutionId)) {
-            const overrideSlug = CONNECTOR_DOC_SLUG_OVERRIDES.get(solutionId);
-            return overrideSlug
-                ? `https://learn.microsoft.com/en-us/azure/sentinel/data-connectors/${overrideSlug}`
-                : GENERAL_SENTINEL_DOC_URL;
+            const override = CONNECTOR_DOC_SLUG_OVERRIDES.get(solutionId);
+            if (!override) return GENERAL_SENTINEL_DOC_URL;
+            if (override.startsWith('https://')) return override;
+            return `https://learn.microsoft.com/en-us/azure/sentinel/data-connectors/${override}`;
         }
 
         const connectorSlug = slugifySentinelDocPath(solutionId || solution?.name);
@@ -643,7 +664,8 @@ function getSolutionFolderName(solution) {
         return decodeURIComponent(match[1]);
     }
 
-    return solution?.name || '';
+    // Without an explicit github_url, don't guess — return empty to skip fetch
+    return '';
 }
 
 function formatReleaseDate(rawDate) {
@@ -924,6 +946,25 @@ function getPreselectedSolutionIds() {
     return preSelectedIds;
 }
 
+const SETUP_HOURS_QUICK_THRESHOLD = 4;
+const SETUP_PHASE_CATEGORIES = new Set(['setup', 'phase-1', 'phase-2']);
+
+function computeSolutionValueScore(solution = {}) {
+    const analytics = getAnalyticRuleCount(solution);
+    const workbooks = getWorkbookCount(solution);
+    const playbooks = getPlaybookCount(solution);
+    return analytics + (workbooks * 2) + (playbooks * 3);
+}
+
+function computeSolutionSortScore(solution = {}) {
+    const value = computeSolutionValueScore(solution);
+    const setupHours = computeConnectorSetupHours(solution);
+    if (setupHours <= SETUP_HOURS_QUICK_THRESHOLD) {
+        return value;
+    }
+    return value * (SETUP_HOURS_QUICK_THRESHOLD / setupHours);
+}
+
 function sortSolutionsForDisplay(solutions = [], recommendedIds = new Set()) {
     return solutions
         .map((solution, index) => ({ solution, index }))
@@ -937,17 +978,16 @@ function sortSolutionsForDisplay(solutions = [], recommendedIds = new Set()) {
                 return leftRecommended ? -1 : 1;
             }
 
-            if (leftRecommended && rightRecommended) {
-                const leftPriority = left.isFeatured === true ? 0 : hasValuableContent(left) ? 1 : 2;
-                const rightPriority = right.isFeatured === true ? 0 : hasValuableContent(right) ? 1 : 2;
-                if (leftPriority !== rightPriority) {
-                    return leftPriority - rightPriority;
-                }
+            const leftFeatured = left.isFeatured === true;
+            const rightFeatured = right.isFeatured === true;
+            if (leftFeatured !== rightFeatured) {
+                return leftFeatured ? -1 : 1;
             }
 
-            const nameComparison = String(left.name || '').localeCompare(String(right.name || ''));
-            if (nameComparison !== 0) {
-                return nameComparison;
+            const leftScore = computeSolutionSortScore(left);
+            const rightScore = computeSolutionSortScore(right);
+            if (leftScore !== rightScore) {
+                return rightScore - leftScore;
             }
 
             return leftEntry.index - rightEntry.index;
@@ -1431,6 +1471,10 @@ export function getSolutionLastLog(solutionId = '') {
     return solutionLastLogMap.get(String(solutionId).trim()) || null;
 }
 
+export function hasLastLogData() {
+    return solutionLastLogMap.size > 0;
+}
+
 export function setConnectedSolutionIds(solutionIds = [], options = {}) {
     connectedSolutionIds.clear();
     solutionIds.filter(Boolean).forEach((solutionId) => connectedSolutionIds.add(solutionId));
@@ -1483,7 +1527,12 @@ export function setConnectedSolutionsFromWorkspace(connectors = [], discoveryMet
         unmatchedConnectorCount: resolution.unmatchedConnectors.length,
         totalShownInTopology: resolution.resolvedIds.size + resolution.syntheticSolutions.length,
         usageQueryFailed: Boolean(discoveryMeta.usageQueryFailed),
-        usedTableFallback: Boolean(discoveryMeta.usedTableFallback)
+        usedTableFallback: Boolean(discoveryMeta.usedTableFallback),
+        dataTypeDiscoverySource: typeof discoveryMeta.dataTypeDiscoverySource === 'string'
+            ? discoveryMeta.dataTypeDiscoverySource
+            : '',
+        tableAnalysisAvailable: Boolean(discoveryMeta.tableAnalysisAvailable),
+        tableFallbackTableCount: Math.max(0, Number(discoveryMeta.tableFallbackTableCount) || 0)
     };
 
     applyWorkspaceDiscoveryMetadata({
@@ -1625,6 +1674,22 @@ function normalizeDifficultyLabel(label) {
     }
 
     return normalizedLabel.charAt(0).toUpperCase() + normalizedLabel.slice(1);
+}
+
+function computeConnectorSetupHours(solution = {}) {
+    const tasks = solution?.planner?.setup_tasks;
+    if (!Array.isArray(tasks) || tasks.length === 0) {
+        return Number(solution?.value_scoring?.setup_hours) || 0;
+    }
+    let total = 0;
+    for (const task of tasks) {
+        const category = String(task?.category || '').trim().toLowerCase();
+        if (!category || SETUP_PHASE_CATEGORIES.has(category)) {
+            const hours = Number(task?.effort_hours) || 0;
+            if (!task?.optional) total += hours;
+        }
+    }
+    return total > 0 ? total : (Number(solution?.value_scoring?.setup_hours) || 0);
 }
 
 let solutionsWorkspace = null;
@@ -1997,8 +2062,9 @@ function createSizingEditor(solution, profile, snapshot = {}) {
         : [];
     const criblEligible = isCriblEligibleForSolution(solution, profile);
     const buildDraft = (seed = null) => {
+        const measuredEps = window.discoveredInfrastructure?.summary?.totalEPS;
         const nextDraft = {
-            ...createDefaultSizingDraft(profile.type),
+            ...createDefaultSizingDraft(profile.type, { measuredEps }),
             ...(seed && typeof seed === 'object' ? seed : {})
         };
         const hasExplicitCriblIngestionPreference = Boolean(seed && typeof seed === 'object' && seed.criblIngestionExplicit);
@@ -2187,6 +2253,18 @@ function createSizingEditor(solution, profile, snapshot = {}) {
             if (relationFieldsetRef instanceof HTMLElement) {
                 relationFieldsetRef.classList.toggle('solution-sizing-collector--disabled', criblIngestion);
             }
+            // When Cribl handles ingestion, hide server count / split / VM estimation
+            grid.hidden = criblIngestion;
+            messages.hidden = criblIngestion;
+            preview.hidden = criblIngestion;
+            docLink.hidden = criblIngestion;
+            intro.textContent = criblIngestion
+                ? 'Cribl handles log collection for this source — no collection VMs are needed. Save to confirm.'
+                : profile.type === 'linux'
+                    ? 'Enter the Linux server count plus the on-prem split. The planner will use that mix when sizing shared Linux DCR capacity.'
+                    : profile.populationKind === 'wec'
+                        ? 'Enter the WEC server count plus the on-prem split. Windows Forwarded Events always stays separate from the AMA host estate.'
+                        : 'Enter the Windows server count plus the on-prem split. The planner will size collection VMs and show the math transparently.';
         }
     };
 
@@ -2430,6 +2508,14 @@ function createSizingEditor(solution, profile, snapshot = {}) {
         fieldRefs.eps = epsInput;
         grid.appendChild(epsField.field);
 
+        const measuredEpsValue = window.discoveredInfrastructure?.summary?.totalEPS;
+        if (typeof measuredEpsValue === 'number' && measuredEpsValue > 0) {
+            const epsNote = document.createElement('p');
+            epsNote.className = 'solution-sizing-measurement-note';
+            epsNote.textContent = '📊 Based on workspace measurement (24h avg)';
+            grid.appendChild(epsNote);
+        }
+
         collectorPlacementControls = createCollectorVmPlacementControls(profile, {
             onChange: () => {
                 updateNoteText();
@@ -2564,12 +2650,13 @@ function createSizingEditor(solution, profile, snapshot = {}) {
     });
     defaultsButton.addEventListener('click', (event) => {
         event.preventDefault();
+        const measuredEps = window.discoveredInfrastructure?.summary?.totalEPS;
         const defaultDraft = buildDraft(profile.type === 'firewall'
             ? {
-                ...createDefaultSizingDraft(profile.type),
+                ...createDefaultSizingDraft(profile.type, { measuredEps }),
                 collectorVmZone: getSelectedCollectorVmZone()
             }
-            : createDefaultSizingDraft(profile.type));
+            : createDefaultSizingDraft(profile.type, { measuredEps }));
         writeDraftToFields(defaultDraft);
         saveDraft(defaultDraft);
     });
@@ -2987,8 +3074,8 @@ function createSolutionItem(solution, recommendedIds = new Set()) {
         || (complexity <= 1 ? 'Easy' : complexity <= 2 ? 'Moderate' : 'Extended');
     const diffLabel = normalizeDifficultyLabel(rawDifficulty);
     const diffClass = diffLabel.toLowerCase() === 'extended' ? 'hard' : diffLabel.toLowerCase();
-    const hours = Number(solution?.value_scoring?.setup_hours) || 0;
-    const hoursText = hours > 0 ? ` · ~${hours}h` : '';
+    const hours = computeConnectorSetupHours(solution);
+    const hoursText = hours > 0 ? ` · ~${Math.round(hours)}h` : '';
 
     const badges = document.createElement('div');
     badges.className = 'solution-item-badges solution-item-footer';

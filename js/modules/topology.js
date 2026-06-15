@@ -1,6 +1,6 @@
-import { getConnectorCapacitySnapshot } from '../gantt-planner.js';
-import { getSolutionCapacityProfile, DEFAULT_COLLECTOR_VM_ZONE, DEFAULT_WINDOWS_ONPREM_PERCENT, DEFAULT_LINUX_ONPREM_PERCENT, FIREWALL_VM_EPS_CAPACITY, DEFAULT_FIREWALL_EPS, normalizeCollectorVmZone } from './capacity.js';
-import { connectedSolutionIds } from './solutions.js';
+import { getConnectorCapacitySnapshot } from '../gantt-planner.js?v=18';
+import { getSolutionCapacityProfile, DEFAULT_COLLECTOR_VM_ZONE, DEFAULT_WINDOWS_ONPREM_PERCENT, DEFAULT_LINUX_ONPREM_PERCENT, FIREWALL_VM_EPS_CAPACITY, DEFAULT_FIREWALL_EPS, normalizeCollectorVmZone } from './capacity.js?v=18';
+import { connectedSolutionIds, getSolutionLastLog, hasLastLogData } from './solutions.js?v=19';
 
 // topology.js — SIEM ingestion topology visualization using React Flow
 
@@ -80,7 +80,6 @@ const LINUX_SERVER_IDS = new Set(['linux-syslog', 'microsoft-sysmon-for-linux'])
 const CRIBL_SOLUTION_ID = 'cribl-stream';
 const ROUTE_STANDARD = 'standard';
 const ROUTE_CRIBL = 'cribl';
-const CRIBL_NODE_ID = 'shared-cribl-node'; // deprecated — use band-scoped IDs below
 const CRIBL_NODE_ID_TOP = 'shared-cribl-node-top';
 const CRIBL_NODE_ID_BOTTOM = 'shared-cribl-node-bottom';
 const FLOW_BAND_ORDER = {
@@ -106,8 +105,18 @@ function getUniqueSolutionNames(solutions = []) {
         .filter(Boolean))];
 }
 
-function isCriblRoutedSolution(solution = {}, capacitySnapshot = {}) {
-    return Boolean(getSolutionCapacityProfile(solution, capacitySnapshot)?.criblIngestion);
+function isCriblRoutedSolution(solution = {}, capacitySnapshot = {}, criblActive = false) {
+    const profile = getSolutionCapacityProfile(solution, capacitySnapshot);
+    // Explicit user preference wins in both directions
+    if (profile?.values?.criblIngestionExplicit) {
+        return Boolean(profile?.criblIngestion);
+    }
+    // Saved sizing (non-explicit) with criblIngestion set
+    if (profile?.criblIngestion) {
+        return true;
+    }
+    // Default: eligible connectors route through Cribl when the environment is active
+    return criblActive && solution?.cribl_eligible === true;
 }
 
 function buildWindowsSharedDcrPlan(zoneLayouts = []) {
@@ -798,10 +807,22 @@ export function renderTopology(selectedSolutions, containerEl) {
     }
 
     const allSelectedSolutions = Array.isArray(selectedSolutions) ? selectedSolutions : [];
+    console.log('[Topology] renderTopology state:', {
+        connectedSolutionCount: connectedSolutionIds.size,
+        connectedSolutionIds: Array.from(connectedSolutionIds),
+        allSelectedSolutions: allSelectedSolutions.length
+    });
+    console.info(
+        '[Topology] Input solutions:',
+        allSelectedSolutions.length,
+        'Connected IDs:',
+        connectedSolutionIds.size,
+        Array.from(connectedSolutionIds).slice(0, 10)
+    );
     const hasStandaloneCriblSelection = allSelectedSolutions.some((solution) => String(solution?.id || '').trim().toLowerCase() === CRIBL_SOLUTION_ID);
     const topologySolutions = allSelectedSolutions.filter((solution) =>
         String(solution?.id || '').trim().toLowerCase() !== CRIBL_SOLUTION_ID
-        && (solution?.connectors ?? 1) > 0
+        && ((solution?.connectors ?? 1) > 0 || solution?.fieldPack || solution?.cribl_eligible)
     );
     const groups = {};
     topologySolutions.forEach((sol) => {
@@ -831,9 +852,72 @@ export function renderTopology(selectedSolutions, containerEl) {
     const { ReactFlow: RF, ReactFlowProvider, Controls, Background, Handle, Position } = window.ReactFlow;
     const capacitySnapshot = getConnectorCapacitySnapshot(selectedSolutions);
 
-    const isSourceConnected = (solutions = []) =>
-        Array.isArray(solutions) && solutions.length > 0 &&
-        solutions.every((sol) => connectedSolutionIds.has(String(sol?.id || '').trim().toLowerCase()));
+    const IDLE_THRESHOLD_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
+
+    // ─── VM + DCR chain validation ───────────────────────────────────────────
+    // A source is only truly "connected" if there's an active VM with a DCR
+    // configured to read from that source type.
+    const infraData = window.discoveredInfrastructure || null;
+    const DCR_TYPE_MATCH = {
+        syslog_cef: ['cef', 'syslog'],
+        windows_events: ['windows'],
+        linux_server: ['syslog']
+    };
+
+    const getMatchingVMs = (sourceType) => {
+        if (!infraData?.vms?.length) return [];
+        const matchTypes = DCR_TYPE_MATCH[sourceType] || [];
+        if (!matchTypes.length) return [];
+        return infraData.vms.filter(vm =>
+            vm.dcrs?.some(dcr => matchTypes.includes(dcr.type))
+        );
+    };
+
+    const isSolutionConnected = (sol) =>
+        connectedSolutionIds.has(String(sol?.id || '').trim().toLowerCase());
+
+    const getSolutionStatus = (sol) => {
+        const id = String(sol?.id || '').trim().toLowerCase();
+        if (!connectedSolutionIds.has(id)) return 'new';
+        const lastLog = getSolutionLastLog(id) || getSolutionLastLog(sol?.id);
+        // If we have no lastLog data at all (Usage query failed), assume connected = active.
+        // Only show 'idle' when we have timestamp evidence of staleness.
+        if (!lastLog) return hasLastLogData() ? 'connected-idle' : 'connected';
+        const age = Date.now() - new Date(lastLog).getTime();
+        return age > IDLE_THRESHOLD_MS ? 'connected-idle' : 'connected';
+    };
+
+    // For source types requiring VMs, verify connection through VM+DCR chain.
+    // If AMA-based VMs confirm activity, use that. Otherwise fall back to table
+    // detection (covers legacy MMA agents, direct ingestion, Cribl, etc.).
+    const getVerifiedSourceStatus = (solutions = [], sourceType = '') => {
+        if (!Array.isArray(solutions) || solutions.length === 0) return 'new';
+        // Source types that don't require VMs — use standard table-based detection
+        if (!DCR_TYPE_MATCH[sourceType]) {
+            return getSourceStatus(solutions);
+        }
+        const matchingVMs = getMatchingVMs(sourceType);
+        const activeVMs = matchingVMs.filter(vm => vm.status === 'active');
+        const idleVMs = matchingVMs.filter(vm => vm.status === 'idle');
+        // AMA chain confirms active data flow
+        if (activeVMs.length > 0) return 'existing';
+        // AMA chain shows idle (heartbeat but no recent data)
+        if (idleVMs.length > 0) return 'connected-idle';
+        // No active/idle AMA VMs — fall back to table-level detection.
+        // Data may still flow via legacy MMA agent, Cribl, or other non-AMA path.
+        const tableStatus = getSourceStatus(solutions);
+        return tableStatus;
+    };
+
+    const getSourceStatus = (solutions = []) => {
+        if (!Array.isArray(solutions) || solutions.length === 0) return 'new';
+        const statuses = solutions.map(getSolutionStatus);
+        if (statuses.every((s) => s === 'new')) return 'new';
+        if (statuses.every((s) => s !== 'new')) {
+            return statuses.some((s) => s === 'connected-idle') ? 'connected-idle' : 'existing';
+        }
+        return 'partial';
+    };
 
     const renderServerOsIcon = (os = 'windows', className = 'rf-inline-os-icon') => {
         if (os === 'linux') {
@@ -905,8 +989,14 @@ export function renderTopology(selectedSolutions, containerEl) {
 
     const renderStatusChip = (status) => {
         if (!status) return null;
+        const labels = {
+            existing: 'CONNECTED',
+            'connected-idle': 'CONNECTED · IDLE',
+            partial: 'PARTIAL',
+            new: 'NEW'
+        };
         return h('span', { className: `rf-status-chip rf-status-chip--${status}` },
-            status === 'existing' ? 'EXISTING' : 'NEW'
+            labels[status] || 'NEW'
         );
     };
 
@@ -980,7 +1070,6 @@ export function renderTopology(selectedSolutions, containerEl) {
         markerEnd: { type: 'arrowclosed', color }
     });
 
-    const getSourceHandleForBand = (band = 'top') => (band === 'bottom' ? HANDLE_IDS.sourceTop : HANDLE_IDS.sourceBottom);
   const getFlowSourceHandleForBand = (band = 'top') => (band === 'bottom' ? HANDLE_IDS.sourceTop : HANDLE_IDS.sourceBottom);
   const getFlowTargetHandleForBand = (band = 'top') => (band === 'bottom' ? HANDLE_IDS.targetBottom : HANDLE_IDS.targetTop);
 
@@ -996,7 +1085,7 @@ export function renderTopology(selectedSolutions, containerEl) {
     buildEdge(source, target, color, {
       ...options,
       type: 'step',
-      sourceHandle: getSourceHandleForBand(band),
+      sourceHandle: getFlowSourceHandleForBand(band),
       targetHandle: getFlowTargetHandleForBand(band)
     });
 
@@ -1047,7 +1136,7 @@ export function renderTopology(selectedSolutions, containerEl) {
   const sentinelNodeWidth = 220;
   const sentinelNodeHeight = 132;
   const criblSentinelGapX = 88;
-  const topIntermediaryOffsetY = 340;
+  const topIntermediaryOffsetY = 460;
   const intermediaryLayerGapY = 200;
   const topSentinelGapY = 250;
   const bottomSentinelGapY = 250;
@@ -1119,15 +1208,16 @@ export function renderTopology(selectedSolutions, containerEl) {
   };
 
   const shouldPlaceCollectorInZone = (entry = {}) => entry.type === 'syslog_cef'
-      && entry.zone === collectorPlacementZone;
+      && entry.zone === collectorPlacementZone
+      && (entry.route || ROUTE_STANDARD) !== ROUTE_CRIBL;
   const splitSolutionsByRoute = (type, solutions = []) => {
       const allSolutions = Array.isArray(solutions) ? solutions : [];
       if (!['windows_events', 'linux_server', 'syslog_cef'].includes(type)) {
           return [{ route: ROUTE_STANDARD, solutions: allSolutions, zones: getZonesForType(type, capacitySnapshot) }];
       }
 
-      const criblSolutions = allSolutions.filter((solution) => isCriblRoutedSolution(solution, capacitySnapshot));
-      const standardSolutions = allSolutions.filter((solution) => !isCriblRoutedSolution(solution, capacitySnapshot));
+      const criblSolutions = allSolutions.filter((solution) => isCriblRoutedSolution(solution, capacitySnapshot, hasStandaloneCriblSelection));
+      const standardSolutions = allSolutions.filter((solution) => !isCriblRoutedSolution(solution, capacitySnapshot, hasStandaloneCriblSelection));
       const routeEntries = [];
 
       if (standardSolutions.length > 0) {
@@ -1176,12 +1266,17 @@ export function renderTopology(selectedSolutions, containerEl) {
       });
   });
 
+  const sourceItemHeight = 32;
+  const sourceNodeChrome = 60;
+
   function estimateRowHeight(entry) {
       if (entry.type === 'windows_events' && Array.isArray(entry.windowsPools) && entry.windowsPools.length > 0) {
           const estimatedNodeHeight = windowsPoolLayout.nodeChrome + estimateWindowsPoolStackHeight(entry);
           return Math.max(sourceNodeHeight, estimatedNodeHeight + windowsPoolLayout.bottomSlack);
       }
-      return sourceNodeHeight;
+      const solutionCount = Array.isArray(entry.solutions) ? entry.solutions.length : 0;
+      const dynamicHeight = sourceNodeChrome + (solutionCount * sourceItemHeight);
+      return Math.max(sourceNodeHeight, dynamicHeight);
   }
 
   const shouldUseSentinelAlignedRowSlot = (entry = {}) => entry.type === 'azure_native' || entry.type === 'direct';
@@ -1663,6 +1758,8 @@ export function renderTopology(selectedSolutions, containerEl) {
   });
 
   if (criblIngress.top) {
+      // Cribl is 'existing' if the cribl-stream solution was already connected in the user's env
+      const criblNodeStatus = connectedSolutionIds.has(CRIBL_SOLUTION_ID) ? 'existing' : 'new';
       const criblTopCenterX = average(criblTopRows.map((row) => getRowCenterX(row)));
       nodes.push({
           id: CRIBL_NODE_ID_TOP,
@@ -1676,7 +1773,7 @@ export function renderTopology(selectedSolutions, containerEl) {
               icon: PATH_CONFIGS.cribl.sourceIcon,
               logoUrl: PATH_CONFIGS.cribl.logoUrl,
               label: 'Cribl Stream',
-              status: 'new'
+              status: criblNodeStatus
           },
           style: {
               width: pathNodeWidth,
@@ -1702,7 +1799,7 @@ export function renderTopology(selectedSolutions, containerEl) {
               icon: PATH_CONFIGS.cribl.sourceIcon,
               logoUrl: PATH_CONFIGS.cribl.logoUrl,
               label: 'Cribl Stream',
-              status: 'new'
+              status: connectedSolutionIds.has(CRIBL_SOLUTION_ID) ? 'existing' : 'new'
           },
           style: {
               width: pathNodeWidth,
@@ -1714,32 +1811,22 @@ export function renderTopology(selectedSolutions, containerEl) {
       }));
   }
 
-  // ─── Existing Linux VMs — already streaming to workspace via DCR ───────────
-  // These are real VMs in the user's environment, distinct from calculated
-  // collector VMs (which represent VMs needed for new onboarding).
+  // ─── Existing Linux VMs — only those with active DCRs matching syslog/CEF sources ───
   const EXISTING_VMS_NODE_ID = 'existing-linux-vms';
-  const infraData = window.discoveredInfrastructure || null;
-  const existingVMs = infraData?.vms || [];
-  const activeVMs = existingVMs.filter(v => v.status === 'active');
-  const idleVMs = existingVMs.filter(v => v.status === 'idle');
-  const staleVMs = existingVMs.filter(v => v.status === 'stale');
-  const totalExistingVMs = existingVMs.length;
+  const matchingSyslogVMs = getMatchingVMs('syslog_cef');
+  const activeMatchingVMs = matchingSyslogVMs.filter(v => v.status === 'active');
+  const idleMatchingVMs = matchingSyslogVMs.filter(v => v.status === 'idle');
+  const relevantVMs = [...activeMatchingVMs, ...idleMatchingVMs];
 
   const syslogDcrEntries = sharedDcrEntries.filter((entry) => entry.color === PATH_CONFIGS.syslog_cef.color);
-  if (infraData && totalExistingVMs > 0 && syslogDcrEntries.length > 0) {
-      const measuredEps = infraData.summary?.totalEPS || 0;
-      let capacityLabel;
-      if (idleVMs.length === 0 && staleVMs.length === 0) {
-          capacityLabel = `${totalExistingVMs} VM${totalExistingVMs !== 1 ? 's' : ''} · all active`;
-      } else {
-          const parts = [];
-          if (activeVMs.length > 0) parts.push(`${activeVMs.length} active`);
-          if (idleVMs.length > 0) parts.push(`${idleVMs.length} idle`);
-          if (staleVMs.length > 0) parts.push(`${staleVMs.length} stale`);
-          capacityLabel = `${totalExistingVMs} VM${totalExistingVMs !== 1 ? 's' : ''} · ${parts.join(', ')}`;
-      }
+  if (relevantVMs.length > 0 && syslogDcrEntries.length > 0) {
+      const measuredEps = infraData?.summary?.totalEPS || 0;
+      const parts = [];
+      if (activeMatchingVMs.length > 0) parts.push(`${activeMatchingVMs.length} active`);
+      if (idleMatchingVMs.length > 0) parts.push(`${idleMatchingVMs.length} idle`);
+      const capacityLabel = `${relevantVMs.length} VM${relevantVMs.length !== 1 ? 's' : ''} · ${parts.join(', ')}`;
       const measuredEpsLabel = measuredEps > 0 ? `~${formatEps(measuredEps)} EPS measured (24h)` : null;
-      // Position existing VMs below its syslog_cef source (not at diagramLeftX which is below Windows)
+      const vmStatus = activeMatchingVMs.length > 0 ? 'existing' : 'connected-idle';
       const syslogCefSource = zoneLayouts
           .flatMap(({ rows = [] }) => rows.filter(r => r.type === 'syslog_cef'))
           [0];
@@ -1750,25 +1837,29 @@ export function renderTopology(selectedSolutions, containerEl) {
           data: {
               color: PATH_CONFIGS.syslog_cef.color,
               band: 'top',
-              vmCount: totalExistingVMs,
+              vmCount: relevantVMs.length,
               capacityLabel,
               measuredEpsLabel,
-              status: 'existing'
+              status: vmStatus
           },
           position: {
               x: existingVmsX,
-              y: topBandLayout.bandBottomY + 80
+              y: topBandLayout.bandBottomY + 120
           },
           style: { width: collectorVmWidth }
       });
       syslogDcrEntries.forEach((entry) => {
           edges.push(buildMiddleEdge(EXISTING_VMS_NODE_ID, entry.id, PATH_CONFIGS.syslog_cef.color, 'top'));
       });
-      // Connect syslog/CEF sources (firewalls) → existing Linux VM collectors
-      const syslogCefSourceIds = zoneLayouts
-          .flatMap(({ rows = [] }) => rows.filter(r => r.type === 'syslog_cef'))
-          .map(r => r.sourceId || getTopologySourceId(r.type, r.zone, r.route));
-      syslogCefSourceIds.forEach((srcId) => {
+      // Connect only standard-routed, CONNECTED syslog/CEF sources to existing VMs
+      const connectedSyslogRows = zoneLayouts
+          .flatMap(({ rows = [] }) => rows.filter(r =>
+              r.type === 'syslog_cef'
+              && (r.route || ROUTE_STANDARD) !== ROUTE_CRIBL
+              && getVerifiedSourceStatus(r.solutions, r.type) !== 'new'
+          ));
+      connectedSyslogRows.forEach((row) => {
+          const srcId = row.sourceId || getTopologySourceId(row.type, row.zone, row.route);
           edges.push(buildSourceToMiddleEdge(srcId, EXISTING_VMS_NODE_ID, PATH_CONFIGS.syslog_cef.color, 'top'));
       });
   }
@@ -1813,6 +1904,22 @@ export function renderTopology(selectedSolutions, containerEl) {
       if (!position) {
           return;
       }
+      const feedingSources = (entry.sourceIds || [])
+          .map((sid) => rowBySourceId.get(sid))
+          .filter(Boolean);
+      const feedingSolutions = feedingSources.flatMap((row) => row.solutions || []);
+      // Use verified status: DCR is only 'existing' if feeding sources have active VM+DCR chain
+      // or confirmed table data (legacy/non-AMA paths)
+      const feedingTypes = [...new Set(feedingSources.map(row => row.type).filter(Boolean))];
+      const verifiedStatuses = feedingTypes.map(t => getVerifiedSourceStatus(
+          feedingSources.filter(r => r.type === t).flatMap(r => r.solutions || []), t
+      ));
+      const sharedStatus = verifiedStatuses.includes('existing') ? 'existing'
+          : verifiedStatuses.includes('connected') ? 'connected'
+          : verifiedStatuses.includes('connected-idle') ? 'connected-idle'
+          : verifiedStatuses.includes('partial') ? 'partial'
+          : 'new';
+      const sharedInfraStatus = sharedStatus === 'new' ? 'new' : 'existing';
       nodes.push({
           id: entry.id,
           type: 'dcr',
@@ -1821,7 +1928,7 @@ export function renderTopology(selectedSolutions, containerEl) {
               ...entry.data,
               color: entry.color,
               band: position.band,
-              status: 'new'
+              status: sharedInfraStatus
           },
           style: { width: dcrNodeWidth },
           draggable: true
@@ -1838,6 +1945,9 @@ export function renderTopology(selectedSolutions, containerEl) {
           const sourceId = entry.sourceId;
           const sourceBand = entry.band;
           const sourceWidth = entry.width;
+          // Use verified status for VM-dependent sources (validates VM+DCR chain)
+          const sourceStatus = getVerifiedSourceStatus(entry.solutions, entry.type);
+          const infraStatus = sourceStatus === 'new' ? 'new' : 'existing';
           const sourceNode = {
               id: sourceId,
               type: 'source',
@@ -1851,7 +1961,7 @@ export function renderTopology(selectedSolutions, containerEl) {
                   color: pc.color,
                   useRightHandle: Boolean(entry.collectorVm),
                   usePoolGrid: entry.type === 'windows_events' && usesWindowsPoolGrid(entry.windowsPools),
-                  status: isSourceConnected(entry.solutions) ? 'existing' : 'new'
+                  status: sourceStatus
               },
               position: { x: entry.x, y: entry.y },
               style: { width: sourceWidth }
@@ -1860,43 +1970,7 @@ export function renderTopology(selectedSolutions, containerEl) {
           const sourceToSentinelEdge = (options = {}) => buildSourceToMiddleEdge(sourceId, 'sentinel', pc.color, sourceBand, options);
 
           if (usesSharedDcr(entry.type) && entry.route === ROUTE_CRIBL) {
-              if (entry.type === 'syslog_cef' && entry.collectorVm) {
-                  // On-prem syslog/CEF: Source → Linux VM → Cribl Stream → Sentinel
-                  const collectorVmId = `collector-${ROUTE_CRIBL}-${entry.zone}`;
-                  if (!renderedCollectorVmIds.has(collectorVmId)) {
-                      const sharedPlan = getSharedPlanForRow(entry);
-                      nodes.push({
-                          id: collectorVmId,
-                          type: 'collectorVm',
-                          data: {
-                              color: PATH_CONFIGS.syslog_cef.color,
-                              band: sourceBand,
-                              vmCount: sharedPlan?.vmCount || 0,
-                              capacityLabel: sharedPlan
-                                  ? `${formatEps(sharedPlan.totalEps)} EPS [max: ${formatTopologyCount(FIREWALL_VM_EPS_CAPACITY)} EPS/VM]`
-                                  : '',
-                              status: 'new'
-                          },
-                          position: {
-                              x: entry.collectorVm.x,
-                              y: sourceBand === 'bottom'
-                                  ? getBottomLayerY(1) + intermediaryNodeHeight + 60
-                                  : topBandLayout.bandBottomY + 80
-                          },
-                          style: { width: collectorVmWidth }
-                      });
-                      renderedCollectorVmIds.add(collectorVmId);
-                  }
-                  edges.push(buildSourceToCollectorEdge(sourceId, collectorVmId, PATH_CONFIGS.syslog_cef.color));
-                  const criblEdgeId = `e-${collectorVmId}--${getCriblNodeId(sourceBand)}`;
-                  if (!renderedCollectorTargetEdgeIds.has(criblEdgeId)) {
-                      edges.push(buildMiddleEdge(collectorVmId, getCriblNodeId(sourceBand), PATH_CONFIGS.syslog_cef.color, sourceBand, {
-                          id: criblEdgeId
-                      }));
-                      renderedCollectorTargetEdgeIds.add(criblEdgeId);
-                  }
-                  return;
-              }
+              // Cribl replaces the VM — Source connects directly to Cribl Stream
               edges.push(buildSourceToMiddleEdge(sourceId, getCriblNodeId(sourceBand), PATH_CONFIGS.cribl.color, sourceBand));
               return;
           }
@@ -1914,7 +1988,12 @@ export function renderTopology(selectedSolutions, containerEl) {
                       : getPlanTargetIds(sharedPlan, sourceId);
 
                   if (entry.type === 'syslog_cef') {
-                      // Fix: TOPO-002 / TOPO-003 — share collector VMs across syslog rows and keep their wiring in the correct band.
+                      // Calculated VMs are recommendations — only connect to NEW (non-connected) sources
+                      const hasNewSources = entry.solutions?.some(s => !isSolutionConnected(s));
+                      if (!hasNewSources) {
+                          // All sources already connected — skip calculated VM entirely
+                          return;
+                      }
                       const collectorVmId = `collector-${entry.route || ROUTE_STANDARD}-${entry.zone}`;
                       if (!renderedCollectorVmIds.has(collectorVmId)) {
                           nodes.push({
@@ -1933,7 +2012,7 @@ export function renderTopology(selectedSolutions, containerEl) {
                                   x: entry.collectorVm ? entry.collectorVm.x : (entry.x + sourceWidth + collectorVmOffsetX),
                                   y: sourceBand === 'bottom'
                                       ? getBottomLayerY(1) + intermediaryNodeHeight + 60
-                                      : topBandLayout.bandBottomY + 80
+                                      : topBandLayout.bandBottomY + 120
                               },
                               style: { width: collectorVmWidth }
                           });
@@ -1973,7 +2052,7 @@ export function renderTopology(selectedSolutions, containerEl) {
                       label: typeof pc.dcr === 'string' ? pc.dcr : (pc.dcr.label || 'DCR'),
                       color: pc.color,
                       band: sourceBand,
-                      status: 'new'
+                          status: infraStatus
                   },
                   style: { width: dcrNodeWidth },
                   draggable: true
@@ -1997,7 +2076,7 @@ export function renderTopology(selectedSolutions, containerEl) {
                       environment: entry.zone,
                       band: sourceBand,
                       serverIndicators: buildServerIndicatorsForGroup(entry.type, entry.solutions, capacitySnapshot, entry.zone),
-                      status: 'new'
+                          status: infraStatus
                   },
                   position: getIntermediaryPosition(entry, serverNodeWidth, serverLayerIndex),
                   style: { width: serverNodeWidth }
@@ -2028,7 +2107,7 @@ export function renderTopology(selectedSolutions, containerEl) {
                       color: pc.color,
                       icon: boxIcon,
                       band: sourceBand,
-                      status: 'new'
+                      status: infraStatus
                   },
                   position: (!pc.dcr && index === pathBoxes.length - 1)
                       ? { x: clampNodeX(sentinelCenterX - (pathNodeWidth / 2), pathNodeWidth), y: (entry.band === 'bottom' ? getBottomLayerY(firstBoxLayerIndex + index) : getTopLayerY(firstBoxLayerIndex + index)) }
@@ -2053,6 +2132,46 @@ export function renderTopology(selectedSolutions, containerEl) {
               ? sourceToSentinelEdge()
               : buildMiddleEdge(previousNodeId, 'sentinel', pc.color, sourceBand));
       });
+  });
+
+  // --- Intermediary node X de-collision pass ---
+  // PathBoxes, DCRs, and servers from different source groups at the same Y can overlap.
+  // Group all intermediary nodes by Y position, then nudge apart any that collide.
+  const INTERMEDIARY_TYPES = new Set(['pathBox', 'dcr', 'server']);
+  const intermediaryNodes = nodes.filter((n) => INTERMEDIARY_TYPES.has(n.type));
+  const intermediaryByY = new Map();
+  const Y_BUCKET_TOLERANCE = 30;
+  intermediaryNodes.forEach((node) => {
+      const rawY = Math.round(node.position.y);
+      // Find existing bucket within tolerance
+      let bucketKey = rawY;
+      for (const existingKey of intermediaryByY.keys()) {
+          if (Math.abs(existingKey - rawY) <= Y_BUCKET_TOLERANCE) {
+              bucketKey = existingKey;
+              break;
+          }
+      }
+      if (!intermediaryByY.has(bucketKey)) intermediaryByY.set(bucketKey, []);
+      intermediaryByY.get(bucketKey).push(node);
+  });
+  const INTERMEDIARY_GAP = 16;
+  intermediaryByY.forEach((group, yKey) => {
+      if (group.length < 2) return;
+      group.sort((a, b) => a.position.x - b.position.x);
+      let nudgeCount = 0;
+      for (let i = 1; i < group.length; i++) {
+          const prev = group[i - 1];
+          const prevWidth = Number(prev.style?.width) || pathNodeWidth;
+          const prevRight = prev.position.x + prevWidth;
+          const curr = group[i];
+          if (curr.position.x < prevRight + INTERMEDIARY_GAP) {
+              curr.position.x = prevRight + INTERMEDIARY_GAP;
+              nudgeCount++;
+          }
+      }
+      if (nudgeCount > 0) {
+          console.info(`[Topology] De-collision at Y≈${yKey}: nudged ${nudgeCount} of ${group.length} nodes (${group.map(n => n.id).join(', ')})`);
+      }
   });
 
   const getNodeWidthForPortLayout = (node = {}) => Number(node?.style?.width)
@@ -2161,9 +2280,15 @@ export function renderTopology(selectedSolutions, containerEl) {
           if (node?.type === 'uberBox') {
               return Number(node?.style?.height) || null;
           }
+          if (Number(node?.style?.height) > 0) {
+              return Number(node.style.height);
+          }
           switch (node?.type) {
-          case 'source':
-              return sourceNodeHeight;
+          case 'source': {
+              const solCount = Array.isArray(node?.data?.solutions) ? node.data.solutions.length : 0;
+              const dynamicH = sourceNodeChrome + (solCount * sourceItemHeight);
+              return Math.max(sourceNodeHeight, dynamicH);
+          }
           case 'server':
               return 120;
           case 'collectorVm':
@@ -2179,7 +2304,6 @@ export function renderTopology(selectedSolutions, containerEl) {
           }
       };
       const sentinelMidY = sentinelY + (sentinelNodeHeight / 2);
-      console.log('[LAYER DEBUG] sentinelY:', sentinelY, 'sentinelMidY:', sentinelMidY);
 
       // Pass 1: compute raw bounds for each layer
       const layerBounds = layerConfigs.map((layer) => {
@@ -2191,11 +2315,6 @@ export function renderTopology(selectedSolutions, containerEl) {
               if (layer.band === 'top') return nodeY < sentinelMidY;
               return nodeY >= sentinelMidY && node?.type !== 'sentinel';
           });
-          if (layer.name === 'transformation') {
-              const allDcrNodes = (Array.isArray(existingNodes) ? existingNodes : []).filter(n => n?.type === 'dcr');
-              console.log('[LAYER DEBUG] transformation top: matchingNodes=', matchingNodes.length, 'allDcrNodes=', allDcrNodes.length);
-              allDcrNodes.forEach(n => console.log('[LAYER DEBUG]   dcr', n.id, 'y=', n.position?.y, 'vs sentinelMidY=', sentinelMidY, 'passes?', Number(n.position?.y) < sentinelMidY));
-          }
           if (!matchingNodes.length) return { layer, empty: true };
 
           let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
@@ -2226,12 +2345,13 @@ export function renderTopology(selectedSolutions, containerEl) {
       const sourcesBottomTopEdge = sourcesBottomBounds ? sourcesBottomBounds.minY - 75 : Infinity;
 
       // Pass 2: create layer box nodes sequentially (top band: sources→collection→transformation, bottom band: sources→collection→transformation)
-      const LAYER_GAP = 12;
+      const LAYER_GAP = 45;
       const topOrder = ['sources', 'collection', 'transformation'];
       const bottomOrder = ['sources-bottom', 'collection-bottom', 'transformation-bottom'];
       const computedBoxes = {};
 
       // Compute top band layers in order (top-to-bottom stacking)
+      let prevTopBottom = -Infinity;
       topOrder.forEach((name) => {
           const bounds = layerBounds.find((b) => b.layer.name === name);
           if (!bounds || bounds.empty) return;
@@ -2245,11 +2365,12 @@ export function renderTopology(selectedSolutions, containerEl) {
           } else {
               boxLeft = Math.min(refMinX, bounds.minX - 50);
               boxRight = Math.max(refMaxX, bounds.maxX + 50);
-              // Start box above its own nodes, allowing slight overlap with previous layer if needed
-              boxTop = minY - 45;
+              // Start box above its own nodes, but enforce gap from previous layer
+              boxTop = Math.max(minY - 45, prevTopBottom + LAYER_GAP);
               // Ensure box extends to contain nodes AND has minimum height
               boxBottom = Math.max(maxY + 45, boxTop + 80);
           }
+          prevTopBottom = boxBottom;
           computedBoxes[name] = { boxLeft, boxRight, boxTop, boxBottom };
       });
 
@@ -2357,17 +2478,25 @@ export function renderTopology(selectedSolutions, containerEl) {
         const { solutions, pc, type, zone, band = 'top', windowsPools, color, useRightHandle = false, usePoolGrid = false, status } = data;
         const isWindows = type === 'windows_events';
         const nodeColor = color || pc.color;
-        const items = solutions.slice(0, 5).map((s, i) =>
-            h('div', { key: i, className: 'rf-source-item', style: { borderLeftColor: pc.color } },
-                h('div', { className: 'rf-source-name' }, s.name)
-            )
-        );
-        const moreCount = solutions.length - 5;
+        const items = solutions.map((s, i) => {
+            // Per-solution badge respects the verified source-level status.
+            // If the source has no proven VM+DCR path (status='new'), don't show CONNECTED badges.
+            const solStatus = (status === 'new') ? 'new' : getSolutionStatus(s);
+            const statusLabel = solStatus === 'connected' ? 'CONNECTED'
+                : solStatus === 'connected-idle' ? 'IDLE'
+                : null;
+            const statusEl = statusLabel
+                ? h('span', { className: `rf-sol-inline-status rf-sol-inline-status--${solStatus}` }, statusLabel)
+                : null;
+            return h('div', { key: i, className: 'rf-source-item', style: { borderLeftColor: pc.color } },
+                h('div', { className: 'rf-source-name' }, s.name),
+                statusEl
+            );
+        });
         const showArcAgent = isWindows && zone === 'onprem';
         const pools = isWindows && Array.isArray(windowsPools) ? windowsPools : [];
         const standardContent = [
-            ...items,
-            moreCount > 0 ? h('div', { className: 'rf-source-item', style: { borderLeftColor: pc.color, color: 'var(--text-muted)' } }, `+${moreCount} more`) : null
+            ...items
         ];
         const sourceContent = isWindows && pools.length > 0
             ? [
@@ -2432,14 +2561,13 @@ export function renderTopology(selectedSolutions, containerEl) {
                 h('span', { className: 'rf-source-node-title-text' }, pc.sourceLabel)
             ),
             ...sourceContent,
-            status ? h('div', { className: 'rf-node-footer' }, renderStatusChip(status)) : null,
             h(Handle, { id: HANDLE_IDS.sourceBottom, type: 'source', position: Position.Bottom, style: getHandleStyle(pc.color, 8, useRightHandle || activeVerticalHandle !== HANDLE_IDS.sourceBottom) })
         );
     }
 
     function PathBoxNode({ data }) {
         const band = data.band || 'top';
-        return h('div', { className: 'rf-path-node', style: { borderColor: data.color } },
+        return h('div', { className: `rf-path-node${data.status ? ` rf-node--${data.status}` : ''}`, style: { borderColor: data.color } },
             h(Handle, { id: HANDLE_IDS.targetTop, type: 'target', position: Position.Top, style: getHandleStyle(data.color, 6, band === 'bottom') }),
             h(Handle, { id: HANDLE_IDS.targetBottom, type: 'target', position: Position.Bottom, style: getHandleStyle(data.color, 6, band !== 'bottom') }),
             h(Handle, { id: HANDLE_IDS.targetLeft, type: 'target', position: Position.Left, style: getHandleStyle(data.color, 6, true) }),
@@ -2677,6 +2805,12 @@ export function renderTopology(selectedSolutions, containerEl) {
             const filter = btn.dataset.filter;
             const nodeEls = topoContainer.querySelectorAll('.react-flow__node');
             nodeEls.forEach((el) => {
+                const isUberBox = el.querySelector('.rf-uberbox-node');
+                const isLayerBox = el.querySelector('.rf-layer-box');
+                if (isUberBox || isLayerBox) {
+                    el.style.opacity = '';
+                    return;
+                }
                 const isExisting = el.querySelector('.rf-node--existing');
                 const isNew = el.querySelector('.rf-node--new');
                 if (filter === 'all') {
@@ -2687,6 +2821,36 @@ export function renderTopology(selectedSolutions, containerEl) {
                     el.style.opacity = isNew ? '' : '0.2';
                 }
             });
+
+            // Dim edges where at least one endpoint node is dimmed
+            const edgeEls = topoContainer.querySelectorAll('.react-flow__edge');
+            if (filter === 'all') {
+                edgeEls.forEach((el) => el.classList.remove('rf-edge--dimmed'));
+            } else {
+                const dimmedNodeIds = new Set();
+                nodeEls.forEach((el) => {
+                    if (el.style.opacity === '0.2') {
+                        const nodeId = el.dataset.id;
+                        if (nodeId) dimmedNodeIds.add(nodeId);
+                    }
+                });
+                edgeEls.forEach((el) => {
+                    const edgeId = String(el.dataset.id || '');
+                    // Edge IDs follow the pattern: e-{sourceId}--{targetId}
+                    const match = /^e-(.+)--([^-].*)$/.exec(edgeId) || /^e-(.+)--(.+)$/.exec(edgeId);
+                    if (!match) {
+                        el.classList.remove('rf-edge--dimmed');
+                        return;
+                    }
+                    const sourceId = match[1];
+                    const targetId = match[2];
+                    if (dimmedNodeIds.has(sourceId) || dimmedNodeIds.has(targetId)) {
+                        el.classList.add('rf-edge--dimmed');
+                    } else {
+                        el.classList.remove('rf-edge--dimmed');
+                    }
+                });
+            }
         });
     });
 }

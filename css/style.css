@@ -268,7 +268,10 @@ body {
 .workspace-picker select { width: 100%; padding: 8px; background: var(--bg-secondary); border: 1px solid var(--border-color); border-radius: 6px; color: var(--text-primary); }
 .workspace-status { min-height: 20px; margin-top: 12px; font-size: 0.85rem; color: var(--text-secondary); }
 .workspace-status.success { color: var(--success); }
+.workspace-status.warning { color: #FBBF24; }
 .workspace-status.error { color: #F87171; }
+.workspace-status__primary { display: block; }
+.workspace-status__detail { display: block; margin-top: 4px; font-size: 0.78rem; color: var(--text-secondary); }
 
 .cta-section {
     text-align: center;
@@ -1004,8 +1007,24 @@ body {
 }
 
 .solution-item.selected {
+    border-color: rgba(80, 230, 255, 0.6);
+    background: rgba(80, 230, 255, 0.05);
+}
+
+.solution-item.selected .solution-item-check:checked {
+    border-color: rgba(80, 230, 255, 0.9);
+    background: rgba(80, 230, 255, 0.85);
+}
+
+.solution-item.already-connected,
+.solution-item.already-connected.selected {
     border-color: var(--success);
     background: rgba(16, 185, 129, 0.05);
+}
+
+.solution-item.already-connected .solution-item-check:checked {
+    border-color: var(--success);
+    background: var(--success);
 }
 
 .solution-item.is-sizing-panel-active {
@@ -1024,17 +1043,6 @@ body {
     background: var(--bg-card);
     transform: none;
     box-shadow: none;
-}
-
-.solution-item.already-connected {
-    border-color: rgba(16, 185, 129, 0.4);
-    background: rgba(16, 185, 129, 0.05);
-}
-
-.solution-item.already-connected.recommended,
-.solution-item.already-connected.selected {
-    border-color: rgba(16, 185, 129, 0.4);
-    background: rgba(16, 185, 129, 0.05);
 }
 
 .solution-item-main {
@@ -1221,13 +1229,14 @@ body {
 }
 
 .solution-item.already-connected .solution-item-check {
-    border-color: rgba(16, 185, 129, 0.55);
-    background: rgba(16, 185, 129, 0.16);
+    border-color: #10B981;
+    background: #10B981;
 }
 
 .solution-item.already-connected .solution-item-check::after {
     content: '✓';
-    color: #10B981;
+    color: #ffffff;
+    font-size: 0.82rem;
 }
 
 .solution-item-check:disabled {
@@ -1508,6 +1517,14 @@ body {
     font-size: 0.76rem;
 }
 
+.solution-sizing-measurement-note {
+    grid-column: 1 / -1;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    margin: -4px 0 2px;
+    opacity: 0.85;
+}
+
 .solution-sizing-select {
     width: 100%;
     min-height: 42px;
@@ -1773,6 +1790,7 @@ body {
 .topo-toolbar-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
 .topo-toolbar-filters { display: flex; gap: 6px; }
 .topo-filter-btn.active { background: rgba(0, 120, 212, 0.15); color: var(--sentinel-blue); border-color: rgba(0, 120, 212, 0.4); }
+.rf-edge--dimmed { opacity: 0.12; transition: opacity 0.2s ease; }
 .topo-flow-wrapper { width: 100%; height: 680px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-primary); overflow: hidden; }
 .topo-flow-wrapper .react-flow__background { background: var(--bg-primary) !important; }
 .topo-flow-wrapper .react-flow { background: var(--bg-primary) !important; }
@@ -1799,8 +1817,8 @@ body {
 .rf-path-logo-img { width: 14px; height: 14px; object-fit: contain; }
 .rf-source-node-title-icon-fallback,
 .rf-path-logo-fallback { font-size: 0.95rem; line-height: 1; }
-.rf-source-item { padding: 6px 10px; border-left: 3px solid transparent; margin-bottom: 4px; font-size: 0.78rem; color: var(--text-secondary); background: var(--bg-secondary); border-radius: 4px; }
-.rf-source-name { font-weight: 500; }
+.rf-source-item { display: flex; align-items: center; justify-content: space-between; padding: 6px 10px; border-left: 3px solid transparent; margin-bottom: 4px; font-size: 0.78rem; color: var(--text-secondary); background: var(--bg-secondary); border-radius: 4px; }
+.rf-source-name { font-weight: 500; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rf-source-windows-extras { display: flex; flex-direction: column; gap: 10px; }
 .rf-pool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .rf-pool-grid .rf-pool-section { min-width: 0; }
@@ -1848,13 +1866,23 @@ body {
 .rf-source-node.rf-node--existing,
 .rf-server-node.rf-node--existing,
 .rf-dcr-node.rf-node--existing,
+.rf-path-node.rf-node--existing,
 .rf-cribl-node.rf-node--existing { opacity: 0.78; border-color: #10B981 !important; border-style: solid !important; }
 .rf-source-node.rf-node--new { border-style: dashed; }
 .rf-server-node.rf-node--new { border-style: dashed; }
+.rf-path-node.rf-node--new { border-style: dashed; }
 .rf-cribl-node.rf-node--new { border-style: dashed; }
 .rf-status-chip { font-size: 0.6rem; padding: 2px 6px; border-radius: 4px; text-transform: uppercase; font-weight: 600; letter-spacing: 0.5px; display: inline-block; }
 .rf-status-chip--existing { background: rgba(16, 185, 129, 0.15); color: #6EE7B7; border: 1px solid rgba(16, 185, 129, 0.35); }
+.rf-status-chip--connected-idle { background: rgba(250, 204, 21, 0.12); color: #FCD34D; border: 1px solid rgba(250, 204, 21, 0.35); }
+.rf-status-chip--partial { background: rgba(250, 204, 21, 0.08); color: #FCD34D; border: 1px solid rgba(250, 204, 21, 0.25); }
 .rf-status-chip--new { background: rgba(80, 230, 255, 0.1); color: #50E6FF; border: 1px solid rgba(80, 230, 255, 0.3); }
+.rf-sol-status-dot { width: 6px; height: 6px; border-radius: 50%; flex-shrink: 0; margin-right: 4px; margin-top: 1px; }
+.rf-sol-status-dot--connected { background: #10B981; box-shadow: 0 0 4px rgba(16, 185, 129, 0.5); }
+.rf-sol-status-dot--connected-idle { background: #FBBF24; box-shadow: 0 0 4px rgba(251, 191, 36, 0.5); }
+.rf-sol-inline-status { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; margin-left: 6px; }
+.rf-sol-inline-status--connected { color: #10B981; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); }
+.rf-sol-inline-status--connected-idle { color: #FBBF24; background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); }
 .rf-node-footer { display: flex; justify-content: flex-end; margin-top: 4px; }
 
 /* Footer */
@@ -4111,6 +4139,14 @@ body.is-resizing-gantt {
     font-size: 0.78rem;
 }
 
+.gantt-detail-sizing__measurement-note {
+    grid-column: 1 / -1;
+    color: var(--text-secondary);
+    font-size: 0.78rem;
+    margin: -4px 0 2px;
+    opacity: 0.85;
+}
+
 .gantt-detail-sizing__note {
     color: var(--text-secondary);
     font-size: 0.82rem;
@@ -5263,4 +5299,74 @@ body.is-resizing-gantt {
     color: var(--layer-box-color, var(--text-muted));
     opacity: 0.6;
     pointer-events: none;
+}
+
+/* ==============================
+   Gantt — Finish-to-Start dependency arrows
+   ============================== */
+
+.gantt-dependency-layer {
+    pointer-events: none;
+}
+
+/* Arrowhead fill inherits the arrow color via the custom property */
+.gantt-dep-arrowhead-path {
+    fill: var(--gantt-dep-arrow-color, #475569);
+}
+
+.gantt-dependency-layer .gantt-dep-arrow {
+    fill: none;
+    stroke: var(--gantt-dep-arrow-color, #475569);
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+    opacity: 0.7;
+    transition: opacity 0.15s ease, stroke-width 0.15s ease;
+}
+
+.gantt-dependency-layer .gantt-dep-arrow--highlighted {
+    opacity: 1;
+    stroke-width: 2.5;
+    stroke: var(--gantt-dep-arrow-color-highlight, #94a3b8);
+}
+
+/* ─── Light Theme ─── */
+[data-theme="light"] {
+    --bg-primary: #f8fafc;
+    --bg-secondary: #f1f5f9;
+    --bg-card: #ffffff;
+    --bg-card-hover: #e2e8f0;
+    --text-primary: #1e293b;
+    --text-secondary: #475569;
+    --text-muted: #64748b;
+    --border-color: #cbd5e1;
+    --success: #059669;
+    --warning: #d97706;
+    --accent: #7c3aed;
+    --gradient-start: #0ea5e9;
+    --gradient-end: #6366f1;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.08), 0 1px 2px rgba(0, 0, 0, 0.06);
+    --shadow-lg: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --planner-task-label-color: rgba(30, 41, 59, 0.96);
+    --planner-task-label-color-strong: rgba(15, 23, 42, 0.98);
+    color-scheme: light;
+}
+
+[data-theme="light"] .solution-item,
+[data-theme="light"] .category-card,
+[data-theme="light"] .stat-card {
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.08);
+}
+
+[data-theme="light"] .solution-item-check {
+    border-color: #94a3b8;
+}
+
+[data-theme="light"] .solution-item.selected {
+    border-color: var(--gradient-start);
+    background: rgba(14, 165, 233, 0.04);
+}
+
+[data-theme="light"] .vendor-logo--light-surface {
+    background: transparent;
 }
