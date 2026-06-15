@@ -755,6 +755,8 @@ function classifySolution(solution) {
     if (is1P && (category === 'Microsoft' || tags.some((tag) => tag.includes('defender') || tag.includes('m365')))) return 'direct';
     if (is1P && tags.some((tag) => tag.includes('azure'))) return 'azure_native';
     if (infra.includes('vm') || infra.includes('agent') || tags.some((tag) => tag.includes('windows'))) return 'windows_events';
+    // CCP / API connectors (e.g. AWS, GCP, Alibaba) — is1P means MS built the connector, not that the source is Azure
+    if (infra.includes('iam-role') || infra.includes('service-account') || infra.includes('export-path')) return 'api';
     if (is1P) return 'azure_native';
     return 'api';
 }
