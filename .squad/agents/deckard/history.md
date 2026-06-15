@@ -231,3 +231,28 @@ All specs now canonical in `decisions.md` and ready for team reference.
 - All pre-existing properties (`capacity_type`, `server_population_kind`, `planner`, `permissions`, etc.) fully preserved — additive change only.
 - Pattern established: `fieldPack` is the selector key for which sizing/detail form the planner renders; `ganttTaskOverrides` carries connector-specific Gantt task variants (PC-02 subtasks, duration overrides).
 - Key file: `data/solutions.json`; decision: `.squad/decisions/inbox/deckard-fieldpack-assignments.md`
+
+### 2026-06-11: V1 Task Coverage Audit — solutions.json vs Gantt engine
+
+**What was analyzed:**
+- `js/modules/scoring.js` — the full priority scoring formula (40% business_impact, 20% complexity_inverse, 15% setup_time_inverse, 15% detection_coverage, 10% maturity); confirmed `featured` flag is editorial, not derived from score.
+- `js/modules/solutions.js` — how solutions are surfaced and filtered in the Solutions screen; confirmed `featured` flag and priority score are independent recommendation signals.
+- `data/solutions.json` — audited all 489 solutions for `planner.setup_tasks` presence, task count, duration population, `fieldPack`, and `ganttTaskOverrides`.
+- `js/modules/gantt-tasks.js` — full `TASK_CATALOG` (SETUP, CEF-INFRA, WIN-INFRA, WEC-INFRA, CL-INFRA, CRIBL-INFRA, CONTENT, OPS), `PER_CONNECTOR_OVERRIDES` (8 connectors with source-config subtasks), and `buildPerConnectorTasks()` which generates the PC-01..04 chain per field pack.
+- Cross-referenced with prior analysis in `deckard-v1-connector-priorities.md`.
+
+**Key Findings:**
+- There are **two separate task systems**: (1) `TASK_CATALOG` + `buildPerConnectorTasks()` in `gantt-tasks.js` drives the Gantt chart — this is well-structured with proper durations across all shared infra tasks. (2) `planner.setup_tasks` in `solutions.json` drives the planning card view and solution-group effort bar — this is almost entirely broken for duration data.
+- **Only 1 connector (Windows Security Events) has all `planner.setup_tasks` durations populated** out of 489 solutions. 488 others have `duration: null` on every task.
+- 6 connectors have detailed task content (> 4 tasks): WSE (11✅), WFE (10), WFEA (10), Sysmon (10), WDNS (8), WDFW (7) — the last 5 have excellent task text but zero duration values.
+- Microsoft Defender for Identity has the **highest priority score in the entire catalog (83)** yet is not featured and has only a generic 4-task template.
+- The `PER_CONNECTOR_OVERRIDES` in `gantt-tasks.js` covers 8 connectors (cisco-asa-2, palo-alto-networks, azure-cloud-ngfw-by-palo-alto-networks, windows-security-events, windows-forwarded-events-via-ama, windows-forwarded-events, windows-dns-events-via-ama, sysmon-via-ama, cribl-stream). Linux Syslog is missing from this list despite being the pair of Common Event Format.
+- The fix for v1 is **purely a data entry task in `solutions.json`** — no code changes required. Adding `duration` values to the 8 Tier 1 connector task entries unblocks the card view and effort bar for all high-priority connectors.
+
+**Artifacts:**
+- Full audit report: `.squad/decisions/inbox/deckard-v1-task-coverage-audit.md`
+
+**Key Paths:**
+- Task engine: `js/modules/gantt-tasks.js` (`TASK_CATALOG`, `PER_CONNECTOR_OVERRIDES`, `buildPerConnectorTasks`)
+- Scoring: `js/modules/scoring.js` (`calculatePriorityScore`, `getEstimatedSetupHours`)
+- Data catalog: `data/solutions.json` (`planner.setup_tasks[].duration` — the primary v1 gap)

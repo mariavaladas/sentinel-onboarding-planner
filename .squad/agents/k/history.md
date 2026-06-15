@@ -94,6 +94,26 @@ K delivered end-to-end Cribl ingestion feature:
 
 ## Learnings
 
+### 2026-06-15T12:10:52+02:00 — Measured EPS auto-fill in Syslog/CEF sizing drawer
+
+- **What was implemented:** `createDefaultSizingDraft` in `capacity.js` now accepts an optional `options = {}` second parameter. When `options.measuredEps` is a positive number and `type === 'firewall'`, it uses that instead of `DEFAULT_FIREWALL_EPS = 1000`. All other types are unaffected; callers without the second arg continue to work exactly as before.
+- **Callsites updated:** `buildDraft()` in `solutions.js` reads `window.discoveredInfrastructure?.summary?.totalEPS` at call-time and passes it as `{ measuredEps }`. The "Reset to defaults" handler in `solutions.js` does the same. In `gantt-planner.js`, the initial draft construction and the "Defaults" button handler both pass `{ measuredEps: window.discoveredInfrastructure?.summary?.totalEPS }`.
+- **Architecture constraint respected:** `capacity.js` remains a pure module — the `window` read happens only in `solutions.js` and `gantt-planner.js`, which already access the DOM. `capacity.js` never touches globals.
+- **Visual indicator:** A `<p class="solution-sizing-measurement-note">` / `<p class="gantt-detail-sizing__measurement-note">` "📊 Based on workspace measurement (24h avg)" is rendered immediately after the EPS field in the grid when `measuredEpsValue > 0`. CSS added to `style.css` with `grid-column: 1 / -1` so it spans the full grid row.
+- **Key file paths:** `js/modules/capacity.js` (line ~556), `js/modules/solutions.js` (lines ~2065, ~2508, ~2645), `js/gantt-planner.js` (lines ~7521, ~7747, ~7843), `css/style.css`.
+
+### 2026-06-11T12:38:35Z — FS Dependency Arrows in Gantt Timeline
+
+- **What was implemented:** Added `syncGanttDependencyArrows(svg, taskById)` in `js/gantt-planner.js` (inserted after `syncGanttMilestoneMarkers`). Called from `inspect()` inside `stabilizeGanttRender()` right after the milestone markers call. Added CSS rules to `css/style.css`.
+- **Layer positioning:** The `g.gantt-dependency-layer` is inserted before the Frappe bar-wrappers parent group (`barsParent`) so arrows render behind task bars. Fallback chain: bars parent → first bar-wrapper → after grid-background → svg.appendChild.
+- **Arrowhead marker:** A single `<marker id="gantt-dep-arrowhead">` in SVG `<defs>` is created once and reused every clear-and-redraw cycle. `orient="auto"` keeps the head pointing in the direction of travel.
+- **Elbow routing:** `M startX startY H (startX+8) V endY H endX` — moves right 8px from the predecessor bar's right edge, drops/rises vertically to the successor's row midpoint, then runs horizontally to the successor bar's left edge.
+- **Positions:** Read from `rect.bar` `x`/`y`/`width`/`height` attributes (already set by inspect's styling pass). startX = predX + predW, startY = predY + predH/2, endX = succX, endY = succY + succH/2.
+- **Collapsed/invisible bars:** Guarded naturally — `svg.querySelector('.bar-wrapper[data-id="..."]')` returns null for collapsed tasks; the function skips them silently.
+- **Hover highlighting:** One-time `mouseenter`/`mouseleave` listeners bound on each bar-wrapper (guarded by `data-dep-arrow-hover-bound`). On enter, queries layer for paths with matching `data-pred-id` or `data-succ-id` and adds `.gantt-dep-arrow--highlighted`. Layer paths are recreated each cycle but the layer element itself persists, so the closure remains valid.
+- **CSS:** `.gantt-dependency-layer` has `pointer-events: none` to avoid blocking bar interactions. Arrow base: stroke `var(--gantt-dep-arrow-color, #475569)`, width 1.5, opacity 0.7. Highlighted: opacity 1, width 2.5, stroke `var(--gantt-dep-arrow-color-highlight, #94a3b8)`.
+- **Key file paths:** `js/gantt-planner.js` (lines ~6823–6932, call at ~7154), `css/style.css` (end of file).
+
 ### 2026-05-28T15:15:39.331+02:00 — Topology server indicator chips
 - **Architecture decisions:** Step 4 topology now reads persisted sizing through `getConnectorCapacitySnapshot()` and resolves per-solution capacity profiles before building React Flow nodes, so server chips stay aligned with the same shared-pool model used by Step 3 and Step 5.
 - **Patterns:** Windows AMA indicators must dedupe by `poolId`; WEC always stays on its own chip; firewall/CEF indicators come from `result.vmCount`; server nodes cap visible chips at three and collapse overflow into `+N more`.
@@ -231,3 +251,27 @@ K delivered end-to-end Cribl ingestion feature:
 - **Architecture decisions:** Step 4 no longer fabricates a standalone Cribl topology when `cribl-stream` is selected without any routed source. Cribl now renders as a band-scoped shared collection-layer node (`shared-cribl-node-top` / `shared-cribl-node-bottom`) that sits between routed sources and route-specific shared DCRs.
 - **Patterns:** Shared Cribl routes must reserve a DCR layer (`rowHasDcr()` stays true for `ROUTE_CRIBL` rows), render the precomputed `cribl*DcrPlan` entries, and connect `Source → Cribl → Custom DCR (Logs Ingestion API) → Sentinel` without relying on a Sentinel right-side sidecar handle. Treat Cribl as collision-managed in the intermediary layer and keep source-to-Cribl mapping explicit per band/source ID to avoid dangling edges.
 - **Key file paths:** `js/modules/topology.js`, `index.html`, `js/app.js`, `js/gantt-planner.js`, `js/modules/export.js`, `js/modules/search.js`, `js/modules/solutions.js`, `.squad/decisions/inbox/k-cribl-collection-layer.md`.
+
+### 2026-06-15 — Layer Box Gap Fix
+
+**Key file:** `js/modules/topology.js`
+
+**Architecture decisions:**
+- `createLayerBoxNodes` (line 2252) generates decorative layer box nodes (`zIndex: -2`, `pointerEvents: none`). Purely visual.
+- `LAYER_GAP` (line 2338, now **45**) = minimum px gap between consecutive top-band layer box borders.
+- `topIntermediaryOffsetY` (line 1129, now **460**) = Y-offset of server/DCR/cribl nodes below `bandBottomY` via `getTopLayerY`.
+- CollectorVm nodes use a **hardcoded** Y offset from `bandBottomY` (lines 1837, 2005) — NOT `topIntermediaryOffsetY`. Changed from `+80` to `+120`.
+- Bottom band layer boxes use a different stacking strategy (no `LAYER_GAP`) — unaffected by this change.
+
+**Critical constraint (structural):**
+- `LAYER_GAP=45` can cause 10 px protrusion of DCR nodes in `server+DCR` layouts because `intermediaryLayerGapY=200 < 255`. If reported, fix is to raise `intermediaryLayerGapY` to ≥256.
+- **FAILURE pattern (FAILURE 5):** Never fix overlap by shrinking box heights. Always add space.
+
+### 2026-06-15T12:10:52+02:00 — Cribl default routing for eligible connectors (no sizing saved)
+
+- **Bug fixed:** Barracuda (and any `cribl_eligible` connector) showed a collector VM in topology when the user selected Cribl in Step 2 but never opened the Barracuda sizing drawer. `isCriblRoutedSolution` only checked persisted `criblIngestion: true`, which is never set unless the sizing drawer is opened and saved.
+- **Root cause:** Disconnect between Solutions UI (which defaults `criblIngestion: true` for eligible connectors in a Cribl environment) and topology (which required the flag to be explicitly persisted).
+- **Fix:** `isCriblRoutedSolution` now accepts a third param `criblActive: boolean`. Priority order: (1) `criblIngestionExplicit: true` in saved profile → return persisted `criblIngestion` (explicit user preference, either direction). (2) `criblIngestion: true` in saved profile (no explicit flag) → return true. (3) Fallback: return `criblActive && solution.cribl_eligible === true`.
+- **Callsite pattern:** `hasStandaloneCriblSelection` is computed at render scope (line 812) as a boolean that is true when `cribl-stream` is among selected solutions. `splitSolutionsByRoute` is a closure inside that render scope, so it reads `hasStandaloneCriblSelection` directly — no prop threading needed. Both filter calls at lines 1219-1220 now pass it as the third argument.
+- **No other callsites changed:** `isCriblRoutedSolution` had exactly two call sites (lines 1219-1220); line 1578 filters `row.route` (already resolved) and was not a call site.
+- **Key file paths:** `js/modules/topology.js` (lines 108-120, 1219-1220).
