@@ -19,7 +19,60 @@
 
 ## Recent Work
 
-### 2026-06-16T13:51:05+02:00: High-value non-featured task rewrite — 24 solutions, 106 hand-crafted tasks
+### 2026-06-16T14:44:22+02:00: High-value Batch B task rewrite — 161 solutions, method-specific 5-task arcs
+
+**What happened:**
+- Wrote `scripts/patch_highvalue_batch_b.py` to rewrite `planner.setup_tasks` for 161 high-value non-featured solutions with generic templated tasks.
+- Detection logic: `value_scoring.business_impact == 'high'`, `isFeatured != True`, any task where `description == task text OR len(description) < 80`.
+- 6 collection method templates (+ azure_diagnostic mapped to rest_api): syslog_cef, rest_api, aws_s3, gcp_pubsub, codeless_connector, azure_function.
+- Each solution gets a 5-task arc personalised with `solution.name` and a `{Product} Admin` owner derived from the solution name.
+- Script ran cleanly: 161 solutions patched, 489 total solutions, JSON valid.
+- Final state: 195 of 196 high-value non-featured solutions are bespoke. `cribl-stream` remains generic (pre-existing data issue: no `planner` key in its solution object — cannot patch without schema fix).
+
+**Method distribution (162 generic inputs → 161 patched):**
+
+| Method | Count | Notes |
+|--------|-------|-------|
+| syslog_cef | 49 | CEF/Syslog forwarder + AMA + DCR arc |
+| rest_api | 86 | API credential → connector → verify → content → validate |
+| aws_s3 | 9 | IAM role + SQS + S3 connector arc |
+| gcp_pubsub | 7 | Log sink + Pub/Sub + GCP connector arc |
+| codeless_connector | 5 | CCP credentials → connector → verify → content → validate |
+| azure_function | 2 | ARM template deploy → Function App verify → content → validate |
+| azure_diagnostic | 3 | Mapped to rest_api template (no dedicated template specified) |
+| cribl-stream | 1 | SKIPPED — no `planner` structure in solution object |
+
+**5-task arc structure (all methods):**
+
+| Order | Phase | Category | Skill | Owner Pattern |
+|-------|-------|----------|-------|---------------|
+| 1 | Prerequisites | setup | beginner | Method-specific (Network Admin / {Product} Admin / AWS Cloud Admin / GCP Cloud Admin / Azure Platform Admin) |
+| 2 | Configuration | setup | intermediate | Azure Platform Admin or method infra owner |
+| 3 | Data Verification | setup | beginner | Azure Platform Admin or SOC Engineer |
+| 4 | Operationalization | phase-1 | intermediate | SOC Engineer |
+| 5 | Validation | phase-2 | intermediate | SOC Analyst |
+
+**ID suffix pattern:** `{abbrev}-prereqs`, `{abbrev}-infra` or `{abbrev}-connector`, `{abbrev}-verify`, `{abbrev}-content`, `{abbrev}-validate`
+
+**Design decisions applied:**
+- **Product owner extraction:** `product_owner(name)` function strips trailing boilerplate ("Solution", "for Microsoft Sentinel", "(MTD)", etc.) and returns the first 2-3 meaningful words + " Admin". E.g., "Azure Cloud NGFW By Palo Alto Networks" → "Azure Cloud NGFW Admin"; "Trellix" → "Trellix Admin".
+- **azure_diagnostic → rest_api:** Windows Firewall, Windows Server DNS, and Vectra AI Stream all detected as `azure_diagnostic` but the spec doesn't define a separate template; they use the rest_api arc which is architecturally appropriate (API/diagnostic settings polling pattern).
+- **Short description guard:** Task 4 (content) and task 5 (validation) descriptions in aws_s3, gcp_pubsub, codeless, and azure_function templates were initially too short (< 80 chars) for short product names (e.g., "Trellix" at 7 chars). Fixed by appending a sentence to each affected template. All 195 bespoke solutions verified to have all task descriptions ≥ 80 chars.
+- **Arrow character → ASCII:** The `→` in "S3 → SQS → Sentinel" was replaced with `->` to avoid Windows cp1252 console encoding issues in print statements. JSON written as UTF-8 without `ensure_ascii`.
+- **Idempotency:** Script skips solutions where is_generic returns False (already bespoke). Second run confirms 0 patched, 171 already bespoke.
+
+**Learnings:**
+- **Description length floor matters for detection logic:** When using `len(description) < 80` as a generic guard, template descriptions must produce > 80 chars even for the shortest realistic product name. The minimum safe base length (without the name) is ~69 chars for a 3-char product name. Need to audit all templates against the shortest expected product name at authoring time.
+- **Method detection order has implicit priority conflicts:** `'api'` is a substring of `'logic app'` — so solutions with "logic app" in their description would match `rest_api` before `azure_function` in the detection chain. This is consistent with the spec (the spec defines `rest_api` before `azure_function`). Slash Next SIEM and AWS Athena were correctly classified as `azure_function` when the detection was run pre-patch, but the spec-defined order means `rest_api` took precedence at patch time. This is acceptable behavior matching the spec exactly.
+- **cribl-stream as a structural outlier:** It has `fieldPack` and `cribl_eligible` keys but no `planner` key — it's a pipeline/routing tool, not a connector with setup tasks. It should probably be excluded from the HV bespoke count entirely, or have a stub planner added in a separate schema-fix script.
+- **Product name extraction is heuristic:** The `product_owner()` function works for the 162 solutions in this batch, but edge cases exist (e.g., long compound names where stripping produces odd results). The function iterates stripping up to 5 times with regex to handle multi-token suffixes.
+
+**Related:**
+- Patch script: `scripts/patch_highvalue_batch_b.py`
+- Precursor: `scripts/patch_highvalue_tasks.py` (Batch A, 24 solutions)
+- Precursor: `scripts/patch_featured_tasks.py` (11 featured solutions)
+
+
 
 **What happened:**
 - Wrote `scripts/patch_highvalue_tasks.py` with fully hand-crafted, product-specific `planner.setup_tasks` for 24 high-value non-featured solutions (Batch A).
