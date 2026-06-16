@@ -19,6 +19,65 @@
 
 ## Recent Work
 
+### 2026-06-16T16:44:17+02:00: Duration recalibration — 479 solutions, -851.5d across catalog
+
+**What happened:**
+- Wrote `scripts/recalibrate_durations.py` to recalibrate every `setup_tasks` duration in `data/solutions.json` based on realistic human effort, not generic category buckets.
+- 9 Tier-1 solutions protected: `azure-activity`, `defender-for-cloud`, `defender-xdr`, `microsoft-entra-id`, `microsoft-365`, `common-event-format`, `windows-forwarded-events`, `windows-security-events`, `windows-dns-events-via-ama` — untouched.
+- 479 solutions recalibrated. `effort_hours` updated consistently (`duration * 4`).
+- All validation constraints pass: every task in [0.5, 3.0]d, every solution total >= 1.0d.
+
+**Before vs after:**
+
+| Metric | Before | After | Change |
+|--------|--------|-------|--------|
+| Grand total duration (all solutions) | 2229.0d | 1377.5d | -851.5d (-38.2%) |
+| Tier-1 protected total | 54.0d | 54.0d | 0 |
+| Non-Tier-1 total | 2175.0d | 1323.5d | -851.5d |
+
+**Solution duration distribution (non-Tier-1 after):**
+
+| Range | Solutions |
+|-------|-----------|
+| 1.0–2.0d | 179 |
+| 2.0–3.0d | 168 |
+| 3.0–4.0d | 114 |
+| 4.0–5.0d | 9 |
+| 5.0d+ | 9 |
+
+**Calibration rules applied (per phase):**
+
+| Phase | Rule |
+|-------|------|
+| Prerequisites | 0.5d (verify licence/RBAC); 1.0d (cross-cloud IAM, AWS/GCP, WEC/WEF planning) |
+| Configuration | 0.5d (paste API key); 1.0d (source device config); 1.5d (cross-cloud S3/SQS/Pub-Sub, forwarder/AMA/DCR, or >5 connectors) |
+| Infrastructure | 1.0-2.0d by keyword: WEC/WEF build=2.0d, AMA/forwarder=1.5d, Sysmon install=1.5d, other=1.0d |
+| Data Verification | Always 0.5d |
+| Operationalization | 0.5d (<=15 rules, <=3 wb/pb); 1.0d (16-50 rules or 4-10 wb/pb); 1.5d (50+ rules or 10+ pb) |
+| Validation | 0.5d standard; 1.0d (50+ analytics to tune/suppress) |
+
+**Key bugs caught and fixed during development:**
+1. `"arc"` in forwarder_kws was matching "se**arc**h" in Azure Cognitive Search → replaced with "azure arc"
+2. `"flow log"` in cross_cloud_kws was matching "NSG flow log" (Azure-native) → replaced with "vpc flow log" / "gcp flow log"
+3. Phase mismatch: some Batch A hand-crafted tasks had analytics/workbook enablement in "Configuration" phase — added description-based override (`content_kws`) to reclassify to Operationalization before applying rules
+4. `"source"` in source_kws was matching "re**source**s" → replaced with "source device", "log source", "event source"
+
+**Spot-checks:**
+- Prisma Cloud: "Configure connector" 1.0d → 0.5d; "Enable 11 analytics + 1 workbook" 1.5d (was wrong phase, was 1.5d before fix) → 0.5d; total 3.5d → 2.5d ✓
+- AWS S3: Prerequisites 1.0d each (IAM + S3/SQS setup), Configuration 1.5d (S3 connector), Operationalization 1.5d (62 rules), Validation 1.0d x2 (tune noise) — total 7.0d is legitimate given cross-cloud complexity
+- Zscaler: 15 connectors + 17 workbooks + 10 playbooks → 6.5d total ✓
+- Connector-only simple solutions: 2.0d typical (prereqs 0.5 + config 0.5 + operationalization 0.5 + validate 0.5) ✓
+
+**Design decisions:**
+- `effort_hours = duration * 4`: 1 day = 4 hours active work (half-day buffer for coordination/waiting)
+- Infrastructure phase not in spec → handled by keyword analysis (same result as heavy Configuration)
+- Content-heavy solutions (50+ analytics) legitimately above 5.0d if they have multiple complex phases (e.g. BloodHound 102 rules in 2 phased deployments = 5.5d, AWS 62 rules + cross-cloud IAM = 7.0d) — hard constraint is task <= 3.0d, not solution total
+- Script is fully idempotent — second run produces 0.0d change
+
+**Related:**
+- Script: `scripts/recalibrate_durations.py`
+- Data: `data/solutions.json` (all `planner.setup_tasks[].duration` and `effort_hours` fields updated)
+
 ### 2026-06-16T14:44:22+02:00: High-value Batch B task rewrite — 161 solutions, method-specific 5-task arcs
 
 **What happened:**
