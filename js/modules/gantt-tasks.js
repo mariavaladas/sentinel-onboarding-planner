@@ -1144,7 +1144,7 @@ function getAnalyticsRuleReviewHours(connectors) {
  * @param {string} permissionTaskId - ID of the universal connector permission gate task
  * @returns {Array<Object>} array of task objects for the connector
  */
-function buildPerConnectorTasks(connector, abbrev, dependencyTaskId, permissionTaskId) {
+function buildPerConnectorTasks(connector, abbrev, dependencyTaskId, permissionTaskId, { criblRouted = false } = {}) {
     const id = String(connector?.id || '').toLowerCase().trim();
     const name = connector?.name || id;
     const overrides = PER_CONNECTOR_OVERRIDES[id] || {};
@@ -1219,6 +1219,61 @@ function buildPerConnectorTasks(connector, abbrev, dependencyTaskId, permissionT
                     `Open Microsoft Sentinel → Data Connectors → ${name}`,
                     'Complete the native/API onboarding steps in the connector blade',
                     'Verify connector shows as Connected and ready for downstream content'
+                ]
+            }
+        ];
+    }
+
+    // Cribl-routed syslog/CEF connectors: Cribl handles log collection,
+    // so tasks focus on source config pointing to Cribl and pipeline validation.
+    if (criblRouted) {
+        return [
+            {
+                ...base,
+                id: pc01Id,
+                name: `${name} — Configure source to send to Cribl`,
+                description: `Configure ${name} to forward logs to the Cribl Stream listener endpoint`,
+                category: 'SRC-CFG',
+                duration: overrides.sourceCfgHours ? formatTaskDuration(overrides.sourceCfgHours) : '1h',
+                durationHours: overrides.sourceCfgHours || 1,
+                ownerRole: 'Operations Team',
+                dependsOn: entryDependsOn,
+                subtasks: overrides.sourceCfgSubtasks || [
+                    `Configure ${name} to send Syslog/CEF logs to the Cribl Stream listener`,
+                    'Set log format (CEF / Syslog), facility, and severity level on the source',
+                    'Verify network connectivity from source to Cribl listener port'
+                ]
+            },
+            {
+                ...base,
+                id: pc02Id,
+                name: `${name} — Validate ingestion via Cribl`,
+                description: 'Validate that data flows through Cribl into the expected Sentinel table',
+                category: 'VALID',
+                duration: '1h',
+                durationHours: 1,
+                ownerRole: 'SOC Engineers',
+                dependsOn: [pc01Id],
+                subtasks: [
+                    `Confirm ${name} events appear in Cribl Stream monitoring`,
+                    `Run KQL query against the target Sentinel table to verify ${name} events`,
+                    'Check event count, timestamp recency, and DeviceVendor/DeviceProduct fields'
+                ]
+            },
+            {
+                ...base,
+                id: pc03Id,
+                name: `${name} — Tune Cribl pipeline`,
+                description: 'Refine the Cribl pipeline filters and routing for this connector',
+                category: 'VALID',
+                duration: '1h',
+                durationHours: 1,
+                ownerRole: 'SOC Engineers',
+                dependsOn: [pc02Id],
+                subtasks: [
+                    `Review and adjust Cribl pipeline routes and filters for ${name}`,
+                    'Apply field reduction or enrichment rules for cost/coverage balance',
+                    'Document final pipeline configuration in the runbook'
                 ]
             }
         ];
@@ -1476,7 +1531,8 @@ export function buildGanttPlan(selectedConnectors) {
 
         if (!joinTaskId) continue;
 
-        const pcTasks = buildPerConnectorTasks(connector, abbrev, joinTaskId, permissionTaskId);
+        const criblRouted = Boolean(criblActive && packInfo.sourcePack === FIELD_PACK.SYSLOG_CEF);
+        const pcTasks = buildPerConnectorTasks(connector, abbrev, joinTaskId, permissionTaskId, { criblRouted });
 
         for (const task of pcTasks) {
             tasks.push(applyDurationOverride(task, overrides));

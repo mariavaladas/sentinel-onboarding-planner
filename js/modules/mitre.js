@@ -43,7 +43,8 @@ function loadPrebakedData() {
 
 /**
  * Derive the GitHub folder name for a solution.
- * Uses the tail segment of github_url when available, otherwise falls back to name.
+ * Uses the tail segment of github_url when available.
+ * Returns empty string if no github_url — caller should skip fetch.
  */
 function getSolutionFolder(solution) {
     if (solution.github_url) {
@@ -51,7 +52,7 @@ function getSolutionFolder(solution) {
         const last = parts[parts.length - 1];
         if (last) return decodeURIComponent(last);
     }
-    return solution.name;
+    return '';
 }
 
 /**
@@ -60,6 +61,7 @@ function getSolutionFolder(solution) {
  */
 async function fetchAnalyticRuleUrls(solution) {
     const folder = getSolutionFolder(solution);
+    if (!folder) return [];
     const apiUrl =
         `https://api.github.com/repos/Azure/Azure-Sentinel/contents/Solutions/` +
         `${encodeURIComponent(folder)}/Analytic%20Rules`;

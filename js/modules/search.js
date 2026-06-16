@@ -4,7 +4,7 @@ import {
     selectedSolutions,
     toggleSolution,
     updateStep3Button
-} from './solutions.js?v=16';
+} from './solutions.js?v=19';
 
 function createMessage(text) {
     const message = document.createElement('p');
