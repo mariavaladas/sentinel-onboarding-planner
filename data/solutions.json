@@ -12628,62 +12628,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "dnse-verify-data",
                 "order": 1,
-                "task": "Design the Syslog or CEF forwarding path, Linux forwarder placement, and network prerequisites for DNS Essentials.",
-                "effort_hours": 4.8,
+                "task": "Verify DNS log data is flowing into Sentinel from an underlying DNS connector before deploying content.",
+                "duration": 0.5,
+                "effort_hours": 1,
                 "skill_level": "beginner",
-                "id": "de-prereqs",
                 "category": "setup",
                 "phase": "Prerequisites",
-                "owner_role": "Azure Platform Admin",
                 "depends_on": [],
-                "description": "Design the Syslog or CEF forwarding path, Linux forwarder placement, and network prerequisites for DNS Essentials.",
-                "duration": 1.5
+                "owner_role": "SOC Analyst",
+                "description": "This is a domain solution — it requires an existing DNS data connector such as Windows DNS via AMA, Cisco Umbrella, or another DNS provider. Query the CommonSecurityLog or provider-specific table to confirm DNS records are arriving. Identify which ASIM DNS parser covers your deployed connector, as the DNS Essentials analytics rules query via the imDns ASIM parser function."
               },
               {
+                "id": "dnse-deploy-content",
                 "order": 2,
-                "task": "Deploy or update the forwarder, Azure Monitor Agent, and data collection rules required for DNS Essentials.",
-                "effort_hours": 8.4,
-                "skill_level": "beginner",
-                "id": "de-configure",
-                "category": "setup",
-                "phase": "Configuration",
-                "owner_role": "SOC Engineer",
-                "depends_on": [
-                  "de-prereqs"
-                ],
-                "description": "Deploy or update the forwarder, Azure Monitor Agent, and data collection rules required for DNS Essentials.",
-                "duration": 3.0
-              },
-              {
-                "order": 3,
-                "task": "Configure DNS Essentials to send the correct log stream and tune filters to avoid unnecessary ingestion.",
-                "effort_hours": 4.8,
+                "task": "Install ASIM DNS parsers and deploy the 9 DNS Essentials analytics rules.",
+                "duration": 0.5,
+                "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "de-content",
                 "category": "phase-1",
                 "phase": "Operationalization",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "de-configure"
+                  "dnse-verify-data"
                 ],
-                "description": "Configure DNS Essentials to send the correct log stream and tune filters to avoid unnecessary ingestion.",
-                "duration": 1.5
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the ASIM DNS parser (imDns) that normalizes your DNS log source into the Advanced Security Information Model schema. Enable all 9 packaged analytics rules covering DNS tunneling, DGA (domain generation algorithm) patterns, DNS amplification, and base-64 encoded queries. Deploy the DNS Essentials playbook for automated block/notify response."
               },
               {
+                "id": "dnse-configure-wb",
+                "order": 3,
+                "task": "Configure the DNS Essentials workbook and set workspace and time-range parameters.",
+                "duration": 0.5,
+                "effort_hours": 1,
+                "skill_level": "beginner",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "dnse-deploy-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Open the deployed DNS Essentials workbook and set the workspace and subscription parameters. Confirm the workbook visualizes DNS query volume, top queried domains, and anomalous query patterns from the imDns normalized view. Pin the workbook to the Sentinel dashboard for daily SOC visibility into DNS activity."
+              },
+              {
+                "id": "dnse-validate",
                 "order": 4,
-                "task": "Validate parser health, record mapping, and one packaged detection using live DNS Essentials telemetry.",
-                "effort_hours": 6,
+                "task": "Validate DNS analytics rules fire on expected query patterns and confirm ASIM parser coverage.",
+                "duration": 0.5,
+                "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "de-validate",
                 "category": "phase-2",
                 "phase": "Validation",
-                "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "de-content"
+                  "dnse-configure-wb"
                 ],
-                "description": "Validate parser health, record mapping, and one packaged detection using live DNS Essentials telemetry.",
-                "duration": 2.0
+                "owner_role": "SOC Analyst",
+                "description": "Run imDns() in Log Analytics and confirm DnsQuery, SrcIpAddr, DnsResponseCode, and TimeGenerated fields are populated from your DNS source. Simulate a known DGA-like domain query pattern and verify the relevant analytics rule triggers within the configured rule frequency. Review any false positives from legitimate CDN or cloud service domains and add them to the rule exclusion list."
               }
             ],
             "validation_steps": [
@@ -17364,62 +17364,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "nse-verify-data",
                 "order": 1,
-                "task": "Design the Syslog or CEF forwarding path, Linux forwarder placement, and network prerequisites for Network Session Essentials.",
-                "effort_hours": 4.8,
+                "task": "Verify network session log data is flowing into Sentinel from an underlying network connector.",
+                "duration": 0.5,
+                "effort_hours": 1,
                 "skill_level": "beginner",
-                "id": "nse-prereqs",
                 "category": "setup",
                 "phase": "Prerequisites",
-                "owner_role": "Azure Platform Admin",
                 "depends_on": [],
-                "description": "Design the Syslog or CEF forwarding path, Linux forwarder placement, and network prerequisites for Network Session Essentials.",
-                "duration": 1.5
+                "owner_role": "SOC Analyst",
+                "description": "This is a domain solution — it requires an existing network data connector such as Palo Alto Firewall, Check Point, Cisco ASA, or Azure Firewall. Query CommonSecurityLog or the provider-specific table to confirm network session records are arriving. Identify which ASIM Network Session parser (imNetworkSession) covers your deployed connector, as all 9 analytics rules and both workbooks consume data through the ASIM normalized view."
               },
               {
+                "id": "nse-deploy-content",
                 "order": 2,
-                "task": "Deploy or update the forwarder, Azure Monitor Agent, and data collection rules required for Network Session Essentials.",
-                "effort_hours": 8.4,
-                "skill_level": "beginner",
-                "id": "nse-configure",
-                "category": "setup",
-                "phase": "Configuration",
-                "owner_role": "SOC Engineer",
-                "depends_on": [
-                  "nse-prereqs"
-                ],
-                "description": "Deploy or update the forwarder, Azure Monitor Agent, and data collection rules required for Network Session Essentials.",
-                "duration": 3.0
-              },
-              {
-                "order": 3,
-                "task": "Configure Network Session Essentials to send the correct log stream and tune filters to avoid unnecessary ingestion.",
-                "effort_hours": 4.8,
+                "task": "Install ASIM Network Session parsers and deploy the 9 analytics rules.",
+                "duration": 0.5,
+                "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "nse-content",
                 "category": "phase-1",
                 "phase": "Operationalization",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "nse-configure"
+                  "nse-verify-data"
                 ],
-                "description": "Configure Network Session Essentials to send the correct log stream and tune filters to avoid unnecessary ingestion.",
-                "duration": 1.5
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the ASIM Network Session parser (imNetworkSession) that normalizes your firewall or network log source into the Advanced Security Information Model. Enable all 9 analytics rules covering port scanning, beaconing behavior, high-volume outbound transfers, and protocol anomalies. Deploy the Network Session Essentials playbook for automated response. All rules target imNetworkSession() so normalization must be confirmed before enabling."
               },
               {
-                "order": 4,
-                "task": "Validate parser health, record mapping, and one packaged detection using live Network Session Essentials telemetry.",
-                "effort_hours": 6,
-                "skill_level": "intermediate",
+                "id": "nse-configure-wb",
+                "order": 3,
+                "task": "Configure the Network Session Essentials workbooks with workspace and filter parameters.",
+                "duration": 0.5,
+                "effort_hours": 1,
+                "skill_level": "beginner",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "nse-deploy-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Open the two deployed Network Session workbooks (overview and anomaly views) and configure the workspace, subscription, and time-range parameters. Confirm the workbooks render session volume, top talkers, geographic distribution, and protocol breakdown from the imNetworkSession normalized table. Pin both workbooks to the Sentinel dashboard for daily network visibility."
+              },
+              {
                 "id": "nse-validate",
+                "order": 4,
+                "task": "Validate ASIM parser coverage and confirm network session analytics rules fire correctly.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
                 "category": "phase-2",
                 "phase": "Validation",
-                "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "nse-content"
+                  "nse-configure-wb"
                 ],
-                "description": "Validate parser health, record mapping, and one packaged detection using live Network Session Essentials telemetry.",
-                "duration": 2.0
+                "owner_role": "SOC Analyst",
+                "description": "Run imNetworkSession() in Log Analytics and verify that SrcIpAddr, DstIpAddr, DstPort, NetworkProtocol, and NetworkBytes fields are populated from your network source. Generate test traffic (e.g., port scan simulation in a lab environment) and confirm the relevant analytics rule triggers an incident. Review false positive volume from internal scanners or monitoring agents and add known safe IPs to rule exclusions."
               }
             ],
             "validation_steps": [
@@ -23421,62 +23421,92 @@
           "planner": {
             "setup_tasks": [
               {
-                "order": 1,
-                "task": "Confirm account, subscription, or project design plus IAM prerequisites needed to collect Amazon Web Services telemetry.",
-                "effort_hours": 4.8,
-                "skill_level": "beginner",
                 "id": "aws-prereqs",
+                "order": 1,
+                "task": "Set up AWS IAM permissions and enable CloudTrail logging across target accounts.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
                 "category": "setup",
                 "phase": "Prerequisites",
-                "owner_role": "Azure Platform Admin",
                 "depends_on": [],
-                "description": "Confirm account, subscription, or project design plus IAM prerequisites needed to collect Amazon Web Services telemetry.",
-                "duration": 1.5
+                "owner_role": "AWS Cloud Admin",
+                "description": "Create a dedicated IAM role in each AWS account with policies granting s3:GetObject, s3:ListBucket, sqs:ReceiveMessage, sqs:DeleteMessage, and cloudtrail:GetTrailStatus permissions. Enable AWS CloudTrail with multi-region scope and ensure management events and S3 data events are captured so that the AWSCloudTrail table in Sentinel receives complete API call history."
               },
               {
+                "id": "aws-s3-setup",
                 "order": 2,
-                "task": "Deploy the export path, API connection, or cloud-native integration required for Amazon Web Services to reach Sentinel.",
-                "effort_hours": 8.4,
-                "skill_level": "beginner",
-                "id": "aws-configure",
+                "task": "Create and configure the S3 bucket and SQS queue that funnel CloudTrail logs to Sentinel.",
+                "duration": 1.5,
+                "effort_hours": 6,
+                "skill_level": "intermediate",
                 "category": "setup",
-                "phase": "Configuration",
-                "owner_role": "SOC Engineer",
+                "phase": "Prerequisites",
                 "depends_on": [
                   "aws-prereqs"
                 ],
-                "description": "Deploy the export path, API connection, or cloud-native integration required for Amazon Web Services to reach Sentinel.",
-                "duration": 3.0
+                "owner_role": "AWS Cloud Admin",
+                "description": "Create or designate an S3 bucket as the CloudTrail log destination and configure bucket event notifications (s3:ObjectCreated:*) to publish to a dedicated SQS queue. Set up the SQS queue with an appropriate retention window (minimum 14 days) and grant the Sentinel connector's IAM role receive/delete access so the S3-based connector can poll new log objects as they arrive."
               },
               {
+                "id": "aws-connector",
                 "order": 3,
-                "task": "Enable packaged detections and dashboards for Amazon Web Services, then align coverage to the target cloud services.",
-                "effort_hours": 4.8,
+                "task": "Configure the Microsoft Sentinel AWS connector using the S3 or CloudTrail connector type.",
+                "duration": 1.0,
+                "effort_hours": 4,
                 "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "aws-s3-setup"
+                ],
+                "owner_role": "AWS Cloud Admin",
+                "description": "In Microsoft Sentinel, open the Amazon Web Services S3 connector and add a new data stream by providing the SQS queue URL and the IAM role ARN. Verify the connector status shows Connected and confirm that AWSCloudTrail records begin appearing in the Log Analytics workspace within 15–30 minutes. Optionally add the Amazon Web Services (CloudTrail) connector or the Amazon GuardDuty connector for additional threat-detection telemetry."
+              },
+              {
                 "id": "aws-content",
+                "order": 4,
+                "task": "Deploy AWS analytics rules and workbooks from the solution content pack.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
                 "category": "phase-1",
                 "phase": "Operationalization",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "aws-configure"
+                  "aws-connector"
                 ],
-                "description": "Enable packaged detections and dashboards for Amazon Web Services, then align coverage to the target cloud services.",
-                "duration": 1.5
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 62 packaged AWS analytics rules covering IAM abuse, S3 bucket exfiltration, CloudTrail disablement, and privilege escalation patterns. Deploy the AWS workbooks for account-level activity visualization. Review each rule's entity mappings (AccountName, IPAddress, ResourceId) to confirm they align with your AWS account naming conventions."
               },
               {
-                "order": 4,
-                "task": "Validate Amazon Web Services with recent cloud activity from at least one scoped account or project and confirm end-to-end ingestion.",
-                "effort_hours": 6,
-                "skill_level": "intermediate",
                 "id": "aws-validate",
+                "order": 5,
+                "task": "Validate end-to-end ingestion from AWS CloudTrail to Sentinel and confirm rule firing.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
                 "category": "phase-2",
                 "phase": "Validation",
-                "owner_role": "SOC Analyst",
                 "depends_on": [
                   "aws-content"
                 ],
-                "description": "Validate Amazon Web Services with recent cloud activity from at least one scoped account or project and confirm end-to-end ingestion.",
-                "duration": 2.0
+                "owner_role": "SOC Analyst",
+                "description": "Query AWSCloudTrail in Log Analytics for recent API calls from at least two target AWS accounts and verify that UserIdentityArn, EventName, and SourceIPAddress fields are populated. Trigger a known-benign activity (e.g., list-buckets API call) and confirm it appears in Sentinel within the expected latency window. Validate that at least one high-confidence analytics rule produces an incident."
+              },
+              {
+                "id": "aws-tune",
+                "order": 6,
+                "task": "Tune AWS analytics rules to reduce noise for your account topology and tag coverage.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "advanced",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "aws-validate"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Review incident volume from the first 48 hours of live data and identify rules generating false positives due to legitimate automation or service accounts. Add account-specific exclusions using watchlists or rule entity filters. Confirm GuardDuty findings (AWSGuardDuty table) are correlated with CloudTrail incidents where applicable to enrich alert fidelity."
               }
             ],
             "validation_steps": [
@@ -29132,62 +29162,92 @@
           "planner": {
             "setup_tasks": [
               {
-                "order": 1,
-                "task": "Confirm account, subscription, or project design plus IAM prerequisites needed to collect Google Cloud Platform IAM telemetry.",
-                "effort_hours": 4.4,
-                "skill_level": "beginner",
                 "id": "gcpi-prereqs",
+                "order": 1,
+                "task": "Create GCP service account, assign IAM roles, and enable the required GCP APIs.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
                 "category": "setup",
                 "phase": "Prerequisites",
-                "owner_role": "Azure Platform Admin",
                 "depends_on": [],
-                "description": "Confirm account, subscription, or project design plus IAM prerequisites needed to collect Google Cloud Platform IAM telemetry.",
-                "duration": 1.5
+                "owner_role": "GCP Cloud Admin",
+                "description": "In Google Cloud Console, create a dedicated service account for Sentinel integration and grant it the roles/pubsub.subscriber and roles/logging.configWriter IAM roles. Enable the Cloud Pub/Sub API and Cloud Logging API on the target GCP project. Download a JSON key for the service account — this credential will be used by the Sentinel GCP connector to authenticate to your Pub/Sub subscription."
               },
               {
+                "id": "gcpi-pubsub",
                 "order": 2,
-                "task": "Deploy the export path, API connection, or cloud-native integration required for Google Cloud Platform IAM to reach Sentinel.",
-                "effort_hours": 7.7,
-                "skill_level": "beginner",
-                "id": "gcpi-configure",
+                "task": "Create the Pub/Sub topic, subscription, and log sink that routes GCP audit logs to Sentinel.",
+                "duration": 1.5,
+                "effort_hours": 5,
+                "skill_level": "intermediate",
                 "category": "setup",
-                "phase": "Configuration",
-                "owner_role": "SOC Engineer",
+                "phase": "Prerequisites",
                 "depends_on": [
                   "gcpi-prereqs"
                 ],
-                "description": "Deploy the export path, API connection, or cloud-native integration required for Google Cloud Platform IAM to reach Sentinel.",
-                "duration": 2.0
+                "owner_role": "GCP Cloud Admin",
+                "description": "Create a Pub/Sub topic (e.g., sentinel-gcp-logs) and a pull subscription with a 7-day message retention policy. Create a Log Sink using Cloud Logging export with the filter 'logName:(activity OR data_access OR system_event)' and set the sink destination to your Pub/Sub topic. This pipeline ensures GCP Admin Activity and Data Access audit logs flow into Sentinel's GCPAuditLogs table."
               },
               {
+                "id": "gcpi-connector",
                 "order": 3,
-                "task": "Enable packaged detections and dashboards for Google Cloud Platform IAM, then align coverage to the target cloud services.",
-                "effort_hours": 4.4,
+                "task": "Configure the Google Cloud Platform IAM connector in Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 3,
                 "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpi-pubsub"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In Microsoft Sentinel, open the Google Cloud Platform IAM connector and enter the GCP project ID, Pub/Sub subscription name, and the service account JSON key. Save the connector and verify within 10–20 minutes that the GCPAuditLogs table receives records and that the connector status shows Connected."
+              },
+              {
                 "id": "gcpi-content",
+                "order": 4,
+                "task": "Deploy GCP analytics rules, workbook, and playbooks from the solution content pack.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
                 "category": "phase-1",
                 "phase": "Operationalization",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "gcpi-configure"
+                  "gcpi-connector"
                 ],
-                "description": "Enable packaged detections and dashboards for Google Cloud Platform IAM, then align coverage to the target cloud services.",
-                "duration": 1.5
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 10 GCP IAM analytics rules covering privilege escalation, service account key creation, IAM policy changes, and log sink modification. Deploy the GCP workbook for IAM activity dashboards. Deploy the 4 packaged playbooks for automated response to high-severity GCP IAM incidents, configuring the Logic App managed identity or API connections during deployment."
               },
               {
-                "order": 4,
-                "task": "Validate Google Cloud Platform IAM with recent cloud activity from at least one scoped account or project and confirm end-to-end ingestion.",
-                "effort_hours": 5.5,
+                "id": "gcpi-playbooks",
+                "order": 5,
+                "task": "Configure Logic App API connections for the 4 GCP response playbooks.",
+                "duration": 0.5,
+                "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "gcpi-validate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "owner_role": "SOC Analyst",
+                "category": "phase-1",
+                "phase": "Operationalization",
                 "depends_on": [
                   "gcpi-content"
                 ],
-                "description": "Validate Google Cloud Platform IAM with recent cloud activity from at least one scoped account or project and confirm end-to-end ingestion.",
-                "duration": 2.0
+                "owner_role": "SOC Engineer",
+                "description": "Open each deployed GCP playbook in the Logic Apps designer and authorize the Microsoft Sentinel and Microsoft Teams (or email) API connections. Attach the playbooks to Sentinel automation rules so they fire when GCP IAM analytics rules generate incidents. Test each connection by triggering a manual playbook run from a test incident."
+              },
+              {
+                "id": "gcpi-validate",
+                "order": 6,
+                "task": "Validate GCP audit log ingestion and confirm analytics rules fire on expected events.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpi-playbooks"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query GCPAuditLogs in Log Analytics and verify that principalEmail, methodName, and resourceName fields are populated for recent IAM events. Perform a benign IAM change (e.g., view a service account) and confirm it appears in Sentinel within the expected latency. Validate that at least one analytics rule produces an incident and that the attached playbook fires correctly."
               }
             ],
             "validation_steps": [
@@ -49520,62 +49580,77 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "ti-strategy",
                 "order": 1,
-                "task": "Confirm feed scope, API credentials, and retention assumptions before onboarding Threat Intelligence (NEW) into Sentinel.",
+                "task": "Identify TI feed sources and plan connector configuration for your threat intelligence strategy.",
+                "duration": 0.5,
                 "effort_hours": 2,
-                "skill_level": "beginner",
-                "id": "tin-prereqs",
+                "skill_level": "intermediate",
                 "category": "setup",
                 "phase": "Prerequisites",
-                "owner_role": "Azure Platform Admin",
                 "depends_on": [],
-                "description": "Confirm feed scope, API credentials, and retention assumptions before onboarding Threat Intelligence (NEW) into Sentinel.",
-                "duration": 1.0
+                "owner_role": "SOC Engineer",
+                "description": "Review the six available TI connectors (TAXII, Microsoft Defender Threat Intelligence, STIX/TAXII feeds, file import, and platform API connectors) and decide which feeds match your organization's threat model. Map each feed to the ThreatIntelligenceIndicator table schema — confirm the indicator types (IP, domain, URL, file hash) your SOC will operationalize and define a stale-indicator retention policy before enabling bulk imports."
               },
               {
+                "id": "ti-connectors",
                 "order": 2,
-                "task": "Configure the TAXII, codeless, or API-based pull for Threat Intelligence (NEW) and verify indicator freshness settings.",
-                "effort_hours": 3.5,
-                "skill_level": "beginner",
-                "id": "tin-configure",
+                "task": "Configure each selected TI connector and verify indicators populate the ThreatIntelligenceIndicator table.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
                 "category": "setup",
                 "phase": "Configuration",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "tin-prereqs"
+                  "ti-strategy"
                 ],
-                "description": "Configure the TAXII, codeless, or API-based pull for Threat Intelligence (NEW) and verify indicator freshness settings.",
-                "duration": 1.5
+                "owner_role": "SOC Engineer",
+                "description": "For TAXII feeds: enter the TAXII server URL, collection name, and credentials in the Threat Intelligence – TAXII connector. For Microsoft Defender TI: connect using the Defender TI connector and authorize the API connection. For STIX feeds or file imports: follow the same connector-specific steps. After each connector activates, query ThreatIntelligenceIndicator and confirm IndicatorType, NetworkIP/DomainName/Url, and ExpirationDateTime are populated."
               },
               {
+                "id": "ti-analytics",
                 "order": 3,
-                "task": "Tune expiration, deduplication, and enrichment expectations for Threat Intelligence (NEW) indicators and packaged hunting content.",
+                "task": "Enable TI matching analytics rules to correlate live log sources against imported indicators.",
+                "duration": 0.5,
                 "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "tin-content",
                 "category": "phase-1",
                 "phase": "Operationalization",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "tin-configure"
+                  "ti-connectors"
                 ],
-                "description": "Tune expiration, deduplication, and enrichment expectations for Threat Intelligence (NEW) indicators and packaged hunting content.",
-                "duration": 1.0
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 52 packaged analytics rules that join ThreatIntelligenceIndicator against log sources such as CommonSecurityLog, DnsEvents, AzureActivity, OfficeActivity, and SigninLogs. Deploy the TI workbook for indicator coverage visualization. Review each rule's lookback window and query schedule to balance detection latency against workspace cost for high-volume indicator sets."
               },
               {
+                "id": "ti-validate",
                 "order": 4,
-                "task": "Validate Threat Intelligence (NEW) by confirming fresh indicators arrive and can be matched during hunting or analytics.",
-                "effort_hours": 2.5,
+                "task": "Validate that TI indicators are ingesting correctly and matching rules are generating incidents.",
+                "duration": 0.5,
+                "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "tin-validate",
                 "category": "phase-2",
                 "phase": "Validation",
-                "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "tin-content"
+                  "ti-analytics"
                 ],
-                "description": "Validate Threat Intelligence (NEW) by confirming fresh indicators arrive and can be matched during hunting or analytics.",
-                "duration": 1.0
+                "owner_role": "SOC Analyst",
+                "description": "Query ThreatIntelligenceIndicator to confirm expected indicator counts per feed source (use the SourceSystem field to differentiate). Run a test lookup against a known-malicious IP or domain against your network logs to confirm the TI matching analytics rules trigger. Verify incident enrichment shows the full indicator record including confidence score and feed attribution."
+              },
+              {
+                "id": "ti-tune",
+                "order": 5,
+                "task": "Tune indicator retention, feed priorities, and suppress low-confidence false positives.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "advanced",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "ti-validate"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Review incident volume per feed and identify low-confidence feeds generating noise. Adjust ConfidenceScore thresholds in analytics rules to filter below your SOC's acceptable confidence floor. Set expiration-based cleanup Logic Apps or scheduled queries to purge stale ThreatIntelligenceIndicator records older than your retention window to keep indicator match performance consistent."
               }
             ],
             "validation_steps": [
@@ -50371,62 +50446,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "vt-api-key",
                 "order": 1,
-                "task": "Confirm feed scope, API credentials, and retention assumptions before onboarding Virus Total into Sentinel.",
-                "effort_hours": 2,
+                "task": "Obtain a VirusTotal API key and confirm API quota tier matches expected enrichment volume.",
+                "duration": 0.5,
+                "effort_hours": 1,
                 "skill_level": "beginner",
-                "id": "vt-prereqs",
                 "category": "setup",
                 "phase": "Prerequisites",
-                "owner_role": "Azure Platform Admin",
                 "depends_on": [],
-                "description": "Confirm feed scope, API credentials, and retention assumptions before onboarding Virus Total into Sentinel.",
-                "duration": 1.0
+                "owner_role": "SOC Engineer",
+                "description": "Register for a VirusTotal account and generate an API key. Confirm whether the Public (free) or Premium tier is appropriate — the 9 enrichment playbooks call the VirusTotal v3 API for file hash, IP, URL, and domain lookups. Public tier is rate-limited to 4 requests/minute; Premium removes this limit. Store the API key in Azure Key Vault and reference it from the Logic Apps API connection."
               },
               {
+                "id": "vt-deploy-playbooks",
                 "order": 2,
-                "task": "Configure the TAXII, codeless, or API-based pull for Virus Total and verify indicator freshness settings.",
-                "effort_hours": 3.5,
-                "skill_level": "beginner",
-                "id": "vt-configure",
+                "task": "Deploy the 9 VirusTotal playbooks and configure the VirusTotal Logic App API connection.",
+                "duration": 1.0,
+                "effort_hours": 3,
+                "skill_level": "intermediate",
                 "category": "setup",
                 "phase": "Configuration",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "vt-prereqs"
+                  "vt-api-key"
                 ],
-                "description": "Configure the TAXII, codeless, or API-based pull for Virus Total and verify indicator freshness settings.",
-                "duration": 1.5
+                "owner_role": "SOC Engineer",
+                "description": "Deploy all 9 playbooks from the VirusTotal solution content pack. Open the VirusTotal Logic App API connection in each playbook and authorize it using the API key from Key Vault. The playbooks cover file hash enrichment, IP reputation lookup, URL scan, and domain reputation — each adds VirusTotal results as comments to the Sentinel incident entity."
               },
               {
+                "id": "vt-attach-rules",
                 "order": 3,
-                "task": "Tune expiration, deduplication, and enrichment expectations for Virus Total indicators and packaged hunting content.",
+                "task": "Attach VirusTotal playbooks to Sentinel automation rules for automatic enrichment on new incidents.",
+                "duration": 0.5,
                 "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "vt-content",
                 "category": "phase-1",
                 "phase": "Operationalization",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "vt-configure"
+                  "vt-deploy-playbooks"
                 ],
-                "description": "Tune expiration, deduplication, and enrichment expectations for Virus Total indicators and packaged hunting content.",
-                "duration": 1.0
+                "owner_role": "SOC Engineer",
+                "description": "Create Sentinel automation rules that trigger the appropriate VirusTotal playbook based on incident entity type: use the IP enrichment playbook for incidents with IP entities, the file hash playbook for FileHash entities, and the URL/domain playbooks accordingly. Set rule conditions to limit scope to High/Medium severity incidents to manage API quota consumption."
               },
               {
-                "order": 4,
-                "task": "Validate Virus Total by confirming fresh indicators arrive and can be matched during hunting or analytics.",
-                "effort_hours": 2.5,
-                "skill_level": "intermediate",
                 "id": "vt-validate",
+                "order": 4,
+                "task": "Validate VirusTotal enrichment by triggering a test incident and confirming the playbook adds enrichment comments.",
+                "duration": 0.5,
+                "effort_hours": 1,
+                "skill_level": "intermediate",
                 "category": "phase-2",
                 "phase": "Validation",
-                "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "vt-content"
+                  "vt-attach-rules"
                 ],
-                "description": "Validate Virus Total by confirming fresh indicators arrive and can be matched during hunting or analytics.",
-                "duration": 1.0
+                "owner_role": "SOC Analyst",
+                "description": "Create a test incident manually in Sentinel with a known-malicious IP or file hash entity (e.g., a public IOC from a threat feed). Confirm the automation rule triggers the VirusTotal IP or hash enrichment playbook. Open the incident and verify a comment has been added with the VirusTotal detection ratio, malicious vote count, and permalink to the full VirusTotal report."
               }
             ],
             "validation_steps": [
@@ -52430,62 +52505,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "log4j-verify-data",
                 "order": 1,
-                "task": "Design the Syslog or CEF forwarding path, Linux forwarder placement, and network prerequisites for Apache Log4j Vulnerability Detection.",
-                "effort_hours": 4.8,
-                "skill_level": "beginner",
-                "id": "alvd-prereqs",
+                "task": "Confirm required log sources are flowing into Sentinel to support Log4j vulnerability detection.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
                 "category": "setup",
                 "phase": "Prerequisites",
-                "owner_role": "Azure Platform Admin",
                 "depends_on": [],
-                "description": "Design the Syslog or CEF forwarding path, Linux forwarder placement, and network prerequisites for Apache Log4j Vulnerability Detection.",
-                "duration": 1.5
+                "owner_role": "SOC Analyst",
+                "description": "This is a detection-only solution requiring existing log sources. Verify that at least one of the following tables is populated: CommonSecurityLog (firewall/IDS syslog), Syslog (Linux application logs), SecurityEvent (Windows event logs), or AzureDiagnostics (WAF/Application Gateway logs). The 4 analytics rules and 2 workbooks target these tables to detect CVE-2021-44228 exploitation attempts and post-exploitation behavior — coverage gaps will leave detections blind."
               },
               {
+                "id": "log4j-content",
                 "order": 2,
-                "task": "Deploy or update the forwarder, Azure Monitor Agent, and data collection rules required for Apache Log4j Vulnerability Detection.",
-                "effort_hours": 8.4,
-                "skill_level": "beginner",
-                "id": "alvd-configure",
-                "category": "setup",
-                "phase": "Configuration",
-                "owner_role": "SOC Engineer",
-                "depends_on": [
-                  "alvd-prereqs"
-                ],
-                "description": "Deploy or update the forwarder, Azure Monitor Agent, and data collection rules required for Apache Log4j Vulnerability Detection.",
-                "duration": 3.0
-              },
-              {
-                "order": 3,
-                "task": "Configure Apache Log4j Vulnerability Detection to send the correct log stream and tune filters to avoid unnecessary ingestion.",
-                "effort_hours": 4.8,
+                "task": "Deploy Log4j analytics rules and workbooks to detect exploitation attempts and post-exploitation activity.",
+                "duration": 0.5,
+                "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "alvd-content",
                 "category": "phase-1",
                 "phase": "Operationalization",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "alvd-configure"
+                  "log4j-verify-data"
                 ],
-                "description": "Configure Apache Log4j Vulnerability Detection to send the correct log stream and tune filters to avoid unnecessary ingestion.",
-                "duration": 1.5
+                "owner_role": "SOC Engineer",
+                "description": "Enable all 4 Log4j analytics rules targeting JNDI lookup pattern detection in firewall logs, web access logs, and Linux syslog. Deploy both workbooks: the exploitation detection dashboard (inbound JNDI attempts) and the post-exploitation workbook (outbound callback traffic, suspicious process spawning via SecurityEvent 4688 events). Ensure rule lookback windows cover back-dated exploitation attempts if the solution is deployed after initial exposure."
               },
               {
-                "order": 4,
-                "task": "Validate parser health, record mapping, and one packaged detection using live Apache Log4j Vulnerability Detection telemetry.",
-                "effort_hours": 6,
+                "id": "log4j-playbook",
+                "order": 3,
+                "task": "Configure the Log4j response playbook for automated containment and notification.",
+                "duration": 0.5,
+                "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "alvd-validate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "log4j-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Open the deployed Log4j playbook in the Logic Apps designer and authorize the Microsoft Sentinel and notification (Teams or email) API connections. Configure the playbook automation rule to trigger on incidents from Log4j analytics rules with High severity. Test the playbook by manually triggering it against a test incident to confirm the notification and optional block actions fire correctly."
+              },
+              {
+                "id": "log4j-validate",
+                "order": 4,
+                "task": "Validate Log4j detection coverage and run a simulated JNDI exploitation pattern.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "advanced",
                 "category": "phase-2",
                 "phase": "Validation",
-                "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "alvd-content"
+                  "log4j-playbook"
                 ],
-                "description": "Validate parser health, record mapping, and one packaged detection using live Apache Log4j Vulnerability Detection telemetry.",
-                "duration": 2.0
+                "owner_role": "SOC Analyst",
+                "description": "In a controlled lab environment, send a web request containing a JNDI lookup string (e.g., ${jndi:ldap://test.example.com/a}) to a monitored target and confirm it appears in the relevant log source (CommonSecurityLog or Syslog). Verify that the matching analytics rule fires and generates an incident within the rule frequency window. Review the workbooks to confirm the event is visualized correctly and that the playbook notification was sent."
               }
             ],
             "validation_steps": [
@@ -66278,62 +66353,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "stes-verify-data",
                 "order": 1,
-                "task": "Confirm vendor API access, service-account scope, and Sentinel permissions required for Security Threat Essential Solution.",
+                "task": "Verify that the data sources required by Security Threat Essentials analytics rules are available.",
+                "duration": 0.5,
                 "effort_hours": 2,
-                "skill_level": "beginner",
-                "id": "stes-prereqs",
+                "skill_level": "intermediate",
                 "category": "setup",
                 "phase": "Prerequisites",
-                "owner_role": "Azure Platform Admin",
                 "depends_on": [],
-                "description": "Confirm vendor API access, service-account scope, and Sentinel permissions required for Security Threat Essential Solution.",
-                "duration": 1.0
+                "owner_role": "SOC Analyst",
+                "description": "Review the 7 analytics rules in this solution and identify their source tables: SecurityEvent, CommonSecurityLog, Syslog, AzureActivity, and SigninLogs. Confirm each referenced table has data flowing in the workspace. Rules with missing source data will return zero results and never fire — document any coverage gaps before enabling to avoid false confidence in detection completeness."
               },
               {
+                "id": "stes-deploy-rules",
                 "order": 2,
-                "task": "Configure the API or codeless connector for Security Threat Essential Solution and store authentication secrets in the approved location.",
-                "effort_hours": 3.5,
-                "skill_level": "beginner",
-                "id": "stes-configure",
-                "category": "setup",
-                "phase": "Configuration",
-                "owner_role": "SOC Engineer",
-                "depends_on": [
-                  "stes-prereqs"
-                ],
-                "description": "Configure the API or codeless connector for Security Threat Essential Solution and store authentication secrets in the approved location.",
-                "duration": 1.5
-              },
-              {
-                "order": 3,
-                "task": "Enable packaged detections, dashboards, and optional automations for Security Threat Essential Solution, then tune for your environment.",
+                "task": "Enable all 7 Security Threat Essentials analytics rules targeting cross-platform attack patterns.",
+                "duration": 0.5,
                 "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "stes-content",
                 "category": "phase-1",
                 "phase": "Operationalization",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "stes-configure"
+                  "stes-verify-data"
                 ],
-                "description": "Enable packaged detections, dashboards, and optional automations for Security Threat Essential Solution, then tune for your environment.",
-                "duration": 1.0
+                "owner_role": "SOC Engineer",
+                "description": "Enable all 7 out-of-box threat detection rules covering lateral movement, credential access, persistence mechanisms, and cross-platform attack patterns. Review entity mappings for each rule (Account, Host, IP) to ensure they align with your log schema and that incidents will be properly enriched with entity context for analyst triage."
               },
               {
-                "order": 4,
-                "task": "Validate Security Threat Essential Solution with a recent vendor event and confirm the expected entities and tables are populated.",
-                "effort_hours": 2.5,
-                "skill_level": "intermediate",
-                "id": "stes-validate",
+                "id": "stes-tune",
+                "order": 3,
+                "task": "Tune detection thresholds and add environment-specific exclusions to reduce false positives.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "advanced",
                 "category": "phase-2",
                 "phase": "Validation",
-                "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "stes-content"
+                  "stes-deploy-rules"
                 ],
-                "description": "Validate Security Threat Essential Solution with a recent vendor event and confirm the expected entities and tables are populated.",
-                "duration": 1.0
+                "owner_role": "SOC Analyst",
+                "description": "Monitor incident volume for the first 48 hours after enabling rules. For rules with excessive false positives (e.g., from known admin tools, monitoring agents, or scheduled tasks), add watchlist-based exclusions referencing AccountCustomEntity or HostCustomEntity fields. Adjust threshold parameters where rules expose configurable count or time-window fields to fit your environment's baseline."
+              },
+              {
+                "id": "stes-validate",
+                "order": 4,
+                "task": "Validate end-to-end detection by confirming incidents are generated and correctly classified.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "stes-tune"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run each enabled analytics rule query manually in Log Analytics to confirm it returns results against live data. Trigger a known-safe test event that matches at least one rule pattern (e.g., a failed login burst for a test account) and confirm an incident is generated with correct severity, title, and entity mapping. Review the MITRE ATT&CK technique tags on each rule to ensure your coverage map is complete for the techniques this solution targets."
               }
             ],
             "validation_steps": [
@@ -66571,62 +66646,77 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "soar-review",
                 "order": 1,
-                "task": "Confirm vendor API access, service-account scope, and Sentinel permissions required for Sentinel SOA Ressentials.",
+                "task": "Review the SOAR Essentials playbook catalog and select playbooks matching your SOC automation priorities.",
+                "duration": 0.5,
                 "effort_hours": 2,
-                "skill_level": "beginner",
-                "id": "ssr-prereqs",
+                "skill_level": "intermediate",
                 "category": "setup",
                 "phase": "Prerequisites",
-                "owner_role": "Azure Platform Admin",
                 "depends_on": [],
-                "description": "Confirm vendor API access, service-account scope, and Sentinel permissions required for Sentinel SOA Ressentials.",
-                "duration": 1.0
+                "owner_role": "SOC Engineer",
+                "description": "The solution contains 23 playbooks spanning incident notification (Teams, email, ServiceNow ticketing), entity enrichment, and response actions. Review the playbook list and prioritize which to deploy first based on your SOC's current automation gaps. Map each playbook to the Sentinel analytics rules or incident types it will respond to, and confirm the required API connections (Teams, M365, ServiceNow, etc.) are available in your tenant."
               },
               {
+                "id": "soar-connections",
                 "order": 2,
-                "task": "Configure the API or codeless connector for Sentinel SOA Ressentials and store authentication secrets in the approved location.",
-                "effort_hours": 3.5,
-                "skill_level": "beginner",
-                "id": "ssr-configure",
+                "task": "Configure Logic App API connections for Teams, M365, and other services used by the playbooks.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
                 "category": "setup",
                 "phase": "Configuration",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "ssr-prereqs"
+                  "soar-review"
                 ],
-                "description": "Configure the API or codeless connector for Sentinel SOA Ressentials and store authentication secrets in the approved location.",
-                "duration": 1.5
+                "owner_role": "SOC Engineer",
+                "description": "Create and authorize the Logic App API connections required by your selected playbooks: Microsoft Teams connector (for SOC channel notifications), Office 365 connector (for email alerting), and Microsoft Sentinel connector (for incident update actions). Use a service account or managed identity with the minimum permissions required — Microsoft Sentinel Responder for incident actions and Teams channel membership for notification playbooks."
               },
               {
+                "id": "soar-deploy",
                 "order": 3,
-                "task": "Enable packaged detections, dashboards, and optional automations for Sentinel SOA Ressentials, then tune for your environment.",
-                "effort_hours": 2,
+                "task": "Deploy the selected SOAR Essentials playbooks and verify Logic App resources are healthy.",
+                "duration": 1.0,
+                "effort_hours": 3,
                 "skill_level": "intermediate",
-                "id": "ssr-content",
                 "category": "phase-1",
                 "phase": "Operationalization",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "ssr-configure"
+                  "soar-connections"
                 ],
-                "description": "Enable packaged detections, dashboards, and optional automations for Sentinel SOA Ressentials, then tune for your environment.",
-                "duration": 1.0
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the prioritized subset of the 23 playbooks from the Sentinel SOAR Essentials content pack. After deployment, open each Logic App in the Azure portal and verify the run history shows no authorization errors. Confirm that the Microsoft Sentinel API connection in each playbook uses the correct workspace and that the playbook has the Sentinel Contributor or Responder role on the workspace resource."
               },
               {
+                "id": "soar-automate",
                 "order": 4,
-                "task": "Validate Sentinel SOA Ressentials with a recent vendor event and confirm the expected entities and tables are populated.",
-                "effort_hours": 2.5,
+                "task": "Attach deployed playbooks to Sentinel automation rules to trigger on matching incidents.",
+                "duration": 0.5,
+                "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "ssr-validate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "soar-deploy"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Create automation rules in Microsoft Sentinel that call the deployed playbooks based on incident conditions: severity, analytics rule name, or entity type. For notification playbooks, set conditions to trigger on New incident status for High severity. For response/enrichment playbooks, scope to specific analytics rule names to avoid over-triggering. Order automation rules to run enrichment before notification so alert comments are populated before Teams messages are sent."
+              },
+              {
+                "id": "soar-validate",
+                "order": 5,
+                "task": "Validate end-to-end SOAR automation by triggering test incidents and confirming playbook execution.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
                 "category": "phase-2",
                 "phase": "Validation",
-                "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ssr-content"
+                  "soar-automate"
                 ],
-                "description": "Validate Sentinel SOA Ressentials with a recent vendor event and confirm the expected entities and tables are populated.",
-                "duration": 1.0
+                "owner_role": "SOC Analyst",
+                "description": "Create test incidents in Sentinel that match the conditions of each automation rule. For notification playbooks: confirm the Teams or email message arrives with the correct incident details (title, severity, assigned analyst). For response playbooks: confirm the Logic App run history shows a Succeeded status and that the incident is updated with the expected comment or status change. Review Logic App run logs for any throttling errors if high-volume incident rates are expected."
               }
             ],
             "validation_steps": [
@@ -67296,62 +67386,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "soch-verify-data",
                 "order": 1,
-                "task": "Confirm vendor API access, service-account scope, and Sentinel permissions required for SOC Handbook.",
-                "effort_hours": 2,
+                "task": "Confirm that the data sources required by the SOC Handbook workbooks are populated in Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 1,
                 "skill_level": "beginner",
-                "id": "sh-prereqs",
                 "category": "setup",
                 "phase": "Prerequisites",
-                "owner_role": "Azure Platform Admin",
                 "depends_on": [],
-                "description": "Confirm vendor API access, service-account scope, and Sentinel permissions required for SOC Handbook.",
-                "duration": 1.0
+                "owner_role": "SOC Analyst",
+                "description": "The SOC Handbook contains 13 operational workbooks covering incident management, alert triage, analyst performance, and coverage metrics. Review each workbook's data dependencies — most consume SecurityIncident, SecurityAlert, ThreatIntelligenceIndicator, and workspace-level Log Analytics metadata. Confirm these tables have sufficient data volume (at least 30 days recommended) before deploying so workbook visualizations are meaningful rather than empty."
               },
               {
+                "id": "soch-deploy-wb",
                 "order": 2,
-                "task": "Configure the API or codeless connector for SOC Handbook and store authentication secrets in the approved location.",
-                "effort_hours": 3.5,
-                "skill_level": "beginner",
-                "id": "sh-configure",
-                "category": "setup",
-                "phase": "Configuration",
-                "owner_role": "SOC Engineer",
-                "depends_on": [
-                  "sh-prereqs"
-                ],
-                "description": "Configure the API or codeless connector for SOC Handbook and store authentication secrets in the approved location.",
-                "duration": 1.5
-              },
-              {
-                "order": 3,
-                "task": "Enable packaged detections, dashboards, and optional automations for SOC Handbook, then tune for your environment.",
+                "task": "Deploy all 13 SOC Handbook workbooks from the solution content pack.",
+                "duration": 0.5,
                 "effort_hours": 2,
-                "skill_level": "intermediate",
-                "id": "sh-content",
+                "skill_level": "beginner",
                 "category": "phase-1",
                 "phase": "Operationalization",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "sh-configure"
+                  "soch-verify-data"
                 ],
-                "description": "Enable packaged detections, dashboards, and optional automations for SOC Handbook, then tune for your environment.",
-                "duration": 1.0
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the SOC Handbook solution from the Microsoft Sentinel Content Hub. All 13 workbooks will be installed to your workspace. Confirm each workbook appears in the Sentinel Workbooks gallery under the 'My workbooks' tab. Workbooks cover areas including SOC efficiency, MITRE ATT&CK coverage heatmaps, incident SLA tracking, analyst workload, and detection health monitoring."
               },
               {
+                "id": "soch-configure",
+                "order": 3,
+                "task": "Configure workbook parameters including workspace, subscription, and time-range filters.",
+                "duration": 0.5,
+                "effort_hours": 1,
+                "skill_level": "beginner",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "soch-deploy-wb"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Open each deployed SOC Handbook workbook and set the workspace and subscription parameters to point at your production Sentinel workspace. For workbooks with analyst-selection filters, configure the default team or shift scope. Save customized versions of the most-used workbooks (e.g., incident SLA dashboard) to preserve parameter settings between sessions."
+              },
+              {
+                "id": "soch-validate",
                 "order": 4,
-                "task": "Validate SOC Handbook with a recent vendor event and confirm the expected entities and tables are populated.",
-                "effort_hours": 2.5,
+                "task": "Validate that all 13 workbooks render correctly and surface meaningful SOC metrics.",
+                "duration": 0.5,
+                "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "sh-validate",
                 "category": "phase-2",
                 "phase": "Validation",
-                "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "sh-content"
+                  "soch-configure"
                 ],
-                "description": "Validate SOC Handbook with a recent vendor event and confirm the expected entities and tables are populated.",
-                "duration": 1.0
+                "owner_role": "SOC Analyst",
+                "description": "Open each of the 13 workbooks and confirm charts and tables render without 'No data found' states for the selected time range. Spot-check SecurityIncident counts displayed in the incident dashboard against a direct KQL query to verify accuracy. Identify any workbooks with persistent empty views and trace the missing table dependency so remediation can be planned."
               }
             ],
             "validation_steps": [
@@ -69681,62 +69771,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "ueba-enable",
                 "order": 1,
-                "task": "Confirm vendor API access, service-account scope, and Sentinel permissions required for UEBA Essentials.",
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "id": "ue-prereqs",
+                "task": "Enable Microsoft Sentinel UEBA and configure entity data sources for behavioral baselining.",
+                "duration": 1.0,
+                "effort_hours": 3,
+                "skill_level": "intermediate",
                 "category": "setup",
                 "phase": "Prerequisites",
-                "owner_role": "Azure Platform Admin",
                 "depends_on": [],
-                "description": "Confirm vendor API access, service-account scope, and Sentinel permissions required for UEBA Essentials.",
-                "duration": 1.0
+                "owner_role": "SOC Analyst",
+                "description": "In Microsoft Sentinel Settings > Entity behavior, enable UEBA and select the data sources to synchronize: Azure Active Directory (sign-in and audit logs), Microsoft 365 (activity logs), and Azure Activity. UEBA requires at least 7 days of baseline data before anomaly scores become meaningful. Confirm that the BehaviorAnalytics and IdentityInfo tables begin populating in Log Analytics after UEBA is enabled."
               },
               {
+                "id": "ueba-deploy-wb",
                 "order": 2,
-                "task": "Configure the API or codeless connector for UEBA Essentials and store authentication secrets in the approved location.",
-                "effort_hours": 3.5,
+                "task": "Deploy the UEBA Essentials workbook from the solution content pack.",
+                "duration": 0.5,
+                "effort_hours": 1,
                 "skill_level": "beginner",
-                "id": "ue-configure",
-                "category": "setup",
-                "phase": "Configuration",
-                "owner_role": "SOC Engineer",
-                "depends_on": [
-                  "ue-prereqs"
-                ],
-                "description": "Configure the API or codeless connector for UEBA Essentials and store authentication secrets in the approved location.",
-                "duration": 1.5
-              },
-              {
-                "order": 3,
-                "task": "Enable packaged detections, dashboards, and optional automations for UEBA Essentials, then tune for your environment.",
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "id": "ue-content",
                 "category": "phase-1",
                 "phase": "Operationalization",
-                "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "ue-configure"
+                  "ueba-enable"
                 ],
-                "description": "Enable packaged detections, dashboards, and optional automations for UEBA Essentials, then tune for your environment.",
-                "duration": 1.0
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the UEBA Essentials solution from the Microsoft Sentinel Content Hub to install the UEBA workbook. The workbook visualizes entity risk scores, anomaly timelines, and top risky users/hosts from the BehaviorAnalytics table. Confirm the workbook appears in the Sentinel Workbooks gallery and opens without errors."
               },
               {
-                "order": 4,
-                "task": "Validate UEBA Essentials with a recent vendor event and confirm the expected entities and tables are populated.",
-                "effort_hours": 2.5,
+                "id": "ueba-configure",
+                "order": 3,
+                "task": "Configure the UEBA workbook entity scope and validate anomaly scores are visible.",
+                "duration": 0.5,
+                "effort_hours": 2,
                 "skill_level": "intermediate",
-                "id": "ue-validate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ueba-deploy-wb"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Open the UEBA Essentials workbook and set the workspace, time range, and entity type filters (Users, Hosts, or IP addresses). Verify that entity risk scores are visible in the BehaviorAnalytics table by running a direct KQL query: BehaviorAnalytics | summarize max(ActivityInsights) by UserName | top 10 by max_ActivityInsights. Navigate to individual entity pages in Sentinel to confirm the UEBA timeline view shows behavioral anomalies."
+              },
+              {
+                "id": "ueba-validate",
+                "order": 4,
+                "task": "Validate UEBA entity pages and anomaly detection after the initial 7-day baselining window.",
+                "duration": 0.5,
+                "effort_hours": 1,
+                "skill_level": "intermediate",
                 "category": "phase-2",
                 "phase": "Validation",
-                "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ue-content"
+                  "ueba-configure"
                 ],
-                "description": "Validate UEBA Essentials with a recent vendor event and confirm the expected entities and tables are populated.",
-                "duration": 1.0
+                "owner_role": "SOC Analyst",
+                "description": "After UEBA has been running for at least 7 days, open the Entity Behavior page for a known user and confirm that anomaly insights (unusual sign-in time, impossible travel, new resource access) are surfaced in the timeline. Verify that the UEBA workbook's risk score distribution chart shows a non-trivial set of entities with elevated scores. Confirm that UEBA insights are appearing in Sentinel incident entity panels for correlated alerts."
               }
             ],
             "validation_steps": [

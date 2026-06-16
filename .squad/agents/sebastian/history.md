@@ -19,6 +19,47 @@
 
 ## Recent Work
 
+### 2026-06-16T13:45:48+02:00: Featured solution task rewrite — 11 solutions, 55 hand-crafted tasks
+
+**What happened:**
+- Wrote `scripts/patch_featured_tasks.py` with fully hand-crafted, product-specific `planner.setup_tasks` for the 11 featured solutions that previously had generic templated tasks.
+- All 4 already-good featured solutions (azure-activity, defender-for-cloud, defender-xdr, microsoft-entra-id) explicitly protected and confirmed untouched.
+- Script ran cleanly: 11 solutions patched, 489 total solutions, JSON valid.
+
+**Solutions and task counts:**
+| Group | Solution | Tasks | Total Days |
+|-------|----------|-------|-----------|
+| A (multi-cloud) | aws | 6 | 5.0d |
+| A (multi-cloud) | google-cloud-platform-iam | 6 | 5.0d |
+| A (multi-cloud) | threat-intelligence-new | 5 | 3.0d |
+| B (domain/content) | dns-essentials | 4 | 2.0d |
+| B (domain/content) | network-session-essentials | 4 | 2.0d |
+| B (domain/content) | apache-log4j-vulnerability-detection | 4 | 2.0d |
+| B (domain/content) | security-threat-essential-solution | 4 | 2.0d |
+| C (playbooks) | virus-total | 4 | 2.5d |
+| C (playbooks) | sentinel-soa-ressentials | 5 | 3.5d |
+| D (workbooks) | soc-handbook | 4 | 2.0d |
+| D (workbooks) | ueba-essentials | 4 | 2.5d |
+| **TOTAL** | 11 solutions | **55** | **31.5d** |
+
+**Design decisions applied:**
+- **Cross-cloud connectors (aws, gcp):** Added infrastructure-specific tasks (S3/SQS setup for AWS, Pub/Sub + log sink for GCP) that generic templates omitted. Owner roles correctly split: AWS Cloud Admin / GCP Cloud Admin for infrastructure; SOC Engineer for content deployment; SOC Analyst for tuning/validation.
+- **Domain solutions (dns-essentials, network-session-essentials):** Task 1 is a hard prerequisite check — "this is a domain solution, verify underlying connector is already deployed." ASIM parser deployment (imDns, imNetworkSession) explicitly called out. NO connector/AMA/DCR deployment steps — that's the underlying connector's job.
+- **Vulnerability detection (apache-log4j):** Task 1 explicitly names the source tables (CommonSecurityLog, Syslog, SecurityEvent, AzureDiagnostics) the 4 rules query. Includes lab-simulation validation step.
+- **Analytics-only (security-threat-essential-solution):** Clean 4-task arc: verify table coverage → deploy 7 rules → tune thresholds → validate. Tuning task correctly assigned to SOC Analyst, not SOC Engineer.
+- **Playbook solutions (virus-total, sentinel-soa-ressentials):** No connector/analytics steps. virus-total starts with API key + quota tier selection. sentinel-soa-ressentials starts with a catalog review + prioritization step (deploy all 23 at once is an antipattern).
+- **Workbook solutions (soc-handbook, ueba-essentials):** ueba-essentials includes the UEBA enable + 7-day baseline wait as task 1, which is non-obvious but critical. soc-handbook includes a data volume prerequisite check (30 days recommended for meaningful metrics).
+
+**Learnings:**
+- **Featured solutions need group-level patterns:** Multi-cloud, domain, playbook-only, and workbook-only solutions each have fundamentally different task arcs. Generic 4-task (prereqs/configure/content/validate) works for simple connector solutions but fails for any solution where "configure" isn't the main work.
+- **ASIM parser dependency is a first-class task:** DNS and Network Session Essentials both depend on an imDns / imNetworkSession parser being deployed and confirmed before analytics rules can fire. This is invisible in the generic template but critical in practice.
+- **Owner role discipline matters for featured solutions:** The most visible solutions in the app should model the correct RBAC split clearly — AWS prereqs owned by AWS Cloud Admin (not Azure Platform Admin) is a meaningful signal to customers that this work isn't handled by the Azure team.
+- **Task count range:** Featured solutions range from 4 (domain/workbook solutions) to 6 (multi-cloud connector solutions). The extra tasks for AWS and GCP are infrastructure steps (S3/SQS, Pub/Sub) that have no equivalent in Azure-native connectors.
+
+**Related:**
+- Decision: `.squad/decisions/inbox/sebastian-featured-rewrite.md`
+- Patch script: `scripts/patch_featured_tasks.py`
+
 ### 2026-06-16T13:00:41+02:00: Tier 3 duration enrichment — 438 third-party connectors enriched
 
 **What happened:**
