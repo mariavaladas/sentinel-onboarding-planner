@@ -19,6 +19,28 @@
 
 ## Recent Work
 
+### 2026-06-16T13:00:41+02:00: Tier 3 duration enrichment — 438 third-party connectors enriched
+
+**What happened:**
+- Wrote `scripts/patch_tier3_durations.py` to batch-enrich all 438 remaining Tier 3 third-party solutions.
+- All 438 solutions had exactly 4 tasks with `effort_hours` set but missing `id`, `category`, `phase`, `owner_role`, `depends_on`, `description`, and `duration`.
+- Applied standard 4-task metadata table uniformly across all 438 solutions: task 1 (setup/Prerequisites/Azure Platform Admin/beginner), task 2 (setup/Configuration/SOC Engineer/beginner), task 3 (phase-1/Operationalization/SOC Engineer/intermediate), task 4 (phase-2/Validation/SOC Analyst/intermediate).
+- ID abbreviation: first letters of hyphen-separated words in solution id, max 4 chars, + suffix (-prereqs/-configure/-content/-validate).
+- Description: reused existing `task` text verbatim (acceptable for batch enrichment of third-party connectors).
+- Total solutions with full duration after enrichment: **488** (9 Tier 1 + 41 Tier 2 + 438 Tier 3).
+- Verified: JSON valid, 0 validation errors, 0 Tier 1/2 solutions modified, duration distribution across all 5 legal values (0.5, 1.0, 1.5, 2.0, 3.0 days).
+
+**Learnings:**
+- **Scale observation:** 438 solutions × 4 tasks = 1752 task records enriched in a single pass; batch scripting with in-place dict mutation works cleanly at this volume.
+- **Effort distribution (Tier 3):** most tasks land at 2.0–2.5 effort_hours, producing 1.0-day duration (the most common value). Only ~10% of tasks reach 3.0 days (effort > 8h).
+- **Abbreviation edge case:** multi-word vendor names with 5+ hyphens (e.g. `azure-cloud-ngfw-by-palo-alto-networks`) truncate to 4 first-letters (`acnb`), which is unique enough for per-solution task IDs.
+- **Description strategy for batch:** reusing `task` text as `description` is pragmatically sound for third-party connectors where bespoke descriptions aren't worth the effort per-connector at this volume.
+- **Idempotency:** script correctly skips fully-enriched solutions (guard: `all(t.get("duration") is not None for t in tasks)`); second run confirms 0 enriched, 0 degraded.
+
+**Related:**
+- Decision: `.squad/decisions/inbox/sebastian-tier3-durations.md`
+- Patch script: `scripts/patch_tier3_durations.py`
+
 ### 2026-06-16T12:02:17+02:00: Tier 2 duration enrichment — 41 connectors enriched
 
 **What happened:**
