@@ -176,28 +176,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "abatch-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure Batch Account.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify Azure Batch Account resources in scope, confirm Monitoring Contributor and Sentinel Contributor roles are assigned on the target workspace, and verify diagnostic settings can be applied to batch account resources."
               },
               {
+                "id": "abatch-configure",
                 "order": 2,
                 "task": "Enable Azure Batch Account data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 0.5,
                 "effort_hours": 1.4,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "abatch-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable diagnostic settings on Azure Batch Account resources to stream the ServiceLog category to the Sentinel workspace, and confirm data flows to the AzureDiagnostics table with the resource type BATCHACCOUNTS."
               },
               {
+                "id": "abatch-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure Batch Account telemetry.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "abatch-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Azure Batch Account analytics rules and workbooks (if included in the solution), and review automation content for job-failure and unauthorized-access anomaly detection."
               },
               {
+                "id": "abatch-validate",
                 "order": 4,
                 "task": "Validate Azure Batch Account with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "abatch-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query AzureDiagnostics filtered to BATCHACCOUNTS in Sentinel, verify job, pool, and caller-identity event records are present, and confirm any enabled analytics rules return expected results."
               }
             ],
             "validation_steps": [
@@ -284,28 +318,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "acsrch-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure Cognitive Search.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify Azure Cognitive Search service instances in scope, confirm Monitoring Contributor and Sentinel Contributor are assigned, and verify diagnostic settings support for the search service resources."
               },
               {
+                "id": "acsrch-configure",
                 "order": 2,
                 "task": "Enable Azure Cognitive Search data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 0.5,
                 "effort_hours": 1.4,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "acsrch-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable diagnostic settings on Azure Cognitive Search resources to stream audit and operation logs to the Sentinel workspace, and confirm data appears in the AzureDiagnostics table under the SEARCHSERVICES resource type."
               },
               {
+                "id": "acsrch-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure Cognitive Search telemetry.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "acsrch-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Cognitive Search analytics rules for unauthorized query attempts, index modification events, and access anomalies; enable any associated workbooks for search service visibility."
               },
               {
+                "id": "acsrch-validate",
                 "order": 4,
                 "task": "Validate Azure Cognitive Search with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "acsrch-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query AzureDiagnostics filtered to Azure Cognitive Search in Sentinel, verify search-operation and identity fields are populated, and confirm analytics rules return expected results on available log data."
               }
             ],
             "validation_steps": [
@@ -395,28 +463,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "ddos-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure D Do S Protection.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Confirm Azure DDoS Protection Standard is enabled on target virtual networks, verify Monitoring Contributor and Sentinel Contributor roles, and identify the VNets to include in DDoS log streaming."
               },
               {
+                "id": "ddos-configure",
                 "order": 2,
                 "task": "Enable Azure D Do S Protection data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 0.5,
                 "effort_hours": 1.4,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "ddos-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable diagnostic settings on Azure DDoS Protection to stream mitigation reports and attack events to the Sentinel workspace; confirm DDoSProtectionNotifications or AzureNetworkAnalytics_CL data begins populating."
               },
               {
+                "id": "ddos-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure D Do S Protection telemetry.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ddos-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy DDoS analytics rules for ongoing mitigation events and volumetric attack detections; enable the DDoS Protection workbook for attack-timeline and mitigation-status visualization."
               },
               {
+                "id": "ddos-validate",
                 "order": 4,
                 "task": "Validate Azure D Do S Protection with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "ddos-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query DDoS-related tables in Sentinel, verify attack type, mitigated traffic, and target-IP fields are populated, and confirm analytics rules fire on any available DDoS event data."
               }
             ],
             "validation_steps": [
@@ -509,28 +611,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "ado-prereqs",
                 "order": 1,
                 "task": "Define the ingestion design, schema expectations, and Azure integration components required for Azure DevOps Auditing.",
+                "duration": 1.5,
                 "effort_hours": 3.2,
-                "skill_level": "advanced"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Confirm Azure DevOps Organization-level access is available and the operator holds Project Collection Admin, and verify the Azure DevOps Auditing API is enabled for the target organizations."
               },
               {
+                "id": "ado-configure",
                 "order": 2,
                 "task": "Provision the Event Hubs, Logic Apps, or custom API path needed to bring Azure DevOps Auditing data into Sentinel.",
+                "duration": 2.0,
                 "effort_hours": 5.6,
-                "skill_level": "advanced"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "ado-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Azure DevOps Auditing connector in Sentinel, configure the API connection to stream DevOps audit events, and verify the AzureDevOpsAuditing table begins ingesting data."
               },
               {
+                "id": "ado-content",
                 "order": 3,
                 "task": "Configure transforms, parsers, and packaged content for Azure DevOps Auditing so data lands in the right schema.",
+                "duration": 1.5,
                 "effort_hours": 3.2,
-                "skill_level": "advanced"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ado-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Azure DevOps analytics rules for unauthorized pipeline modifications, repo permission changes, and service-connection anomalies; enable the DevOps Auditing workbook."
               },
               {
+                "id": "ado-validate",
                 "order": 4,
                 "task": "Validate Azure DevOps Auditing with a representative payload and confirm parsing, latency, and content mapping are correct.",
+                "duration": 1.5,
                 "effort_hours": 4,
-                "skill_level": "advanced"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "ado-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query AzureDevOpsAuditing in Sentinel, verify actor, operation type, and project fields are populated for recent DevOps audit events, and confirm an analytics rule fires on a test pipeline or permission change."
               }
             ],
             "validation_steps": [
@@ -630,28 +766,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "aeh-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure Event Hubs.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify Azure Event Hubs namespaces in scope, confirm Monitoring Contributor and Sentinel Contributor are assigned, and verify diagnostic settings are supported for the target namespaces."
               },
               {
+                "id": "aeh-configure",
                 "order": 2,
                 "task": "Enable Azure Event Hubs data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 1.0,
                 "effort_hours": 2.1,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "aeh-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable diagnostic settings on Azure Event Hubs namespaces to stream OperationalLogs to the Sentinel workspace, and confirm AzureDiagnostics data for EVENTHUBS begins populating."
               },
               {
+                "id": "aeh-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure Event Hubs telemetry.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "aeh-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Event Hubs analytics rules for unauthorized access, throttling events, and namespace management anomalies; enable any associated workbooks for messaging-pipeline visibility."
               },
               {
+                "id": "aeh-validate",
                 "order": 4,
                 "task": "Validate Azure Event Hubs with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "aeh-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query AzureDiagnostics filtered to Event Hubs in Sentinel, verify namespace, entity, and caller fields are present, and confirm analytics rules return expected results on available log data."
               }
             ],
             "validation_steps": [
@@ -885,28 +1055,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "akv-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure Key Vault.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify Azure Key Vault instances in scope, confirm Monitoring Contributor and Sentinel Contributor RBAC, and verify the AuditEvent diagnostic logging category is available on each target vault."
               },
               {
+                "id": "akv-configure",
                 "order": 2,
                 "task": "Enable Azure Key Vault data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 0.5,
                 "effort_hours": 1.4,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "akv-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable diagnostic settings on Azure Key Vault resources to stream AuditEvent logs to the Sentinel workspace, and verify the KeyVaultData or AzureDiagnostics table is receiving vault-operation events."
               },
               {
+                "id": "akv-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure Key Vault telemetry.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "akv-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Key Vault analytics rules for secret exfiltration, vault deletion, access-policy modification, and anomalous access patterns; enable the Key Vault workbook for access and operation visibility."
               },
               {
+                "id": "akv-validate",
                 "order": 4,
                 "task": "Validate Azure Key Vault with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "akv-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query KeyVaultData or AzureDiagnostics filtered to Key Vault in Sentinel, verify operation type, caller identity, and vault name fields are populated, and confirm analytics rules fire on available vault audit events."
               }
             ],
             "validation_steps": [
@@ -992,28 +1196,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "aks-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure kubernetes Service.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify AKS clusters in scope, confirm Monitoring Contributor and Sentinel Contributor RBAC, and verify that Azure Monitor for containers and diagnostic settings are supported on the target clusters."
               },
               {
+                "id": "aks-configure",
                 "order": 2,
                 "task": "Enable Azure kubernetes Service data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 1.0,
                 "effort_hours": 2.1,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "aks-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable diagnostic settings on AKS clusters to stream kube-audit, kube-apiserver, and guard logs to the Sentinel workspace; verify AzureDiagnostics data for MANAGEDCLUSTERS begins populating."
               },
               {
+                "id": "aks-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure kubernetes Service telemetry.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "aks-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy AKS analytics rules for privilege escalation, unauthorized API access, and container-escape detection; enable the AKS workbook for cluster event and activity visualization."
               },
               {
+                "id": "aks-validate",
                 "order": 4,
                 "task": "Validate Azure kubernetes Service with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "aks-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query AzureDiagnostics filtered to AKS in Sentinel, verify cluster, namespace, and user fields are populated for recent Kubernetes API events, and confirm analytics rules fire on available audit data."
               }
             ],
             "validation_steps": [
@@ -1102,28 +1340,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "ala-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure Logic Apps.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify Azure Logic Apps instances in scope, confirm Monitoring Contributor and Sentinel Contributor roles, and verify diagnostic settings can be enabled for the target workflow resources."
               },
               {
+                "id": "ala-configure",
                 "order": 2,
                 "task": "Enable Azure Logic Apps data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 1.0,
                 "effort_hours": 2.1,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "ala-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable diagnostic settings on Azure Logic Apps to stream WorkflowRuntime logs to the Sentinel workspace, and confirm AzureDiagnostics data for WORKFLOWS begins ingesting."
               },
               {
+                "id": "ala-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure Logic Apps telemetry.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ala-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Logic Apps analytics rules for failed-workflow anomalies, unauthorized trigger access, and sensitive-action detection; enable any associated workbooks for workflow visibility."
               },
               {
+                "id": "ala-validate",
                 "order": 4,
                 "task": "Validate Azure Logic Apps with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "ala-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query AzureDiagnostics filtered to Logic Apps in Sentinel, verify workflow name, trigger type, and outcome fields are populated, and confirm analytics rules execute correctly on available workflow log data."
               }
             ],
             "validation_steps": [
@@ -1210,28 +1482,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "nsg-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure Network Security Groups.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify NSGs in scope and confirm NSG flow logs are enabled (or can be enabled) targeting the Sentinel workspace; verify Network Contributor and Sentinel Contributor roles are assigned."
               },
               {
+                "id": "nsg-configure",
                 "order": 2,
                 "task": "Enable Azure Network Security Groups data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 0.5,
                 "effort_hours": 1.4,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "nsg-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable NSG flow log diagnostic settings to stream allowed and denied traffic events to the Sentinel workspace, and verify AzureNetworkAnalytics_CL or the NSG flow log table begins populating."
               },
               {
+                "id": "nsg-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure Network Security Groups telemetry.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "nsg-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy NSG analytics rules for unusual inbound access, port-scanning patterns, and denied-traffic spikes; enable the NSG workbook for traffic-flow visualization and network activity overview."
               },
               {
+                "id": "nsg-validate",
                 "order": 4,
                 "task": "Validate Azure Network Security Groups with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "nsg-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query AzureNetworkAnalytics_CL or NSG flow log tables in Sentinel, verify source IP, destination port, and flow-decision fields are populated, and confirm analytics rules return expected results on available traffic data."
               }
             ],
             "validation_steps": [
@@ -1318,28 +1624,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "arg-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure Resource Graph.",
+                "duration": 0.5,
                 "effort_hours": 0.5,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Confirm the operator has Reader access across all target subscriptions for Azure Resource Graph queries, and verify the Sentinel workspace is configured to receive resource change events."
               },
               {
+                "id": "arg-configure",
                 "order": 2,
                 "task": "Enable Azure Resource Graph data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 0.5,
                 "effort_hours": 0.7,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "arg-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Azure Resource Graph connector in Sentinel, configure subscription-level resource change event streaming, and verify resource-topology data begins populating in the relevant tables."
               },
               {
+                "id": "arg-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure Resource Graph telemetry.",
+                "duration": 0.5,
                 "effort_hours": 0.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "arg-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Resource Graph analytics rules for resource deletion, unauthorized resource creation, and configuration drift; enable the Resource Graph workbook for subscription inventory visualization."
               },
               {
+                "id": "arg-validate",
                 "order": 4,
                 "task": "Validate Azure Resource Graph with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 0.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "arg-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query Resource Graph event tables in Sentinel, verify resource type, subscription, and change-detail fields are populated, and confirm analytics rules fire on available resource-change data."
               }
             ],
             "validation_steps": [
@@ -1429,28 +1769,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "asb-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure Security Benchmark.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Confirm Microsoft Defender for Cloud is enabled with the Azure Security Benchmark initiative assigned across target subscriptions; verify Security Reader and Sentinel Contributor roles are in place."
               },
               {
+                "id": "asb-configure",
                 "order": 2,
                 "task": "Enable Azure Security Benchmark data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 0.5,
                 "effort_hours": 1.4,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "asb-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Azure Security Benchmark connector in Sentinel to stream benchmark assessment findings and recommendations, and verify SecurityRecommendation or AzureSecurityBenchmark tables populate."
               },
               {
+                "id": "asb-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure Security Benchmark telemetry.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "asb-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy ASB analytics rules for critical control failures, benchmark regression, and compliance drift; enable the Azure Security Benchmark workbook for posture-score tracking and prioritized remediation."
               },
               {
+                "id": "asb-validate",
                 "order": 4,
                 "task": "Validate Azure Security Benchmark with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "asb-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query SecurityRecommendation tables in Sentinel, verify benchmark control, resource, and severity fields are populated for recent assessments, and confirm analytics rules fire on available benchmark findings."
               }
             ],
             "validation_steps": [
@@ -1536,28 +1910,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "asbus-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure Service Bus.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify Azure Service Bus namespaces in scope, confirm Monitoring Contributor and Sentinel Contributor roles, and verify diagnostic settings are available for the target namespaces."
               },
               {
+                "id": "asbus-configure",
                 "order": 2,
                 "task": "Enable Azure Service Bus data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 1.0,
                 "effort_hours": 2.1,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "asbus-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable diagnostic settings on Azure Service Bus namespaces to stream OperationalLogs and management logs to the Sentinel workspace, and verify AzureDiagnostics for SERVICEBUS begins ingesting."
               },
               {
+                "id": "asbus-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure Service Bus telemetry.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "asbus-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Service Bus analytics rules for unauthorized queue or topic access, dead-letter queue anomalies, and management-plane changes; enable any associated workbooks for messaging visibility."
               },
               {
+                "id": "asbus-validate",
                 "order": 4,
                 "task": "Validate Azure Service Bus with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "asbus-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query AzureDiagnostics filtered to Service Bus in Sentinel, verify namespace, entity, and caller fields are populated for recent events, and confirm analytics rules return expected results."
               }
             ],
             "validation_steps": [
@@ -1646,28 +2054,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "asql-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure SQL Database solution for sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify Azure SQL Database instances in scope, confirm Monitoring Contributor and Sentinel Contributor roles, and verify SQL Audit and Advanced Threat Protection are enabled on the target databases."
               },
               {
+                "id": "asql-configure",
                 "order": 2,
                 "task": "Enable Azure SQL Database solution for sentinel data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 1.0,
                 "effort_hours": 2.1,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "asql-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable Azure SQL Database diagnostic settings and SQL Audit log streaming to the Sentinel workspace; confirm AzureDiagnostics and SQLSecurityAuditEvents data begins populating."
               },
               {
+                "id": "asql-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure SQL Database solution for sentinel telemetry.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "asql-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Azure SQL analytics rules for SQL injection patterns, brute-force login attempts, and anomalous data exfiltration; enable the Azure SQL workbook for database activity and threat visibility."
               },
               {
+                "id": "asql-validate",
                 "order": 4,
                 "task": "Validate Azure SQL Database solution for sentinel with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "asql-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query AzureDiagnostics and SQLSecurityAuditEvents in Sentinel, verify database, caller, and SQL statement fields are present for recent queries, and confirm analytics rules fire on available SQL audit data."
               }
             ],
             "validation_steps": [
@@ -1755,28 +2197,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "astor-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure Storage.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify Azure Storage accounts in scope, confirm Monitoring Contributor and Sentinel Contributor roles, and verify diagnostic settings support for the target account types (Blob, Queue, File, Table)."
               },
               {
+                "id": "astor-configure",
                 "order": 2,
                 "task": "Enable Azure Storage data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 1.0,
                 "effort_hours": 2.1,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "astor-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable diagnostic settings on Azure Storage accounts to stream read, write, and delete operations to the Sentinel workspace; verify StorageBlobLogs or AzureDiagnostics data for Storage begins ingesting."
               },
               {
+                "id": "astor-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure Storage telemetry.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "astor-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Azure Storage analytics rules for mass deletion, unusual blob access, SAS-token misuse, and public-access anomalies; enable the Azure Storage workbook for data-layer visibility."
               },
               {
+                "id": "astor-validate",
                 "order": 4,
                 "task": "Validate Azure Storage with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "astor-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query StorageBlobLogs or AzureDiagnostics filtered to Storage in Sentinel, verify caller, operation, and container fields are populated for recent events, and confirm analytics rules fire correctly."
               }
             ],
             "validation_steps": [
@@ -1862,28 +2338,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "asa-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure Stream Analytics.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify Azure Stream Analytics jobs in scope, confirm Monitoring Contributor and Sentinel Contributor roles, and verify diagnostic settings support for Stream Analytics job logs."
               },
               {
+                "id": "asa-configure",
                 "order": 2,
                 "task": "Enable Azure Stream Analytics data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 1.0,
                 "effort_hours": 2.1,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "asa-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable diagnostic settings on Azure Stream Analytics jobs to stream execution and authoring logs to the Sentinel workspace, and verify AzureDiagnostics for STREAMINGJOBS begins populating."
               },
               {
+                "id": "asa-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure Stream Analytics telemetry.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "asa-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Stream Analytics analytics rules for job-failure anomalies, unauthorized input or output configuration changes, and streaming data-access events."
               },
               {
+                "id": "asa-validate",
                 "order": 4,
                 "task": "Validate Azure Stream Analytics with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "asa-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query AzureDiagnostics filtered to Stream Analytics in Sentinel, verify job name, operation, and status fields are populated, and confirm analytics rules return expected results on available job log data."
               }
             ],
             "validation_steps": [
@@ -1975,28 +2485,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "waf-prereqs",
                 "order": 1,
                 "task": "Confirm Azure resource scope, diagnostic settings requirements, and Sentinel RBAC for Azure Web Application Firewall (WAF).",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify Azure WAF policies and associated Application Gateways or Front Door profiles in scope, confirm Monitoring Contributor and Sentinel Contributor roles, and verify WAF diagnostic logging is supported."
               },
               {
+                "id": "waf-configure",
                 "order": 2,
                 "task": "Enable Azure Web Application Firewall (WAF) data collection into the target Sentinel workspace and verify the right resource set is connected.",
+                "duration": 0.5,
                 "effort_hours": 1.4,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "waf-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable diagnostic settings on Azure WAF resources to stream ApplicationGatewayFirewallLog or FrontDoorWebApplicationFirewallLog to the Sentinel workspace, and confirm WAF log tables begin populating."
               },
               {
+                "id": "waf-content",
                 "order": 3,
                 "task": "Turn on packaged analytics, workbooks, and any optional content that depends on Azure Web Application Firewall (WAF) telemetry.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "waf-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Azure WAF analytics rules for SQL injection, XSS, and RCE detection patterns; enable the WAF workbook for blocked-request trending and attack-source visualization."
               },
               {
+                "id": "waf-validate",
                 "order": 4,
                 "task": "Validate Azure Web Application Firewall (WAF) with a recent Azure event and confirm the expected records arrive in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "waf-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query ApplicationGatewayFirewallLog or FrontDoorWebApplicationFirewallLog in Sentinel, verify rule ID, action, and client-IP fields are populated, and confirm analytics rules fire on available WAF block events."
               }
             ],
             "validation_steps": [
@@ -2087,28 +2631,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "sysml-prereqs",
                 "order": 1,
                 "task": "Design the Syslog or CEF forwarding path, Linux forwarder placement, and network prerequisites for Microsoft Sysmon For Linux.",
+                "duration": 1.5,
                 "effort_hours": 4.8,
-                "skill_level": "advanced"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Confirm target Linux servers are Azure Arc-onboarded (or have AMA installed), verify Azure Platform Admin rights for DCR configuration, and identify the sysmon-for-linux package availability on target distributions."
               },
               {
+                "id": "sysml-configure",
                 "order": 2,
                 "task": "Deploy or update the forwarder, Azure Monitor Agent, and data collection rules required for Microsoft Sysmon For Linux.",
+                "duration": 3.0,
                 "effort_hours": 8.4,
-                "skill_level": "advanced"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "sysml-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Install Sysmon for Linux on target hosts, configure the Sysmon XML profile, and enable data collection via AMA and a DCR targeting the Sentinel workspace Syslog or custom Sysmon table."
               },
               {
+                "id": "sysml-content",
                 "order": 3,
                 "task": "Configure Microsoft Sysmon For Linux to send the correct log stream and tune filters to avoid unnecessary ingestion.",
+                "duration": 1.5,
                 "effort_hours": 4.8,
-                "skill_level": "advanced"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "sysml-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Sysmon for Linux analytics rules for process injection, unusual network connections, and file creation in sensitive paths; enable the Linux Sysmon workbook for host-level telemetry visualization."
               },
               {
+                "id": "sysml-validate",
                 "order": 4,
                 "task": "Validate parser health, record mapping, and one packaged detection using live Microsoft Sysmon For Linux telemetry.",
+                "duration": 2.0,
                 "effort_hours": 6,
-                "skill_level": "advanced"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "sysml-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query Syslog or the Sysmon Linux custom table in Sentinel, verify event ID, host, and process fields are populated for recent endpoint events, and confirm analytics rules fire on available test data."
               }
             ],
             "validation_steps": [
@@ -2214,28 +2792,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "wssql-prereqs",
                 "order": 1,
                 "task": "Confirm vendor API access, service-account scope, and Sentinel permissions required for Microsoft Windows SQL Server Database Audit.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Identify Windows SQL Server instances in scope, confirm the operator has local admin on SQL hosts and Azure Platform Admin for DCR configuration, and verify AMA is installed or can be deployed to SQL server hosts."
               },
               {
+                "id": "wssql-configure",
                 "order": 2,
                 "task": "Configure the API or codeless connector for Microsoft Windows SQL Server Database Audit and store authentication secrets in the approved location.",
+                "duration": 1.5,
                 "effort_hours": 3.5,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "wssql-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Configure SQL Server audit logging to write to the Windows Security Event log, deploy a DCR to forward SQL-related Windows Security Events to the Sentinel workspace, and verify WindowsEvent or SecurityEvent data flows."
               },
               {
+                "id": "wssql-content",
                 "order": 3,
                 "task": "Enable packaged detections, dashboards, and optional automations for Microsoft Windows SQL Server Database Audit, then tune for your environment.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "wssql-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Windows SQL Server audit analytics rules for login failures, privilege escalation, and sensitive-table access patterns; enable any associated workbooks for SQL audit visualization."
               },
               {
+                "id": "wssql-validate",
                 "order": 4,
                 "task": "Validate Microsoft Windows SQL Server Database Audit with a recent vendor event and confirm the expected entities and tables are populated.",
+                "duration": 1.0,
                 "effort_hours": 2.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "wssql-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query WindowsEvent or SecurityEvent in Sentinel filtered to SQL Server audit events, verify database, login, and operation fields are populated, and confirm analytics rules fire on available SQL audit data."
               }
             ],
             "validation_steps": [
@@ -2333,28 +2945,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "mba-prereqs",
                 "order": 1,
                 "task": "Confirm account, subscription, or project design plus IAM prerequisites needed to collect Microsoft Business Applications telemetry.",
+                "duration": 1.5,
                 "effort_hours": 4.8,
-                "skill_level": "intermediate"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm Dynamics 365 or Power Platform licensing and audit log collection are enabled in the tenant, and verify the operator holds System Admin or Global Admin for the business applications environment."
               },
               {
+                "id": "mba-configure",
                 "order": 2,
                 "task": "Deploy the export path, API connection, or cloud-native integration required for Microsoft Business Applications to reach Sentinel.",
+                "duration": 3.0,
                 "effort_hours": 8.4,
-                "skill_level": "intermediate"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "mba-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Business Applications connector in Sentinel, configure Dataverse audit log and Power Platform activity streaming, and verify Dynamics365Activity or OfficeActivity tables populate."
               },
               {
+                "id": "mba-content",
                 "order": 3,
                 "task": "Enable packaged detections and dashboards for Microsoft Business Applications, then align coverage to the target cloud services.",
+                "duration": 1.5,
                 "effort_hours": 4.8,
-                "skill_level": "intermediate"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "mba-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy analytics rules for Dynamics 365 privilege escalations, bulk data exports, and Power Automate policy violations; enable the Business Applications workbook for activity visibility."
               },
               {
+                "id": "mba-validate",
                 "order": 4,
                 "task": "Validate Microsoft Business Applications with recent cloud activity from at least one scoped account or project and confirm end-to-end ingestion.",
+                "duration": 2.0,
                 "effort_hours": 6,
-                "skill_level": "intermediate"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "mba-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query Dynamics365Activity or relevant business-applications tables in Sentinel, verify user, operation, and entity fields are populated, and confirm analytics rules fire on available audit data."
               }
             ],
             "validation_steps": [
@@ -2458,28 +3104,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "dfc-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Defender for Cloud.",
+                "duration": 1.0,
                 "effort_hours": 1.6,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm the target Azure subscriptions have Defender for Cloud enabled at the Standard/P2 tier, verify Sentinel workspace permissions (Microsoft Sentinel Contributor), and ensure Security Reader is assigned for the connector account."
               },
               {
+                "id": "dfc-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Defender for Cloud connector in Sentinel and choose the required data types or workloads.",
+                "duration": 1.0,
                 "effort_hours": 2.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "dfc-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Defender for Cloud data connector in Sentinel, select all target subscriptions for bi-directional alert sync, and confirm SecurityAlert and SecurityRecommendation tables begin populating."
               },
               {
+                "id": "dfc-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Defender for Cloud, then tune noisy content.",
+                "duration": 1.0,
                 "effort_hours": 1.6,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "dfc-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable Defender for Cloud analytics rules targeting SecurityAlert and SecurityRecommendation tables, deploy the Defender for Cloud workbook for subscription-level posture visibility, and activate playbooks for automated response."
               },
               {
+                "id": "dfc-validate",
                 "order": 4,
                 "task": "Validate Microsoft Defender for Cloud with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "dfc-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query SecurityAlert and SecurityRecommendation in Log Analytics for recent Defender findings, verify caller-identity and resource fields are populated, and fire at least one enabled analytics rule end-to-end to confirm incident creation."
               }
             ],
             "validation_steps": [
@@ -2556,28 +3236,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "dfca-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Defender for Cloud Apps.",
+                "duration": 1.0,
                 "effort_hours": 1.6,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Verify the tenant holds a Microsoft Defender for Cloud Apps license, confirm an account with Global Admin or Security Admin is available for connector consent, and validate Sentinel workspace connectivity."
               },
               {
+                "id": "dfca-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Defender for Cloud Apps connector in Sentinel and choose the required data types or workloads.",
+                "duration": 1.0,
                 "effort_hours": 2.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "dfca-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Defender for Cloud Apps connector in Sentinel, configure alert streaming and activity log forwarding, and verify CloudAppEvents and SecurityAlert tables start receiving data."
               },
               {
+                "id": "dfca-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Defender for Cloud Apps, then tune noisy content.",
+                "duration": 1.0,
                 "effort_hours": 1.6,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "dfca-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy MDCA analytics rules covering shadow-IT discovery, OAuth app anomalies, and impossible travel; enable the Cloud Apps workbook for SaaS activity visibility."
               },
               {
+                "id": "dfca-validate",
                 "order": 4,
                 "task": "Validate Microsoft Defender for Cloud Apps with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "dfca-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query CloudAppEvents and SecurityAlert for MDCA-sourced events, verify user and app fields are populated, and confirm at least one analytics rule fires correctly on available test data."
               }
             ],
             "validation_steps": [
@@ -2666,28 +3380,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "mde-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Defender For Endpoint.",
+                "duration": 1.0,
                 "effort_hours": 1.6,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm enrolled devices have the Defender for Endpoint sensor active and the M365 Defender tenant holds MDE P2 licensing, and verify the operator holds Security Admin in the M365 Defender portal."
               },
               {
+                "id": "mde-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Defender For Endpoint connector in Sentinel and choose the required data types or workloads.",
+                "duration": 1.0,
                 "effort_hours": 2.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "mde-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Defender for Endpoint connector in Sentinel, configure alert and incident streaming from M365 Defender, and verify DeviceAlertEvents and SecurityAlert tables populate in the workspace."
               },
               {
+                "id": "mde-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Defender For Endpoint, then tune noisy content.",
+                "duration": 1.0,
                 "effort_hours": 1.6,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "mde-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable MDE analytics rules for lateral movement, process injection, and credential theft; deploy the MDE device telemetry workbook; and review automated device-isolation playbooks."
               },
               {
+                "id": "mde-validate",
                 "order": 4,
                 "task": "Validate Microsoft Defender For Endpoint with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "mde-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query DeviceAlertEvents and DeviceProcessEvents in Sentinel, verify endpoint telemetry from enrolled devices shows correct device and user context, and confirm an alert-to-incident pipeline test succeeds."
               }
             ],
             "validation_steps": [
@@ -2783,28 +3531,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "mdi-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Defender for Identity.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm domain controllers have the MDI sensor installed and the MDI workspace is associated with the correct tenant; verify Security Admin or Global Admin access and Sentinel workspace permissions."
               },
               {
+                "id": "mdi-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Defender for Identity connector in Sentinel and choose the required data types or workloads.",
+                "duration": 1.0,
                 "effort_hours": 1.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "mdi-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Defender for Identity connector in Sentinel to stream identity-based alerts and audit events; verify IdentityInfo, IdentityLogonEvents, and SecurityAlert tables are receiving data."
               },
               {
+                "id": "mdi-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Defender for Identity, then tune noisy content.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "mdi-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy MDI analytics rules for lateral movement, DCSync attacks, and Kerberoasting patterns; enable the MDI workbook for identity-layer attack-path visualization."
               },
               {
+                "id": "mdi-validate",
                 "order": 4,
                 "task": "Validate Microsoft Defender for Identity with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "mdi-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query IdentityLogonEvents and SecurityAlert for MDI-sourced detections, verify domain controller and user entity fields are populated, and test that a simulated reconnaissance event generates a Sentinel incident."
               }
             ],
             "validation_steps": [
@@ -2896,28 +3678,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "dfo-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Defender for Office 365.",
+                "duration": 1.0,
                 "effort_hours": 1.6,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm the tenant has Microsoft Defender for Office 365 Plan 1 or Plan 2 licensing, verify the operator holds Security Admin in the Microsoft 365 Security portal, and confirm Sentinel workspace connectivity."
               },
               {
+                "id": "dfo-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Defender for Office 365 connector in Sentinel and choose the required data types or workloads.",
+                "duration": 1.0,
                 "effort_hours": 2.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "dfo-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Defender for Office 365 connector in Sentinel to stream EmailEvents, EmailAttachmentInfo, EmailUrlInfo, and SecurityAlert tables from M365 Defender."
               },
               {
+                "id": "dfo-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Defender for Office 365, then tune noisy content.",
+                "duration": 1.0,
                 "effort_hours": 1.6,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "dfo-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable DFO analytics rules for phishing, malicious-attachment, and BEC patterns; deploy the email threat workbook; and configure playbooks for automated email investigation."
               },
               {
+                "id": "dfo-validate",
                 "order": 4,
                 "task": "Validate Microsoft Defender for Office 365 with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "dfo-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query EmailEvents and EmailAttachmentInfo in Sentinel to verify recent email telemetry, confirm sender and recipient fields are populated, and test an analytics rule against known-bad email indicators."
               }
             ],
             "validation_steps": [
@@ -3013,28 +3829,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "mdti-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Defender Threat Intelligence.",
+                "duration": 1.0,
                 "effort_hours": 1.6,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Verify the tenant has a Defender Threat Intelligence license or premium TI access, confirm the operator holds Security Admin or Global Admin, and validate the ThreatIntelligenceIndicator table is enabled in the Sentinel workspace."
               },
               {
+                "id": "mdti-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Defender Threat Intelligence connector in Sentinel and choose the required data types or workloads.",
+                "duration": 1.0,
                 "effort_hours": 2.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "mdti-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Defender Threat Intelligence connector in Sentinel, configure TI indicator ingestion feeding ThreatIntelligenceIndicator, and confirm indicators begin populating within the expected sync interval."
               },
               {
+                "id": "mdti-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Defender Threat Intelligence, then tune noisy content.",
+                "duration": 1.0,
                 "effort_hours": 1.6,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "mdti-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy TI-matching analytics rules for IP, domain, and URL indicators; enable threat intelligence workbooks for IOC coverage overview; and integrate TI with watchlist-based detection patterns."
               },
               {
+                "id": "mdti-validate",
                 "order": 4,
                 "task": "Validate Microsoft Defender Threat Intelligence with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "mdti-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query ThreatIntelligenceIndicator and verify active indicators are present with confidence scores and expiry dates; cross-reference against recent network events to confirm TI-matching rules are triggering correctly."
               }
             ],
             "validation_steps": [
@@ -3280,28 +4130,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "gsa-prereqs",
                 "order": 1,
                 "task": "Confirm vendor API access, service-account scope, and Sentinel permissions required for Global Secure Access.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm the tenant has Microsoft Entra Internet Access or Private Access licensing, verify Global Administrator or Security Administrator access, and confirm the Sentinel workspace is ready to receive Global Secure Access logs."
               },
               {
+                "id": "gsa-configure",
                 "order": 2,
                 "task": "Configure the API or codeless connector for Global Secure Access and store authentication secrets in the approved location.",
+                "duration": 1.5,
                 "effort_hours": 3.5,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gsa-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Global Secure Access data connector in Sentinel, configure traffic log streaming for Microsoft traffic and private-access profiles, and verify the NetworkAccessTraffic table begins ingesting."
               },
               {
+                "id": "gsa-content",
                 "order": 3,
                 "task": "Enable packaged detections, dashboards, and optional automations for Global Secure Access, then tune for your environment.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "gsa-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy GSA analytics rules for unusual access patterns and policy-bypass attempts, and enable the Global Secure Access workbook for per-user and per-destination traffic visibility."
               },
               {
+                "id": "gsa-validate",
                 "order": 4,
                 "task": "Validate Global Secure Access with a recent vendor event and confirm the expected entities and tables are populated.",
+                "duration": 1.0,
                 "effort_hours": 2.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "gsa-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query NetworkAccessTraffic in Sentinel and verify user, destination, and policy-decision fields are populated; confirm an analytics rule targeting suspicious traffic patterns returns expected results."
               }
             ],
             "validation_steps": [
@@ -3532,28 +4416,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "eia-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Entra ID Assets.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm Microsoft Entra ID P1 or P2 licensing, verify the operator holds Global Admin or Security Admin for connector configuration, and ensure the Sentinel workspace has appropriate RBAC for identity log ingestion."
               },
               {
+                "id": "eia-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Entra ID Assets connector in Sentinel and choose the required data types or workloads.",
+                "duration": 1.0,
                 "effort_hours": 1.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "eia-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Entra ID Assets connector in Sentinel to stream AuditLogs, SigninLogs, and asset-related identity events; confirm the expected tables start populating."
               },
               {
+                "id": "eia-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Entra ID Assets, then tune noisy content.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "eia-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Entra ID analytics rules for asset-change anomalies, privileged account modifications, and app-registration events; enable the Entra ID workbook for asset inventory and access visualization."
               },
               {
+                "id": "eia-validate",
                 "order": 4,
                 "task": "Validate Microsoft Entra ID Assets with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "eia-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query AuditLogs and SigninLogs in Sentinel to verify user and resource fields are correct, and test that a simulated Entra change event triggers the appropriate analytics rule."
               }
             ],
             "validation_steps": [
@@ -3641,28 +4559,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "eip-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Entra ID Protection.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm Microsoft Entra ID P2 licensing is active for users in scope, verify the operator holds Security Admin or Global Admin, and confirm the Sentinel workspace is connected and healthy."
               },
               {
+                "id": "eip-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Entra ID Protection connector in Sentinel and choose the required data types or workloads.",
+                "duration": 1.0,
                 "effort_hours": 1.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "eip-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Entra ID Protection connector in Sentinel to stream AADRiskyUsers, AADUserRiskEvents, and SigninLogs risk-signal tables into the workspace."
               },
               {
+                "id": "eip-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Entra ID Protection, then tune noisy content.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "eip-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Entra ID Protection analytics rules for high-risk sign-ins and user risk elevations, and enable the Identity Protection workbook for risk trends and remediation status tracking."
               },
               {
+                "id": "eip-validate",
                 "order": 4,
                 "task": "Validate Microsoft Entra ID Protection with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "eip-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query AADUserRiskEvents and AADRiskyUsers in Sentinel, verify risk level, detection type, and user fields are populated, and confirm a risk event triggers the configured analytics rule."
               }
             ],
             "validation_steps": [
@@ -3752,28 +4704,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "a365-prereqs",
                 "order": 1,
                 "task": "Confirm vendor API access, service-account scope, and Sentinel permissions required for Agent 365.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Verify the Microsoft 365 tenant has the required licenses for Agent 365 integration, confirm the operator holds M365 Security Admin or Global Admin, and ensure the Sentinel workspace is configured for M365 data ingestion."
               },
               {
+                "id": "a365-configure",
                 "order": 2,
                 "task": "Configure the API or codeless connector for Agent 365 and store authentication secrets in the approved location.",
+                "duration": 1.0,
                 "effort_hours": 2.1,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "a365-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Agent 365 connector in Sentinel, configure the data-collection scope for M365 activity and agent events, and verify the relevant log tables begin populating."
               },
               {
+                "id": "a365-content",
                 "order": 3,
                 "task": "Enable packaged detections, dashboards, and optional automations for Agent 365, then tune for your environment.",
+                "duration": 0.5,
                 "effort_hours": 1.2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "a365-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy analytics rules and workbooks packaged with the Agent 365 solution, and configure playbooks for automated response to detected threats across M365 workloads."
               },
               {
+                "id": "a365-validate",
                 "order": 4,
                 "task": "Validate Agent 365 with a recent vendor event and confirm the expected entities and tables are populated.",
+                "duration": 0.5,
                 "effort_hours": 1.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "a365-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query Agent 365 log tables in Sentinel to verify event data is ingesting correctly, confirm entity fields (user, resource, action) are populated, and test at least one analytics rule end-to-end."
               }
             ],
             "validation_steps": [
@@ -4021,28 +5007,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "m365a-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft 365 Assets.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm Microsoft 365 E3 or E5 licensing is in place, verify the operator holds Security Admin or Global Admin, and ensure the Sentinel workspace has the M365 connector prerequisites satisfied."
               },
               {
+                "id": "m365a-configure",
                 "order": 2,
                 "task": "Enable the Microsoft 365 Assets connector in Sentinel and choose the required data types or workloads.",
+                "duration": 0.5,
                 "effort_hours": 1.4,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "m365a-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft 365 Assets connector in Sentinel, configure data collection for the M365 asset event tables, and verify Office365 and related asset tables are receiving data."
               },
               {
+                "id": "m365a-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft 365 Assets, then tune noisy content.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "m365a-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable analytics rules targeting M365 asset-related anomalies (file sharing, DLP events, app access); deploy the M365 Assets workbook; and review associated playbooks."
               },
               {
+                "id": "m365a-validate",
                 "order": 4,
                 "task": "Validate Microsoft 365 Assets with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "m365a-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query Office365 and M365 asset tables in Sentinel to confirm data is ingesting, verify user and resource fields are populated, and confirm at least one analytics rule runs successfully."
               }
             ],
             "validation_steps": [
@@ -4134,28 +5154,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "mcop-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Copilot.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Verify Microsoft Copilot for Microsoft 365 licensing is enabled, confirm the operator holds Security Admin or Global Admin for audit log access, and ensure the Sentinel workspace is ready for M365 audit log ingestion."
               },
               {
+                "id": "mcop-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Copilot connector in Sentinel and choose the required data types or workloads.",
+                "duration": 1.5,
                 "effort_hours": 3.5,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "mcop-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Copilot connector in Sentinel, configure Microsoft 365 audit log streaming for Copilot events, and verify Copilot interaction and activity events appear in the relevant tables."
               },
               {
+                "id": "mcop-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Copilot, then tune noisy content.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "mcop-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy analytics rules for Copilot usage anomalies and sensitive-data exposure patterns, and enable the Microsoft Copilot workbook for usage and risk visualization."
               },
               {
+                "id": "mcop-validate",
                 "order": 4,
                 "task": "Validate Microsoft Copilot with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 1.0,
                 "effort_hours": 2.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "mcop-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query Microsoft Copilot activity tables in Sentinel and verify user-interaction, prompt, and response-metadata fields are populated; confirm an analytics rule targeting sensitive-data Copilot queries fires correctly."
               }
             ],
             "validation_steps": [
@@ -4254,28 +5308,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "exop-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Exchange Security - Exchange On-Premises.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm the on-premises Exchange environment is Exchange 2016 or later, verify the AMA agent is installed on Exchange servers and the operator has rights to configure log collection."
               },
               {
+                "id": "exop-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Exchange Security - Exchange On-Premises connector in Sentinel and choose the required data types or workloads.",
+                "duration": 0.5,
                 "effort_hours": 1.4,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "exop-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Exchange Security (on-premises) connector in Sentinel, configure AMA-based log collection for Exchange admin audit logs and security events, and verify ExchangeAdminAuditLogs data begins ingesting."
               },
               {
+                "id": "exop-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Exchange Security - Exchange On-Premises, then tune noisy content.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "exop-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Exchange Security analytics rules for admin account changes, mailbox permission modifications, and on-premises transport rule anomalies; enable the Exchange Security workbook."
               },
               {
+                "id": "exop-validate",
                 "order": 4,
                 "task": "Validate Microsoft Exchange Security - Exchange On-Premises with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "exop-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query ExchangeAdminAuditLogs in Sentinel, verify cmdlet, caller, and object fields are populated for recent Exchange admin activity, and confirm an analytics rule fires on a test admin action."
               }
             ],
             "validation_steps": [
@@ -4358,28 +5446,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "exol-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Exchange Security - Exchange Online.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm Exchange Online is active in the M365 tenant, verify the operator holds Exchange Admin or Security Admin, and ensure the Office 365 Management Activity API is accessible for log streaming."
               },
               {
+                "id": "exol-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Exchange Security - Exchange Online connector in Sentinel and choose the required data types or workloads.",
+                "duration": 0.5,
                 "effort_hours": 1.4,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "exol-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Exchange Security (Online) connector in Sentinel, configure audit log streaming via the Office 365 connector, and verify ExchangeAdminAuditLogs and OfficeActivity (Exchange) data populate."
               },
               {
+                "id": "exol-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Exchange Security - Exchange Online, then tune noisy content.",
+                "duration": 0.5,
                 "effort_hours": 0.8,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "exol-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Exchange Online analytics rules for unusual email forwarding, inbox rule creation, and administrative permission changes; enable the Exchange Security Online workbook."
               },
               {
+                "id": "exol-validate",
                 "order": 4,
                 "task": "Validate Microsoft Exchange Security - Exchange Online with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 0.5,
                 "effort_hours": 1,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "exol-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query ExchangeAdminAuditLogs and OfficeActivity for Exchange-type events in Sentinel, verify user, operation, and object fields are populated, and confirm analytics rules fire on available audit log data."
               }
             ],
             "validation_steps": [
@@ -4472,28 +5594,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "pbi-prereqs",
                 "order": 1,
                 "task": "Confirm vendor API access, service-account scope, and Sentinel permissions required for Microsoft Power BI.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm Power BI Premium or Pro licensing is active, verify the tenant has Power BI audit log collection enabled in the admin portal, and confirm the operator holds Power BI Service Admin or Global Admin."
               },
               {
+                "id": "pbi-configure",
                 "order": 2,
                 "task": "Configure the API or codeless connector for Microsoft Power BI and store authentication secrets in the approved location.",
+                "duration": 1.5,
                 "effort_hours": 3.5,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "pbi-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Power BI connector in Sentinel by configuring the Microsoft 365 audit log scope to include Power BI events; verify PowerBIActivity or OfficeActivity (PowerBI) events appear."
               },
               {
+                "id": "pbi-content",
                 "order": 3,
                 "task": "Enable packaged detections, dashboards, and optional automations for Microsoft Power BI, then tune for your environment.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "pbi-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Power BI analytics rules for sensitive-data export anomalies, workspace permission changes, and unusual report access patterns; enable the Power BI workbook for activity and risk visualization."
               },
               {
+                "id": "pbi-validate",
                 "order": 4,
                 "task": "Validate Microsoft Power BI with a recent vendor event and confirm the expected entities and tables are populated.",
+                "duration": 1.0,
                 "effort_hours": 2.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "pbi-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query PowerBIActivity or OfficeActivity filtered to the Power BI workload in Sentinel, verify activity type, user, and workspace fields are populated, and confirm an analytics rule triggers on available test data."
               }
             ],
             "validation_steps": [
@@ -4581,28 +5737,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "proj-prereqs",
                 "order": 1,
                 "task": "Confirm vendor API access, service-account scope, and Sentinel permissions required for Microsoft Project.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm Microsoft Project licensing and audit log collection are enabled in the M365 tenant, and verify the operator holds M365 Security Admin or Global Admin for log-access configuration."
               },
               {
+                "id": "proj-configure",
                 "order": 2,
                 "task": "Configure the API or codeless connector for Microsoft Project and store authentication secrets in the approved location.",
+                "duration": 1.5,
                 "effort_hours": 3.5,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "proj-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Project connector in Sentinel, configure M365 audit log streaming for Project-related events, and verify relevant events appear in the OfficeActivity or Project-specific tables."
               },
               {
+                "id": "proj-content",
                 "order": 3,
                 "task": "Enable packaged detections, dashboards, and optional automations for Microsoft Project, then tune for your environment.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "proj-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy analytics rules for Microsoft Project permission anomalies and data-export events, and enable the Project workbook for activity visibility across project workspaces."
               },
               {
+                "id": "proj-validate",
                 "order": 4,
                 "task": "Validate Microsoft Project with a recent vendor event and confirm the expected entities and tables are populated.",
+                "duration": 1.0,
                 "effort_hours": 2.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "proj-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query Project-related events in the OfficeActivity table in Sentinel, verify user, operation, and project fields are populated, and confirm analytics rules run correctly against available audit data."
               }
             ],
             "validation_steps": [
@@ -4692,28 +5882,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "purv-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Purview.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm the tenant has a Microsoft Purview license (Compliance or Information Protection), verify the operator holds Compliance Admin or Global Admin, and ensure audit logging is enabled in the Microsoft Purview compliance portal."
               },
               {
+                "id": "purv-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Purview connector in Sentinel and choose the required data types or workloads.",
+                "duration": 1.5,
                 "effort_hours": 3.5,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "purv-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Purview connector in Sentinel, configure audit log streaming for DLP, compliance, and data-governance events, and verify PurviewDataMap or OfficeActivity (Compliance) data begins ingesting."
               },
               {
+                "id": "purv-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Purview, then tune noisy content.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "purv-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Purview analytics rules for DLP policy violations, sensitive label changes, and insider risk signals; enable the Purview workbook for compliance posture visualization."
               },
               {
+                "id": "purv-validate",
                 "order": 4,
                 "task": "Validate Microsoft Purview with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 1.0,
                 "effort_hours": 2.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "purv-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query Purview or compliance-related events in OfficeActivity in Sentinel, verify activity type, user, and policy fields are populated, and confirm analytics rules fire on available DLP or compliance events."
               }
             ],
             "validation_steps": [
@@ -4809,28 +6033,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "pip-prereqs",
                 "order": 1,
                 "task": "Verify licensing, tenant prerequisites, and delegated permissions required to onboard Microsoft Purview Information Protection.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Confirm Microsoft Purview Information Protection labeling is enabled in the tenant, verify the operator holds Compliance Admin or Security Admin, and ensure audit events for label operations are flowing."
               },
               {
+                "id": "pip-configure",
                 "order": 2,
                 "task": "Enable the Microsoft Purview Information Protection connector in Sentinel and choose the required data types or workloads.",
+                "duration": 1.5,
                 "effort_hours": 3.5,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "pip-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Purview Information Protection connector in Sentinel, configure label-operation and DLP event streaming, and verify InformationProtectionLogs_CL or MicrosoftPurviewInformationProtection tables populate."
               },
               {
+                "id": "pip-content",
                 "order": 3,
                 "task": "Deploy packaged analytics, workbooks, and automations for Microsoft Purview Information Protection, then tune noisy content.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "pip-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy analytics rules for sensitive label removal, downgrade events, and DLP overrides that indicate data exfiltration risk; enable the Information Protection workbook for label coverage visualization."
               },
               {
+                "id": "pip-validate",
                 "order": 4,
                 "task": "Validate Microsoft Purview Information Protection with a recent workload event and confirm incidents or records appear in Sentinel.",
+                "duration": 1.0,
                 "effort_hours": 2.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "pip-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query InformationProtectionLogs_CL or the Purview IP event tables in Sentinel, verify label, user, and file fields are populated for recent label operations, and confirm a label-downgrade event triggers the appropriate analytics rule."
               }
             ],
             "validation_steps": [
@@ -4924,28 +6182,62 @@
           "planner": {
             "setup_tasks": [
               {
+                "id": "teams-prereqs",
                 "order": 1,
                 "task": "Confirm vendor API access, service-account scope, and Sentinel permissions required for Teams.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Identity / RBAC Admin",
+                "description": "Verify the operator holds Teams Admin or Global Admin for Microsoft Teams audit log collection, confirm API access is approved, and validate the Sentinel workspace has RBAC for M365 log ingestion."
               },
               {
+                "id": "teams-configure",
                 "order": 2,
                 "task": "Configure the API or codeless connector for Teams and store authentication secrets in the approved location.",
+                "duration": 1.5,
                 "effort_hours": 3.5,
-                "skill_level": "beginner"
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "teams-prereqs"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Enable the Microsoft Teams connector in Sentinel via the Office 365 Management Activity API, configure the Teams event collection scope, and verify TeamsMessages or OfficeActivity (Teams) data begins populating."
               },
               {
+                "id": "teams-content",
                 "order": 3,
                 "task": "Enable packaged detections, dashboards, and optional automations for Teams, then tune for your environment.",
+                "duration": 1.0,
                 "effort_hours": 2,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "teams-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy Teams analytics rules for external user invitation anomalies, large message exfiltration, and policy-bypass patterns; enable the Teams workbook for collaboration activity oversight."
               },
               {
+                "id": "teams-validate",
                 "order": 4,
                 "task": "Validate Teams with a recent vendor event and confirm the expected entities and tables are populated.",
+                "duration": 1.0,
                 "effort_hours": 2.5,
-                "skill_level": "beginner"
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "teams-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Query TeamsMessages or OfficeActivity filtered to the Teams workload in Sentinel, verify user, channel, and message-type fields are populated, and confirm an analytics rule fires on available test collaboration events."
               }
             ],
             "validation_steps": [
@@ -56191,7 +57483,8 @@
                 "phase": "Prerequisites",
                 "depends_on": [],
                 "owner_role": "Windows Server Admin",
-                "description": "Confirm the target WEC servers are supported, reachable, healthy, and already receiving ForwardedEvents if an existing collector estate is in place."
+                "description": "Confirm the target WEC servers are supported, reachable, healthy, and already receiving ForwardedEvents if an existing collector estate is in place.",
+                "duration": 1.0
               },
               {
                 "id": "wfe-collector-topology",
@@ -56205,7 +57498,8 @@
                   "wfe-wec-readiness"
                 ],
                 "owner_role": "Windows Server Admin",
-                "description": "Decide whether the project will reuse an existing healthy WEC estate or build one from scratch, and document collector ownership, segmentation, and pilot forwarding sources."
+                "description": "Decide whether the project will reuse an existing healthy WEC estate or build one from scratch, and document collector ownership, segmentation, and pilot forwarding sources.",
+                "duration": 1.0
               },
               {
                 "id": "wfe-subscription-design",
@@ -56219,7 +57513,8 @@
                   "wfe-collector-topology"
                 ],
                 "owner_role": "Group Policy Admin",
-                "description": "Define the WEF subscription model, source targeting, event scope, and any GPO changes needed so the collector receives the intended ForwardedEvents stream."
+                "description": "Define the WEF subscription model, source targeting, event scope, and any GPO changes needed so the collector receives the intended ForwardedEvents stream.",
+                "duration": 1.0
               },
               {
                 "id": "wfe-channel-sizing",
@@ -56233,7 +57528,8 @@
                   "wfe-subscription-design"
                 ],
                 "owner_role": "Windows Server Admin",
-                "description": "Validate ForwardedEvents log size, retention, and throughput so the collector does not drop events before AMA can read them."
+                "description": "Validate ForwardedEvents log size, retention, and throughput so the collector does not drop events before AMA can read them.",
+                "duration": 0.5
               },
               {
                 "id": "wfe-verify-rbac",
@@ -56247,7 +57543,8 @@
                   "wfe-channel-sizing"
                 ],
                 "owner_role": "Identity / RBAC Admin",
-                "description": "Confirm Monitoring Contributor, Log Analytics Contributor, Microsoft Sentinel Contributor, and VM Contributor or Azure Connected Machine Resource Administrator for the collector path in use."
+                "description": "Confirm Monitoring Contributor, Log Analytics Contributor, Microsoft Sentinel Contributor, and VM Contributor or Azure Connected Machine Resource Administrator for the collector path in use.",
+                "duration": 0.5
               },
               {
                 "id": "wfe-build-wec",
@@ -56262,7 +57559,8 @@
                 ],
                 "owner_role": "Windows Server Admin",
                 "description": "Conditional duration for environments that do not already have a healthy WEC / WEF estate. Stand up or remediate the collector service, subscriptions, and baseline ForwardedEvents flow before AMA onboarding.",
-                "optional": true
+                "optional": true,
+                "duration": 2.0
               },
               {
                 "id": "wfe-collector-ama",
@@ -56276,7 +57574,8 @@
                   "wfe-verify-rbac"
                 ],
                 "owner_role": "Azure Platform Admin",
-                "description": "Onboard non-Azure collectors to Azure Arc when required, then install or validate Azure Monitor Agent on the WEC collector. Complete the scratch-build task first if a new collector is being introduced."
+                "description": "Onboard non-Azure collectors to Azure Arc when required, then install or validate Azure Monitor Agent on the WEC collector. Complete the scratch-build task first if a new collector is being introduced.",
+                "duration": 1.5
               },
               {
                 "id": "wfe-create-dcr",
@@ -56327,7 +57626,8 @@
                     ],
                     "owner_role": "Azure Platform Admin"
                   }
-                ]
+                ],
+                "duration": 1.0
               },
               {
                 "id": "wfe-validate-ingestion",
@@ -56341,7 +57641,8 @@
                   "wfe-create-dcr"
                 ],
                 "owner_role": "SOC Engineer",
-                "description": "Run WindowsEvent validation against Channel == \"ForwardedEvents\", confirm expected providers and event IDs are present, and check for overlap between WEF and DCR filtering."
+                "description": "Run WindowsEvent validation against Channel == \"ForwardedEvents\", confirm expected providers and event IDs are present, and check for overlap between WEF and DCR filtering.",
+                "duration": 1.0
               },
               {
                 "id": "wfe-handoff",
@@ -56355,7 +57656,8 @@
                   "wfe-validate-ingestion"
                 ],
                 "owner_role": "SOC Engineer",
-                "description": "Capture the collector topology, WEF subscription model, ForwardedEvents sizing decisions, and the process for adding new forwarding sources."
+                "description": "Capture the collector topology, WEF subscription model, ForwardedEvents sizing decisions, and the process for adding new forwarding sources.",
+                "duration": 0.5
               }
             ],
             "validation_steps": [
@@ -56635,7 +57937,8 @@
                 "phase": "Prerequisites",
                 "depends_on": [],
                 "owner_role": "Azure Platform Admin",
-                "description": "Define which Windows servers or workstations need firewall telemetry, confirm the workspace region, and verify whether raw table validation prerequisites are present."
+                "description": "Define which Windows servers or workstations need firewall telemetry, confirm the workspace region, and verify whether raw table validation prerequisites are present.",
+                "duration": 1.0
               },
               {
                 "id": "wf-verify-rbac",
@@ -56649,7 +57952,8 @@
                   "wf-readiness-scope"
                 ],
                 "owner_role": "Identity / RBAC Admin",
-                "description": "Confirm Monitoring Contributor, Log Analytics Contributor, Microsoft Sentinel Contributor, and VM Contributor or Azure Connected Machine Resource Administrator before connector rollout."
+                "description": "Confirm Monitoring Contributor, Log Analytics Contributor, Microsoft Sentinel Contributor, and VM Contributor or Azure Connected Machine Resource Administrator before connector rollout.",
+                "duration": 0.5
               },
               {
                 "id": "wf-enable-source-logging",
@@ -56700,7 +58004,8 @@
                     ],
                     "owner_role": "Windows Server Admin"
                   }
-                ]
+                ],
+                "duration": 1.0
               },
               {
                 "id": "wf-arc-ama",
@@ -56714,7 +58019,8 @@
                   "wf-enable-source-logging"
                 ],
                 "owner_role": "Azure Platform Admin",
-                "description": "Use Azure Arc for non-Azure machines, then deploy or validate AMA on the Windows hosts that own the firewall logs."
+                "description": "Use Azure Arc for non-Azure machines, then deploy or validate AMA on the Windows hosts that own the firewall logs.",
+                "duration": 1.5
               },
               {
                 "id": "wf-create-dcr",
@@ -56765,7 +58071,8 @@
                     ],
                     "owner_role": "Azure Platform Admin"
                   }
-                ]
+                ],
+                "duration": 1.0
               },
               {
                 "id": "wf-validate-ingestion",
@@ -56779,7 +58086,8 @@
                   "wf-create-dcr"
                 ],
                 "owner_role": "SOC Engineer",
-                "description": "Verify recent records in WindowsFirewall and ASimNetworkSessionLogs, confirm EventProduct = Windows Firewall, and check that expected allowed and dropped actions are present."
+                "description": "Verify recent records in WindowsFirewall and ASimNetworkSessionLogs, confirm EventProduct = Windows Firewall, and check that expected allowed and dropped actions are present.",
+                "duration": 1.0
               },
               {
                 "id": "wf-tune-handoff",
@@ -56793,7 +58101,8 @@
                   "wf-validate-ingestion"
                 ],
                 "owner_role": "Network Security Engineer",
-                "description": "Reduce unnecessary collection by narrowing profiles where possible, document the firewall logging standard, and hand off validation queries to the SOC."
+                "description": "Reduce unnecessary collection by narrowing profiles where possible, document the firewall logging standard, and hand off validation queries to the SOC.",
+                "duration": 0.5
               }
             ],
             "validation_steps": [
@@ -57522,7 +58831,8 @@
                 "phase": "Prerequisites",
                 "depends_on": [],
                 "owner_role": "SOC Architect",
-                "description": "Identify which Windows and Linux hosts require Sysmon, decide the minimum Windows event IDs and Linux use cases to collect, and confirm Sentinel workspace readiness."
+                "description": "Identify which Windows and Linux hosts require Sysmon, decide the minimum Windows event IDs and Linux use cases to collect, and confirm Sentinel workspace readiness.",
+                "duration": 1.0
               },
               {
                 "id": "sysmon-verify-rbac",
@@ -57536,7 +58846,8 @@
                   "sysmon-readiness-design"
                 ],
                 "owner_role": "Identity / RBAC Admin",
-                "description": "Confirm Monitoring Contributor, Log Analytics Contributor, Microsoft Sentinel Contributor, and host deployment rights for Windows/Arc and Linux/Arc or VM management."
+                "description": "Confirm Monitoring Contributor, Log Analytics Contributor, Microsoft Sentinel Contributor, and host deployment rights for Windows/Arc and Linux/Arc or VM management.",
+                "duration": 0.5
               },
               {
                 "id": "sysmon-install-windows",
@@ -57550,7 +58861,8 @@
                   "sysmon-verify-rbac"
                 ],
                 "owner_role": "Windows Endpoint Admin",
-                "description": "Install Sysmon with an approved configuration file, verify the Operational channel is populated locally, and tune the baseline before cloud collection starts."
+                "description": "Install Sysmon with an approved configuration file, verify the Operational channel is populated locally, and tune the baseline before cloud collection starts.",
+                "duration": 1.5
               },
               {
                 "id": "sysmon-install-linux",
@@ -57564,7 +58876,8 @@
                   "sysmon-verify-rbac"
                 ],
                 "owner_role": "Linux Admin",
-                "description": "Install Sysmon for Linux from official Microsoft repositories, apply the approved config, and verify events are written to syslog."
+                "description": "Install Sysmon for Linux from official Microsoft repositories, apply the approved config, and verify events are written to syslog.",
+                "duration": 1.5
               },
               {
                 "id": "sysmon-ama-forwarder",
@@ -57579,7 +58892,8 @@
                   "sysmon-install-linux"
                 ],
                 "owner_role": "Azure Platform Admin",
-                "description": "Deploy AMA on Windows hosts and Linux origin or forwarder nodes, onboard non-Azure machines to Arc if needed, and prepare Syslog reception on Linux collectors if using a forwarder pattern."
+                "description": "Deploy AMA on Windows hosts and Linux origin or forwarder nodes, onboard non-Azure machines to Arc if needed, and prepare Syslog reception on Linux collectors if using a forwarder pattern.",
+                "duration": 2.0
               },
               {
                 "id": "sysmon-windows-dcr",
@@ -57618,7 +58932,8 @@
                     ],
                     "owner_role": "Azure Platform Admin"
                   }
-                ]
+                ],
+                "duration": 1.0
               },
               {
                 "id": "sysmon-linux-dcr",
@@ -57658,7 +58973,8 @@
                     "owner_role": "Linux Admin",
                     "optional": true
                   }
-                ]
+                ],
+                "duration": 1.0
               },
               {
                 "id": "sysmon-asim",
@@ -57672,7 +58988,8 @@
                   "sysmon-linux-dcr"
                 ],
                 "owner_role": "Detection Engineer",
-                "description": "For Linux especially, deploy the ASIM parsers and functions needed by the official connector guidance so detections and normalized queries work as expected."
+                "description": "For Linux especially, deploy the ASIM parsers and functions needed by the official connector guidance so detections and normalized queries work as expected.",
+                "duration": 0.5
               },
               {
                 "id": "sysmon-validate",
@@ -57687,7 +59004,8 @@
                   "sysmon-asim"
                 ],
                 "owner_role": "SOC Engineer",
-                "description": "Confirm Windows Sysmon events arrive in Event with EventLog = Microsoft-Windows-Sysmon/Operational, confirm Linux Sysmon arrives in Syslog with ProcessName = sysmon, and test at least one hunting or analytic query per platform."
+                "description": "Confirm Windows Sysmon events arrive in Event with EventLog = Microsoft-Windows-Sysmon/Operational, confirm Linux Sysmon arrives in Syslog with ProcessName = sysmon, and test at least one hunting or analytic query per platform.",
+                "duration": 1.0
               },
               {
                 "id": "sysmon-handoff",
@@ -57701,7 +59019,8 @@
                   "sysmon-validate"
                 ],
                 "owner_role": "Security Engineering",
-                "description": "Document the Windows config XML, Linux Sysmon config, chosen event IDs and facilities, ASIM dependencies, and the process for future tuning as event volume changes."
+                "description": "Document the Windows config XML, Linux Sysmon config, chosen event IDs and facilities, ASIM dependencies, and the process for future tuning as event volume changes.",
+                "duration": 1.0
               }
             ],
             "validation_steps": [

@@ -19,6 +19,30 @@
 
 ## Recent Work
 
+### 2026-06-16T12:02:17+02:00: Tier 2 duration enrichment — 41 connectors enriched
+
+**What happened:**
+- Wrote `scripts/patch_tier2_durations.py` to enrich all 41 Tier 2 connectors with full `planner.setup_tasks` metadata.
+- **38 standard (4-task) solutions** received: `id`, `category`, `phase`, `owner_role`, `depends_on`, `description`, and `duration` derived from `effort_hours`.
+  - 20 M365 Security solutions (defender-for-cloud through microsoft-business-applications)
+  - 18 Azure native solutions (azure-batch-account through microsoft-windows-sql-server-database-audit)
+- **3 infrastructure solutions** (windows-firewall-via-ama, windows-forwarded-events-via-ama, sysmon-via-ama): already had ids, phases, and descriptions — `duration` added in-place only, preserving all existing task structure.
+- Total solutions with full duration data after enrichment: **50** (9 Tier 1 + 41 Tier 2).
+- Verified Tier 1 solutions untouched; verified JSON is valid and parseable.
+
+**Learnings:**
+- **Duration derivation formula** (confirmed canonical): effort_hours ≤1.5 → 0.5d; ≤3 → 1.0d; ≤5 → 1.5d; ≤8 → 2.0d; >8 → 3.0d.
+- **Idempotency guard:** script checks `all("duration" in t for t in tasks)` before patching — important because solutions with `duration: null` (null key) would satisfy `"duration" in t` even with null values. Always check both key presence AND non-null value.
+- **M365 vs Azure task 1 owner role:** M365 prerequisites = `Identity / RBAC Admin` (licensing, admin consent); Azure prerequisites = `Azure Platform Admin` (diagnostic settings scope, RBAC).
+- **Infra solutions are already fully enriched:** windows-firewall-via-ama (7 tasks), windows-forwarded-events-via-ama (10 tasks), sysmon-via-ama (10 tasks) had complete metadata from prior work — only `duration` was missing.
+- **ID abbreviation pattern:** 3-6 char abbreviation + suffix (-prereqs, -configure, -content, -validate). All 38 four-task solutions follow `{abbrev}-{suffix}` convention.
+- **Connector-specific descriptions:** referenced actual Sentinel table names (e.g., CloudAppEvents, DeviceAlertEvents, AzureDiagnostics filtered by resource type, KeyVaultData, AzureDevOpsAuditing) to make descriptions actionable for SOC engineers.
+- **Patch script as catalog:** the CATALOG dict in patch_tier2_durations.py now serves as a human-readable data source for all 38 solutions' task descriptions and abbreviations.
+
+**Related:**
+- Decision: `.squad/decisions/inbox/sebastian-tier2-durations.md`
+- Patch script: `scripts/patch_tier2_durations.py`
+
 ### 2026-06-15T12:10:52+02:00: Tier 1 duration data — 8 connectors enriched
 
 **What happened:**

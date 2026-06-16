@@ -424,9 +424,12 @@ const getWelcomeCtaButtons = () => ([
 
 const syncWorkspaceValidationButtons = () => {
     const isPending = workspaceConnectionState.workspaceValidationPending === true;
+    const hadPriorWorkspaceConnection = workspaceConnectionState.status === 'expired'
+        && !!workspaceConnectionState.selectedWorkspace;
     const isDisconnected = !workspaceConnectionState.accessToken
         || workspaceConnectionState.status === 'expired';
-    const shouldDisable = isPending || isDisconnected;
+    const shouldRequireReconnect = isDisconnected && hadPriorWorkspaceConnection;
+    const shouldDisable = isPending || shouldRequireReconnect;
 
     getWelcomeCtaButtons().forEach((button) => {
         button.toggleAttribute('disabled', shouldDisable);
@@ -434,8 +437,8 @@ const syncWorkspaceValidationButtons = () => {
         button.setAttribute('aria-busy', isPending ? 'true' : 'false');
         if (isPending) {
             button.setAttribute('title', 'Confirming workspace connection…');
-        } else if (isDisconnected) {
-            button.setAttribute('title', 'Connect a workspace first');
+        } else if (shouldRequireReconnect) {
+            button.setAttribute('title', 'Reconnect your workspace to continue');
         } else {
             button.removeAttribute('title');
         }
