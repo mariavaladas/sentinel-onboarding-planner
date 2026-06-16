@@ -19,6 +19,59 @@
 
 ## Recent Work
 
+### 2026-06-16T13:51:05+02:00: High-value non-featured task rewrite — 24 solutions, 106 hand-crafted tasks
+
+**What happened:**
+- Wrote `scripts/patch_highvalue_tasks.py` with fully hand-crafted, product-specific `planner.setup_tasks` for 24 high-value non-featured solutions (Batch A).
+- azure-firewall explicitly skipped (already Tier 1 quality); all 4 featured solution PROTECTED IDs also guarded.
+- Script ran cleanly: 24 solutions patched, 489 total solutions, JSON valid.
+
+**Solutions and task counts:**
+
+| Group | Solution | Tasks | Notable design |
+|-------|----------|-------|---------------|
+| 1st-party | microsoft-business-applications | 5 | PowerPlatformAdminActivity + 8 playbooks |
+| 1st-party | microsoft-defender-for-endpoint | 5 | MDE API isolation playbooks, alert de-dup guidance |
+| 3rd-party | blood-hound-enterprise | 6 | Phased analytics (50+52 rules), AD collector deployment |
+| 3rd-party | zscaler | 6 | NSS topology design, 15 connectors, ZIA vs ZPA split |
+| 3rd-party | vectra-xdr | 5 | API polling, 20 playbooks with KV secret storage |
+| 3rd-party | rubrik-security-cloud | 5 | GraphQL API playbooks, snapshot initiation workflow |
+| 3rd-party | corelight | 4 | Zeek _path field validation, Corelight_CL |
+| 3rd-party | cisco-umbrella | 5 | Cisco_Umbrella_dns_CL + proxy_CL, domain block playbook |
+| 3rd-party | sap-btp | 4 | OAuth2 Audit Log Retrieval API, SAPAuditLog_CL |
+| 3rd-party | palo-alto-prisma-cloud-2 | 5 | CSPM alert status playbooks, cross-cloud |
+| 3rd-party | sentinelone | 4 | SentinelOne_CL field mapping |
+| 3rd-party | cisco-secure-endpoint | 4 | AMP regional cloud selection, CiscoSecureEndpoint_CL |
+| 3rd-party | cloudflare | 4 | Logpush to Azure Blob, Cloudflare_CL |
+| 3rd-party | imperva-cloud-waf | 4 | ImpervaWAF_CL attack type field mapping |
+| 3rd-party | google-cloud-platform-dns | 4 | GCP Pub/Sub log sink, GCP_DNSLogs_CL |
+| 3rd-party | google-workspace-reports | 4 | Domain-wide delegation, GWorkspaceActivityReports_CL |
+| 3rd-party | tanium | 5 | Tanium Connect module, 8 API playbooks |
+| 3rd-party | theom | 4 | Theom_CL data classification, access anomaly tuning |
+| content-only | falcon-friday | 4 | CrowdStrikeFalconEventStream prereq check, phased rules |
+| content-only | web-session-essentials | 4 | imWebSession() ASIM parser verification first |
+| content-only | endpoint-threat-protection-essentials | 3 | imProcessCreate() ASIM parser, LOLBin exclusions |
+| content-only | censys | 4 | ASM API enrichment playbooks, no connector |
+| content-only | global-secure-access | 4 | NetworkAccessTraffic, Entra enable first |
+| content-only | microsoft-defender-threat-intelligence | 4 | MDTI licence + TI connector, 7 enrichment playbooks |
+| **TOTAL** | **24** | **106** | |
+
+**Design decisions applied:**
+- **Zscaler (15 connectors):** 6-task arc with explicit NSS topology planning as the first task. ZIA → NSS/Syslog/CEF vs ZPA → API distinction called out explicitly in connector task description. 10 playbooks deploy in a separate task from the 17 workbooks.
+- **BloodHound (102 analytics):** Phased 2-step analytics deployment (Phase 1: 50 critical attack path rules; Phase 2: 52 lateral movement/escalation rules). AD collector agents are a separate task before the connector — the most common point of confusion when onboarding BHE.
+- **Content-only solutions:** Maintain same "verify underlying data source → deploy content → validate" pattern established for DNS Essentials. falcon-friday starts with a CrowdStrikeFalconEventStream existence check; ASIM domain solutions start with parser function call test.
+- **Owner role discipline:** BloodHound Admin, Zscaler Admin, Vectra Admin, Rubrik Admin, etc. correctly assigned for product-side prerequisites. Azure Platform Admin only for Entra/Azure-native setup (Global Secure Access, MDTI licensing).
+- **Table name specificity:** Every solution references its actual Sentinel table name in at least one task description. No generic "custom log table" language without the specific table name.
+
+**Learnings:**
+- **Phased content deployment for 100+ rule solutions:** Any solution with >25 analytics rules warrants a Phase 1/Phase 2 split. BloodHound's 102 rules and Falcon Friday's 30 rules both benefit from this — deploying all rules in one task produces unmanageable false positive storms in week 1.
+- **NSS/Pub/Sub/Logpush topology design is a genuine first task:** Zscaler NSS, GCP log sink, and Cloudflare Logpush all require architectural decisions (which log feeds, which transport, which collection VM) that must be made before any connector work. Collapsing these into "configure connector" is a common mistake.
+- **ASIM parser tests as acceptance criteria:** Including the exact parser function call (`imWebSession | take 10`, `imProcessCreate | take 10`) as the acceptance criterion for ASIM prerequisite tasks makes them executable and verifiable.
+
+**Related:**
+- Decision: `.squad/decisions/inbox/sebastian-highvalue-batch-a.md`
+- Patch script: `scripts/patch_highvalue_tasks.py`
+
 ### 2026-06-16T13:45:48+02:00: Featured solution task rewrite — 11 solutions, 55 hand-crafted tasks
 
 **What happened:**
