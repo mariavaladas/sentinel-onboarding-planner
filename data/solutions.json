@@ -1812,8 +1812,23 @@
                 "description": "Deploy ASB analytics rules for critical control failures, benchmark regression, and compliance drift; enable the Azure Security Benchmark workbook for posture-score tracking and prioritized remediation."
               },
               {
-                "id": "asb-validate",
+                "id": "asb-playbooks",
                 "order": 4,
+                "task": "Configure Azure Security Benchmark playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "asb-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 3 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "id": "asb-validate",
+                "order": 5,
                 "task": "Validate Azure Security Benchmark with a recent Azure event and confirm the expected records arrive in Sentinel.",
                 "duration": 0.5,
                 "effort_hours": 2.0,
@@ -1821,7 +1836,7 @@
                 "category": "phase-2",
                 "phase": "Validation",
                 "depends_on": [
-                  "asb-content"
+                  "asb-playbooks"
                 ],
                 "owner_role": "SOC Analyst",
                 "description": "Query SecurityRecommendation tables in Sentinel, verify benchmark control, resource, and severity fields are populated for recent assessments, and confirm analytics rules fire on available benchmark findings."
@@ -20746,8 +20761,23 @@
                 "description": "Deploy analytics rules and workbooks from the Slash Next SIEM content hub package. Review and enable detection rules appropriate for the environment."
               },
               {
-                "id": "sns-validate",
+                "id": "sns-playbooks",
                 "order": 5,
+                "task": "Configure Slash Next SIEM playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "sns-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 2 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "id": "sns-validate",
+                "order": 6,
                 "task": "Validate Slash Next SIEM event quality and detection rules",
                 "duration": 0.5,
                 "effort_hours": 2.0,
@@ -20755,7 +20785,7 @@
                 "category": "phase-2",
                 "phase": "Validation",
                 "depends_on": [
-                  "sns-content"
+                  "sns-playbooks"
                 ],
                 "owner_role": "SOC Analyst",
                 "description": "Validate Slash Next SIEM event quality and detection rule coverage. Confirm at least one analytics rule fires and generates a Sentinel incident."
@@ -23063,8 +23093,23 @@
                 "description": "Install the Web Session Essentials workbook to provide a normalised view of web traffic patterns across all ASIM-compatible proxy data sources. Validate that the workbook renders data correctly and that the parser source selector reflects all active web session data sources."
               },
               {
-                "id": "wse-validate",
+                "id": "wse-playbooks",
                 "order": 4,
+                "task": "Configure Web Session Essentials playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "wse-workbook"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "id": "wse-validate",
+                "order": 5,
                 "task": "Validate ASIM web session coverage and tune normalisation",
                 "duration": 0.5,
                 "effort_hours": 2.0,
@@ -23072,7 +23117,7 @@
                 "category": "phase-2",
                 "phase": "Validation",
                 "depends_on": [
-                  "wse-workbook"
+                  "wse-playbooks"
                 ],
                 "owner_role": "SOC Analyst",
                 "description": "Query imWebSession() to confirm that all expected proxy/firewall sources are contributing events and that key ASIM fields (EventResult, HttpStatusCode, NetworkApplicationProtocol) are populated across all sources. Document any field gaps in product-specific parsers and create GitHub issues or parser extensions to address coverage gaps."
@@ -25912,8 +25957,23 @@
                 "description": "Deploy analytics rules and workbooks from the AWS Athena content hub package. Review and enable detection rules appropriate for the environment."
               },
               {
-                "id": "aa-validate",
+                "id": "aa-playbooks",
                 "order": 5,
+                "task": "Configure AWS Athena playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "aa-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 2 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "id": "aa-validate",
+                "order": 6,
                 "task": "Validate AWS Athena event quality and detection rules",
                 "duration": 0.5,
                 "effort_hours": 2.0,
@@ -25921,7 +25981,7 @@
                 "category": "phase-2",
                 "phase": "Validation",
                 "depends_on": [
-                  "aa-content"
+                  "aa-playbooks"
                 ],
                 "owner_role": "SOC Analyst",
                 "description": "Validate AWS Athena event quality and detection rule coverage. Confirm at least one analytics rule fires and generates a Sentinel incident."
@@ -26945,8 +27005,23 @@
                 "description": "Deploy analytics rules and workbooks from the AWS Systems Manager content hub package."
               },
               {
-                "id": "asm-validate",
+                "id": "asm-playbooks",
                 "order": 5,
+                "task": "Configure AWS Systems Manager playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "asm-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 8 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "id": "asm-validate",
+                "order": 6,
                 "task": "Validate AWS Systems Manager S3 pipeline and detection rules",
                 "duration": 0.5,
                 "effort_hours": 2.0,
@@ -26954,7 +27029,7 @@
                 "category": "phase-2",
                 "phase": "Validation",
                 "depends_on": [
-                  "asm-content"
+                  "asm-playbooks"
                 ],
                 "owner_role": "SOC Analyst",
                 "description": "Query the target table for recent AWS Systems Manager events. Verify S3 -> SQS -> Sentinel pipeline latency is within acceptable bounds (< 5 min)."
@@ -28952,8 +29027,23 @@
                 "description": "Deploy analytics rules and workbooks from the Druva Data Security Cloud content hub package."
               },
               {
-                "id": "ddsc-validate",
+                "id": "ddsc-playbooks",
                 "order": 5,
+                "task": "Configure Druva Data Security Cloud playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ddsc-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 5 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "id": "ddsc-validate",
+                "order": 6,
                 "task": "Validate Druva Data Security Cloud detection coverage",
                 "duration": 0.5,
                 "effort_hours": 2.0,
@@ -28961,7 +29051,7 @@
                 "category": "phase-2",
                 "phase": "Validation",
                 "depends_on": [
-                  "ddsc-content"
+                  "ddsc-playbooks"
                 ],
                 "owner_role": "SOC Analyst",
                 "description": "Validate detection coverage and data quality for Druva Data Security Cloud. Test at least one analytics rule produces an incident."
@@ -30129,8 +30219,23 @@
                 "description": "Deploy analytics rules and workbooks from the Google Cloud Platform Big Query content hub package."
               },
               {
-                "id": "gcpb-validate",
+                "id": "gcpb-playbooks",
                 "order": 5,
+                "task": "Configure Google Cloud Platform Big Query playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "gcpb-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 4 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "id": "gcpb-validate",
+                "order": 6,
                 "task": "Validate Google Cloud Platform Big Query GCP log pipeline",
                 "duration": 0.5,
                 "effort_hours": 2.0,
@@ -30138,7 +30243,7 @@
                 "category": "phase-2",
                 "phase": "Validation",
                 "depends_on": [
-                  "gcpb-content"
+                  "gcpb-playbooks"
                 ],
                 "owner_role": "SOC Analyst",
                 "description": "Query GCP log tables in Sentinel for recent Google Cloud Platform Big Query events. Verify schema mapping and timestamp accuracy."
@@ -37303,7 +37408,22 @@
                 "duration": 1.0
               },
               {
+                "id": "1p-analytics",
                 "order": 4,
+                "task": "Enable 1 Password analytics rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "1p-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 18 included analytics rules from the 1 Password content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate 1 Password with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -37312,7 +37432,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "1p-content"
+                  "1p-analytics"
                 ],
                 "description": "Validate 1 Password with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -38005,7 +38125,22 @@
                 "duration": 0.5
               },
               {
+                "id": "cds-analytics",
                 "order": 4,
+                "task": "Enable Cisco Duo Security analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "cds-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 10 included analytics rules from the Cisco Duo Security content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Cisco Duo Security with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -38014,7 +38149,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "cds-content"
+                  "cds-analytics"
                 ],
                 "description": "Validate Cisco Duo Security with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -38897,7 +39032,22 @@
                 "duration": 0.5
               },
               {
+                "id": "np-analytics",
                 "order": 4,
+                "task": "Enable Nord Pass analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "np-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 9 included analytics rules from the Nord Pass content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Nord Pass with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -38906,7 +39056,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "np-content"
+                  "np-analytics"
                 ],
                 "description": "Validate Nord Pass with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -39956,7 +40106,37 @@
                 "duration": 0.5
               },
               {
+                "id": "spin-analytics",
                 "order": 4,
+                "task": "Enable Sail Point Identity Now analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "spin-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 6 included analytics rules from the Sail Point Identity Now content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "id": "spin-playbooks",
+                "order": 5,
+                "task": "Configure Sail Point Identity Now playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "spin-analytics"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 6,
                 "task": "Validate Sail Point Identity Now with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -39965,7 +40145,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "spin-content"
+                  "spin-playbooks"
                 ],
                 "description": "Validate Sail Point Identity Now with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -40842,7 +41022,37 @@
                 "duration": 0.5
               },
               {
+                "id": "arm-analytics",
                 "order": 4,
+                "task": "Enable Armorblox analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "arm-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 1 included analytics rules from the Armorblox content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "id": "arm-playbooks",
+                "order": 5,
+                "task": "Configure Armorblox playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "arm-analytics"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 6,
                 "task": "Validate Armorblox with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -40851,7 +41061,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "arm-content"
+                  "arm-playbooks"
                 ],
                 "description": "Validate Armorblox with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -41445,7 +41655,52 @@
                 "duration": 0.5
               },
               {
+                "id": "mim-analytics",
                 "order": 4,
+                "task": "Enable Mimecast analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "mim-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 13 included analytics rules from the Mimecast content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "id": "mim-workbooks",
+                "order": 5,
+                "task": "Deploy and configure Mimecast workbooks",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "mim-analytics"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 5 included workbooks. Configure workspace parameters, time range defaults, and subscription filters for each workbook."
+              },
+              {
+                "id": "mim-playbooks",
+                "order": 6,
+                "task": "Configure Mimecast playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "mim-workbooks"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 7,
                 "task": "Validate Mimecast with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -41454,7 +41709,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "mim-content"
+                  "mim-playbooks"
                 ],
                 "description": "Validate Mimecast with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -42164,7 +42419,37 @@
                 "duration": 1.0
               },
               {
+                "id": "aja-analytics",
                 "order": 4,
+                "task": "Enable Atlassian Jira Audit analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "aja-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 10 included analytics rules from the Atlassian Jira Audit content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "id": "aja-playbooks",
+                "order": 5,
+                "task": "Configure Atlassian Jira Audit playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "aja-analytics"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 8 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 6,
                 "task": "Validate Atlassian Jira Audit with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -42173,7 +42458,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "aja-content"
+                  "aja-playbooks"
                 ],
                 "description": "Validate Atlassian Jira Audit with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -42840,7 +43125,22 @@
                 "duration": 0.5
               },
               {
+                "id": "eaa-source",
                 "order": 3,
+                "task": "Configure Exabeam Advanced Analytics source devices to export logs",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "eaa-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Configure each Exabeam Advanced Analytics device or appliance to forward Syslog/CEF events to the Linux log-forwarder. Set the correct facility, severity, and port settings; confirm that log streams arrive on the forwarder host."
+              },
+              {
+                "order": 4,
                 "task": "Enable packaged detections, dashboards, and optional automations for Exabeam Advanced Analytics, then tune for your environment.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -42849,13 +43149,13 @@
                 "phase": "Operationalization",
                 "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "eaa-configure"
+                  "eaa-source"
                 ],
                 "description": "Enable packaged detections, dashboards, and optional automations for Exabeam Advanced Analytics, then tune for your environment.",
                 "duration": 0.5
               },
               {
-                "order": 4,
+                "order": 5,
                 "task": "Validate Exabeam Advanced Analytics with a recent vendor event and confirm the expected entities and tables are populated.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -43740,7 +44040,22 @@
                 "duration": 1.0
               },
               {
+                "id": "ai-playbooks",
                 "order": 4,
+                "task": "Configure Abuse IPDB playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ai-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 4 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Abuse IPDB by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -43749,7 +44064,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ai-content"
+                  "ai-playbooks"
                 ],
                 "description": "Validate Abuse IPDB by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -43886,7 +44201,22 @@
                 "duration": 0.5
               },
               {
+                "id": "acsc-playbooks",
                 "order": 4,
+                "task": "Configure Australian Cyber Security Centre playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "acsc-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Australian Cyber Security Centre by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -43895,7 +44225,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "acsc-content"
+                  "acsc-playbooks"
                 ],
                 "description": "Validate Australian Cyber Security Centre by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -44181,7 +44511,22 @@
                 "duration": 0.5
               },
               {
+                "id": "cpbb-playbooks",
                 "order": 4,
+                "task": "Configure Check Phish by Bolster playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "cpbb-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 2 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Check Phish by Bolster by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -44190,7 +44535,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "cpbb-content"
+                  "cpbb-playbooks"
                 ],
                 "description": "Validate Check Phish by Bolster by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -44329,7 +44674,22 @@
                 "duration": 1.0
               },
               {
+                "id": "cpca-playbooks",
                 "order": 4,
+                "task": "Configure Check Point Cyberint Alerts playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "cpca-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 8 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Check Point Cyberint Alerts by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -44338,7 +44698,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "cpca-content"
+                  "cpca-playbooks"
                 ],
                 "description": "Validate Check Point Cyberint Alerts by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -45202,7 +45562,22 @@
                 "duration": 0.5
               },
               {
+                "id": "caa-playbooks",
                 "order": 4,
+                "task": "Configure Cybersixgill-Actionable-Alerts playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "caa-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 2 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Cybersixgill-Actionable-Alerts by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -45211,7 +45586,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "caa-content"
+                  "caa-playbooks"
                 ],
                 "description": "Validate Cybersixgill-Actionable-Alerts by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -46377,7 +46752,22 @@
                 "duration": 1.0
               },
               {
+                "id": "cyj-playbooks",
                 "order": 4,
+                "task": "Configure Cyjax playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "cyj-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 5 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Cyjax by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -46386,7 +46776,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "cyj-content"
+                  "cyj-playbooks"
                 ],
                 "description": "Validate Cyjax by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -46673,7 +47063,22 @@
                 "duration": 0.5
               },
               {
+                "id": "ccst-playbooks",
                 "order": 4,
+                "task": "Configure Cyren-Crowd Strike-Threat Intelligence playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ccst-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Cyren-Crowd Strike-Threat Intelligence by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -46682,7 +47087,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ccst-content"
+                  "ccst-playbooks"
                 ],
                 "description": "Validate Cyren-Crowd Strike-Threat Intelligence by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -46821,7 +47226,22 @@
                 "duration": 0.5
               },
               {
+                "id": "csot-playbooks",
                 "order": 4,
+                "task": "Configure Cyren-Sentinel One-Threat Intelligence playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "csot-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Cyren-Sentinel One-Threat Intelligence by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -46830,7 +47250,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "csot-content"
+                  "csot-playbooks"
                 ],
                 "description": "Validate Cyren-Sentinel One-Threat Intelligence by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -47116,7 +47536,22 @@
                 "duration": 0.5
               },
               {
+                "id": "dp-playbooks",
                 "order": 4,
+                "task": "Configure Dataminr Pulse playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "dp-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Dataminr Pulse by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -47125,7 +47560,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "dp-content"
+                  "dp-playbooks"
                 ],
                 "description": "Validate Dataminr Pulse by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -47264,7 +47699,22 @@
                 "duration": 0.5
               },
               {
+                "id": "ds-playbooks",
                 "order": 4,
+                "task": "Configure Digital Shadows playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ds-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Digital Shadows by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -47273,7 +47723,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ds-content"
+                  "ds-playbooks"
                 ],
                 "description": "Validate Digital Shadows by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -47410,7 +47860,22 @@
                 "duration": 1.0
               },
               {
+                "id": "dt-playbooks",
                 "order": 4,
+                "task": "Configure Domain Tools playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "dt-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 9 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Domain Tools by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -47419,7 +47884,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "dt-content"
+                  "dt-playbooks"
                 ],
                 "description": "Validate Domain Tools by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -47556,7 +48021,22 @@
                 "duration": 0.5
               },
               {
+                "id": "ei-playbooks",
                 "order": 4,
+                "task": "Configure Eclectic IQ playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ei-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 3 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Eclectic IQ by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -47565,7 +48045,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ei-content"
+                  "ei-playbooks"
                 ],
                 "description": "Validate Eclectic IQ by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -47702,7 +48182,22 @@
                 "duration": 1.0
               },
               {
+                "id": "gti-playbooks",
                 "order": 4,
+                "task": "Configure Google Threat Intelligence playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "gti-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 9 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Google Threat Intelligence by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -47711,7 +48206,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "gti-content"
+                  "gti-playbooks"
                 ],
                 "description": "Validate Google Threat Intelligence by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -47996,7 +48491,22 @@
                 "duration": 1.5
               },
               {
+                "id": "hya-playbooks",
                 "order": 4,
+                "task": "Configure HYAS playbooks and automation rules",
+                "duration": 1.5,
+                "effort_hours": 6.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "hya-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 25 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate HYAS by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -48005,7 +48515,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "hya-content"
+                  "hya-playbooks"
                 ],
                 "description": "Validate HYAS by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -48289,7 +48799,22 @@
                 "duration": 1.5
               },
               {
+                "id": "inf-playbooks",
                 "order": 4,
+                "task": "Configure Infoblox playbooks and automation rules",
+                "duration": 1.5,
+                "effort_hours": 6.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "inf-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 17 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Infoblox by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -48298,7 +48823,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "inf-content"
+                  "inf-playbooks"
                 ],
                 "description": "Validate Infoblox by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -48406,7 +48931,22 @@
                 "duration": 0.5
               },
               {
+                "id": "icdc-source",
                 "order": 3,
+                "task": "Configure Infoblox Cloud Data Connector source devices to export logs",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "icdc-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Configure each Infoblox Cloud Data Connector device or appliance to forward Syslog/CEF events to the Linux log-forwarder. Set the correct facility, severity, and port settings; confirm that log streams arrive on the forwarder host."
+              },
+              {
+                "order": 4,
                 "task": "Tune expiration, deduplication, and enrichment expectations for Infoblox Cloud Data Connector indicators and packaged hunting content.",
                 "effort_hours": 6.0,
                 "skill_level": "intermediate",
@@ -48415,13 +48955,28 @@
                 "phase": "Operationalization",
                 "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "icdc-configure"
+                  "icdc-source"
                 ],
                 "description": "Tune expiration, deduplication, and enrichment expectations for Infoblox Cloud Data Connector indicators and packaged hunting content.",
                 "duration": 1.5
               },
               {
-                "order": 4,
+                "id": "icdc-playbooks",
+                "order": 5,
+                "task": "Configure Infoblox Cloud Data Connector playbooks and automation rules",
+                "duration": 1.5,
+                "effort_hours": 6.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "icdc-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 11 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 6,
                 "task": "Validate Infoblox Cloud Data Connector by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -48430,7 +48985,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "icdc-content"
+                  "icdc-playbooks"
                 ],
                 "description": "Validate Infoblox Cloud Data Connector by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -48554,7 +49109,22 @@
                 "duration": 0.5
               },
               {
+                "id": "isi-source",
                 "order": 3,
+                "task": "Configure Infoblox SOC Insights source devices to export logs",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "isi-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Configure each Infoblox SOC Insights device or appliance to forward Syslog/CEF events to the Linux log-forwarder. Set the correct facility, severity, and port settings; confirm that log streams arrive on the forwarder host."
+              },
+              {
+                "order": 4,
                 "task": "Tune expiration, deduplication, and enrichment expectations for Infoblox SOC Insights indicators and packaged hunting content.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -48563,13 +49133,28 @@
                 "phase": "Operationalization",
                 "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "isi-configure"
+                  "isi-source"
                 ],
                 "description": "Tune expiration, deduplication, and enrichment expectations for Infoblox SOC Insights indicators and packaged hunting content.",
                 "duration": 0.5
               },
               {
-                "order": 4,
+                "id": "isi-playbooks",
+                "order": 5,
+                "task": "Configure Infoblox SOC Insights playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "isi-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 3 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 6,
                 "task": "Validate Infoblox SOC Insights by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -48578,7 +49163,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "isi-content"
+                  "isi-playbooks"
                 ],
                 "description": "Validate Infoblox SOC Insights by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -48705,7 +49290,22 @@
                 "duration": 1.0
               },
               {
+                "id": "iqs-playbooks",
                 "order": 4,
+                "task": "Configure IP Quality Score playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "iqs-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 5 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate IP Quality Score by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -48714,7 +49314,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "iqs-content"
+                  "iqs-playbooks"
                 ],
                 "description": "Validate IP Quality Score by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -48851,7 +49451,22 @@
                 "duration": 0.5
               },
               {
+                "id": "js-playbooks",
                 "order": 4,
+                "task": "Configure Joe Sandbox playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "js-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 3 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Joe Sandbox by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -48860,7 +49475,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "js-content"
+                  "js-playbooks"
                 ],
                 "description": "Validate Joe Sandbox by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -48994,7 +49609,22 @@
                 "duration": 1.0
               },
               {
+                "id": "jc-playbooks",
                 "order": 4,
+                "task": "Configure Joshua-Cyberiskvision playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "jc-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 9 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Joshua-Cyberiskvision by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -49003,7 +49633,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "jc-content"
+                  "jc-playbooks"
                 ],
                 "description": "Validate Joshua-Cyberiskvision by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -49268,7 +49898,22 @@
                 "duration": 0.5
               },
               {
+                "id": "min-playbooks",
                 "order": 4,
+                "task": "Configure Minemeld playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "min-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 3 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Minemeld by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -49277,7 +49922,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "min-content"
+                  "min-playbooks"
                 ],
                 "description": "Validate Minemeld by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -49560,7 +50205,22 @@
                 "duration": 0.5
               },
               {
+                "id": "nnnc-playbooks",
                 "order": 4,
+                "task": "Configure NCSC-NL NDN Cyber Threat Intelligence Sharing playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "nnnc-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate NCSC-NL NDN Cyber Threat Intelligence Sharing by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -49569,7 +50229,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "nnnc-content"
+                  "nnnc-playbooks"
                 ],
                 "description": "Validate NCSC-NL NDN Cyber Threat Intelligence Sharing by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -49707,7 +50367,37 @@
                 "duration": 1.5
               },
               {
+                "id": "rf-workbooks",
                 "order": 4,
+                "task": "Deploy and configure Recorded Future workbooks",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "rf-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 8 included workbooks. Configure workspace parameters, time range defaults, and subscription filters for each workbook."
+              },
+              {
+                "id": "rf-playbooks",
+                "order": 5,
+                "task": "Configure Recorded Future playbooks and automation rules",
+                "duration": 1.5,
+                "effort_hours": 6.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "rf-workbooks"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 14 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 6,
                 "task": "Validate Recorded Future by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -49716,7 +50406,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "rf-content"
+                  "rf-playbooks"
                 ],
                 "description": "Validate Recorded Future by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -49854,7 +50544,22 @@
                 "duration": 1.0
               },
               {
+                "id": "rfi-playbooks",
                 "order": 4,
+                "task": "Configure Recorded Future Identity playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "rfi-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 4 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Recorded Future Identity by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -49863,7 +50568,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "rfi-content"
+                  "rfi-playbooks"
                 ],
                 "description": "Validate Recorded Future Identity by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -50002,7 +50707,22 @@
                 "duration": 1.0
               },
               {
+                "id": "rl-playbooks",
                 "order": 4,
+                "task": "Configure Reversing Labs playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "rl-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 5 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Reversing Labs by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -50011,7 +50731,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "rl-content"
+                  "rl-playbooks"
                 ],
                 "description": "Validate Reversing Labs by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -50297,7 +51017,22 @@
                 "duration": 1.0
               },
               {
+                "id": "snt-playbooks",
                 "order": 4,
+                "task": "Configure Service Now TISC playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "snt-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 9 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Service Now TISC by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -50306,7 +51041,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "snt-content"
+                  "snt-playbooks"
                 ],
                 "description": "Validate Service Now TISC by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -50442,7 +51177,22 @@
                 "duration": 0.5
               },
               {
+                "id": "sba-playbooks",
                 "order": 4,
+                "task": "Configure Shadow Byte Aria playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "sba-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 3 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Shadow Byte Aria by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -50451,7 +51201,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "sba-content"
+                  "sba-playbooks"
                 ],
                 "description": "Validate Shadow Byte Aria by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -50586,7 +51336,22 @@
                 "duration": 0.5
               },
               {
+                "id": "sr-playbooks",
                 "order": 4,
+                "task": "Configure SOC Radar playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "sr-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 2 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate SOC Radar by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -50595,7 +51360,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "sr-content"
+                  "sr-playbooks"
                 ],
                 "description": "Validate SOC Radar by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -50733,7 +51498,22 @@
                 "duration": 0.5
               },
               {
+                "id": "spu-playbooks",
                 "order": 4,
+                "task": "Configure Spur playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "spu-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 3 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Spur by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -50742,7 +51522,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "spu-content"
+                  "spu-playbooks"
                 ],
                 "description": "Validate Spur by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -50881,7 +51661,22 @@
                 "duration": 1.0
               },
               {
+                "id": "scep-playbooks",
                 "order": 4,
+                "task": "Configure Spy Cloud Enterprise Protection playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "scep-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 9 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Spy Cloud Enterprise Protection by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -50890,7 +51685,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "scep-content"
+                  "scep-playbooks"
                 ],
                 "description": "Validate Spy Cloud Enterprise Protection by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -51322,7 +52117,22 @@
                 "duration": 0.5
               },
               {
+                "id": "trdt-playbooks",
                 "order": 4,
+                "task": "Configure Tacit Red-Defender-Threat Intelligence playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "trdt-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 2 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Tacit Red-Defender-Threat Intelligence by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -51331,7 +52141,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "trdt-content"
+                  "trdt-playbooks"
                 ],
                 "description": "Validate Tacit Red-Defender-Threat Intelligence by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -51468,7 +52278,22 @@
                 "duration": 0.5
               },
               {
+                "id": "tric-playbooks",
                 "order": 4,
+                "task": "Configure Tacit Red-IOC-Crowd Strike playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "tric-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Tacit Red-IOC-Crowd Strike by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -51477,7 +52302,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "tric-content"
+                  "tric-playbooks"
                 ],
                 "description": "Validate Tacit Red-IOC-Crowd Strike by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -51616,7 +52441,22 @@
                 "duration": 0.5
               },
               {
+                "id": "trso-playbooks",
                 "order": 4,
+                "task": "Configure Tacit Red-Sentinel One playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "trso-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Tacit Red-Sentinel One by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -51625,7 +52465,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "trso-content"
+                  "trso-playbooks"
                 ],
                 "description": "Validate Tacit Red-Sentinel One by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -51762,7 +52602,22 @@
                 "duration": 0.5
               },
               {
+                "id": "tcs-playbooks",
                 "order": 4,
+                "task": "Configure Team Cymru Scout playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "tcs-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 3 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Team Cymru Scout by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -51771,7 +52626,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "tcs-content"
+                  "tcs-playbooks"
                 ],
                 "description": "Validate Team Cymru Scout by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -52466,7 +53321,22 @@
                 "duration": 1.0
               },
               {
+                "id": "ul-playbooks",
                 "order": 4,
+                "task": "Configure UR Lhaus playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ul-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 4 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate UR Lhaus by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -52475,7 +53345,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ul-content"
+                  "ul-playbooks"
                 ],
                 "description": "Validate UR Lhaus by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -52614,7 +53484,22 @@
                 "duration": 0.5
               },
               {
+                "id": "vcst-playbooks",
                 "order": 4,
+                "task": "Configure Vaikora-Crowd Strike-Threat Intelligence playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "vcst-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Vaikora-Crowd Strike-Threat Intelligence by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -52623,7 +53508,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "vcst-content"
+                  "vcst-playbooks"
                 ],
                 "description": "Validate Vaikora-Crowd Strike-Threat Intelligence by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -52910,7 +53795,22 @@
                 "duration": 0.5
               },
               {
+                "id": "vsot-playbooks",
                 "order": 4,
+                "task": "Configure Vaikora-Sentinel One-Threat Intelligence playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "vsot-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 1 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Vaikora-Sentinel One-Threat Intelligence by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -52919,7 +53819,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "vsot-content"
+                  "vsot-playbooks"
                 ],
                 "description": "Validate Vaikora-Sentinel One-Threat Intelligence by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -53349,7 +54249,22 @@
                 "duration": 0.5
               },
               {
+                "id": "vr-playbooks",
                 "order": 4,
+                "task": "Configure VM Ray playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "vr-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 3 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate VM Ray by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -53358,7 +54273,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "vr-content"
+                  "vr-playbooks"
                 ],
                 "description": "Validate VM Ray by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "duration": 0.5
@@ -53476,7 +54391,22 @@
                 "duration": 0.5
               },
               {
+                "id": "vot-source",
                 "order": 3,
+                "task": "Configure Votiro source devices to export logs",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "vot-configure"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Configure each Votiro device or appliance to forward Syslog/CEF events to the Linux log-forwarder. Set the correct facility, severity, and port settings; confirm that log streams arrive on the forwarder host."
+              },
+              {
+                "order": 4,
                 "task": "Tune expiration, deduplication, and enrichment expectations for Votiro indicators and packaged hunting content.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -53485,13 +54415,13 @@
                 "phase": "Operationalization",
                 "owner_role": "SOC Engineer",
                 "depends_on": [
-                  "vot-configure"
+                  "vot-source"
                 ],
                 "description": "Tune expiration, deduplication, and enrichment expectations for Votiro indicators and packaged hunting content.",
                 "duration": 0.5
               },
               {
-                "order": 4,
+                "order": 5,
                 "task": "Validate Votiro by confirming fresh indicators arrive and can be matched during hunting or analytics.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -54798,7 +55728,22 @@
                 "duration": 0.5
               },
               {
+                "id": "anv-analytics",
                 "order": 4,
+                "task": "Enable Anvilogic analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "anv-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 1 included analytics rules from the Anvilogic content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Anvilogic with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -54807,7 +55752,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "anv-content"
+                  "anv-analytics"
                 ],
                 "description": "Validate Anvilogic with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -54954,7 +55899,22 @@
                 "duration": 0.5
               },
               {
+                "id": "ahs-analytics",
                 "order": 4,
+                "task": "Enable Apache HTTP Server analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ahs-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 10 included analytics rules from the Apache HTTP Server content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Apache HTTP Server with a recent host event and confirm the expected schema and incident content in Sentinel.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -54963,7 +55923,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ahs-content"
+                  "ahs-analytics"
                 ],
                 "description": "Validate Apache HTTP Server with a recent host event and confirm the expected schema and incident content in Sentinel.",
                 "duration": 0.5
@@ -55113,8 +56073,23 @@
                 "description": "Open the deployed Log4j playbook in the Logic Apps designer and authorize the Microsoft Sentinel and notification (Teams or email) API connections. Configure the playbook automation rule to trigger on incidents from Log4j analytics rules with High severity. Test the playbook by manually triggering it against a test incident to confirm the notification and optional block actions fire correctly."
               },
               {
-                "id": "log4j-validate",
+                "id": "log4j-verify-data-source",
                 "order": 4,
+                "task": "Configure Apache Log4j Vulnerability Detection source devices to export logs",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "log4j-playbook"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Configure each Apache Log4j Vulnerability Detection device or appliance to forward Syslog/CEF events to the Linux log-forwarder. Set the correct facility, severity, and port settings; confirm that log streams arrive on the forwarder host."
+              },
+              {
+                "id": "log4j-validate",
+                "order": 5,
                 "task": "Validate Log4j detection coverage and run a simulated JNDI exploitation pattern.",
                 "duration": 0.5,
                 "effort_hours": 2.0,
@@ -55122,7 +56097,7 @@
                 "category": "phase-2",
                 "phase": "Validation",
                 "depends_on": [
-                  "log4j-playbook"
+                  "log4j-verify-data-source"
                 ],
                 "owner_role": "SOC Analyst",
                 "description": "In a controlled lab environment, send a web request containing a JNDI lookup string (e.g., ${jndi:ldap://test.example.com/a}) to a monitored target and confirm it appears in the relevant log source (CommonSecurityLog or Syslog). Verify that the matching analytics rule fires and generates an incident within the rule frequency window. Review the workbooks to confirm the event is visualized correctly and that the playbook notification was sent."
@@ -55580,7 +56555,22 @@
                 "duration": 0.5
               },
               {
+                "id": "attp-analytics",
                 "order": 4,
+                "task": "Enable Attacker Tools Threat Protection Essentials analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "attp-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 4 included analytics rules from the Attacker Tools Threat Protection Essentials content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Attacker Tools Threat Protection Essentials with a recent host event and confirm the expected schema and incident content in Sentinel.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -55589,7 +56579,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "attp-content"
+                  "attp-analytics"
                 ],
                 "description": "Validate Attacker Tools Threat Protection Essentials with a recent host event and confirm the expected schema and incident content in Sentinel.",
                 "duration": 0.5
@@ -56039,7 +57029,22 @@
                 "duration": 0.5
               },
               {
+                "id": "bs-analytics",
                 "order": 4,
+                "task": "Enable Bit Sight analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "bs-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 6 included analytics rules from the Bit Sight content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Bit Sight with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -56048,7 +57053,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "bs-content"
+                  "bs-analytics"
                 ],
                 "description": "Validate Bit Sight with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -56337,7 +57342,22 @@
                 "duration": 0.5
               },
               {
+                "id": "box-analytics",
                 "order": 4,
+                "task": "Enable Box analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "box-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 10 included analytics rules from the Box content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Box with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -56346,7 +57366,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "box-content"
+                  "box-analytics"
                 ],
                 "description": "Validate Box with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -57297,7 +58317,37 @@
                 "duration": 0.5
               },
               {
+                "id": "csi-analytics",
                 "order": 4,
+                "task": "Enable Commvault Security IQ analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "csi-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 1 included analytics rules from the Commvault Security IQ content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "id": "csi-playbooks",
+                "order": 5,
+                "task": "Configure Commvault Security IQ playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "csi-analytics"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 3 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 6,
                 "task": "Validate Commvault Security IQ with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -57306,7 +58356,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "csi-content"
+                  "csi-playbooks"
                 ],
                 "description": "Validate Commvault Security IQ with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -57595,7 +58645,37 @@
                 "duration": 0.5
               },
               {
+                "id": "ca-analytics",
                 "order": 4,
+                "task": "Enable Contrast ADR analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ca-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 6 included analytics rules from the Contrast ADR content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "id": "ca-workbooks",
+                "order": 5,
+                "task": "Deploy and configure Contrast ADR workbooks",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ca-analytics"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 9 included workbooks. Configure workspace parameters, time range defaults, and subscription filters for each workbook."
+              },
+              {
+                "order": 6,
                 "task": "Validate Contrast ADR with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -57604,7 +58684,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ca-content"
+                  "ca-workbooks"
                 ],
                 "description": "Validate Contrast ADR with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -58036,7 +59116,22 @@
                 "duration": 1.0
               },
               {
+                "id": "cv-analytics",
                 "order": 4,
+                "task": "Enable Cyble Vision analytics rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "cv-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 43 included analytics rules from the Cyble Vision content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Cyble Vision with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -58045,7 +59140,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "cv-content"
+                  "cv-analytics"
                 ],
                 "description": "Validate Cyble Vision with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -58491,7 +59586,22 @@
                 "duration": 0.5
               },
               {
+                "id": "dss-analytics",
                 "order": 4,
+                "task": "Enable D3 Smart SOAR analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "dss-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 1 included analytics rules from the D3 Smart SOAR content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate D3 Smart SOAR with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -58500,7 +59610,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "dss-content"
+                  "dss-analytics"
                 ],
                 "description": "Validate D3 Smart SOAR with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -60911,7 +62021,22 @@
                 "duration": 0.5
               },
               {
+                "id": "fla-analytics",
                 "order": 4,
+                "task": "Enable Flare analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "fla-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 10 included analytics rules from the Flare content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Flare with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -60920,7 +62045,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "fla-content"
+                  "fla-analytics"
                 ],
                 "description": "Validate Flare with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -62977,7 +64102,22 @@
                 "duration": 0.5
               },
               {
+                "id": "ion-analytics",
                 "order": 4,
+                "task": "Enable IONIX analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ion-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 1 included analytics rules from the IONIX content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate IONIX with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -62986,7 +64126,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ion-content"
+                  "ion-analytics"
                 ],
                 "description": "Validate IONIX with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -63406,7 +64546,22 @@
                 "duration": 0.5
               },
               {
+                "id": "jp-analytics",
                 "order": 4,
+                "task": "Enable Jamf Protect analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "jp-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 3 included analytics rules from the Jamf Protect content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Jamf Protect with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -63415,7 +64570,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "jp-content"
+                  "jp-analytics"
                 ],
                 "description": "Validate Jamf Protect with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -64159,7 +65314,52 @@
                 "duration": 0.5
               },
               {
+                "id": "loo-analytics",
                 "order": 4,
+                "task": "Enable Lookout analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "loo-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 5 included analytics rules from the Lookout content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "id": "loo-workbooks",
+                "order": 5,
+                "task": "Deploy and configure Lookout workbooks",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "loo-analytics"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 5 included workbooks. Configure workspace parameters, time range defaults, and subscription filters for each workbook."
+              },
+              {
+                "id": "loo-playbooks",
+                "order": 6,
+                "task": "Configure Lookout playbooks and automation rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "loo-workbooks"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 3 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 7,
                 "task": "Validate Lookout with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -64168,7 +65368,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "loo-content"
+                  "loo-playbooks"
                 ],
                 "description": "Validate Lookout with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -64901,7 +66101,22 @@
                 "duration": 0.5
               },
               {
+                "id": "mor-analytics",
                 "order": 4,
+                "task": "Enable Morphisec analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "mor-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 3 included analytics rules from the Morphisec content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Morphisec with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -64910,7 +66125,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "mor-content"
+                  "mor-analytics"
                 ],
                 "description": "Validate Morphisec with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -66558,7 +67773,22 @@
                 "duration": 0.5
               },
               {
+                "id": "oci-analytics",
                 "order": 4,
+                "task": "Enable Oracle Cloud Infrastructure analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "oci-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 10 included analytics rules from the Oracle Cloud Infrastructure content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Oracle Cloud Infrastructure with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -66567,7 +67797,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "oci-content"
+                  "oci-analytics"
                 ],
                 "description": "Validate Oracle Cloud Infrastructure with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -66869,7 +68099,22 @@
                 "duration": 0.5
               },
               {
+                "id": "owls-analytics",
                 "order": 4,
+                "task": "Enable Oracle Web Logic Server analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "owls-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 10 included analytics rules from the Oracle Web Logic Server content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Oracle Web Logic Server with a recent host event and confirm the expected schema and incident content in Sentinel.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -66878,7 +68123,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "owls-content"
+                  "owls-analytics"
                 ],
                 "description": "Validate Oracle Web Logic Server with a recent host event and confirm the expected schema and incident content in Sentinel.",
                 "duration": 0.5
@@ -68057,7 +69302,22 @@
                 "duration": 0.5
               },
               {
+                "id": "quo-analytics",
                 "order": 4,
+                "task": "Enable Quokka analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "quo-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 1 included analytics rules from the Quokka content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Quokka with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -68066,7 +69326,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "quo-content"
+                  "quo-analytics"
                 ],
                 "description": "Validate Quokka with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -68211,7 +69471,22 @@
                 "duration": 0.5
               },
               {
+                "id": "rad-analytics",
                 "order": 4,
+                "task": "Enable Radiflow analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "rad-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 8 included analytics rules from the Radiflow content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Radiflow with a recent host event and confirm the expected schema and incident content in Sentinel.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -68220,7 +69495,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "rad-content"
+                  "rad-analytics"
                 ],
                 "description": "Validate Radiflow with a recent host event and confirm the expected schema and incident content in Sentinel.",
                 "duration": 0.5
@@ -68371,7 +69646,22 @@
                 "duration": 1.0
               },
               {
+                "id": "ri-playbooks",
                 "order": 4,
+                "task": "Configure Rapid7 InsightVM playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ri-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 4 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Rapid7 InsightVM with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -68380,7 +69670,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ri-content"
+                  "ri-playbooks"
                 ],
                 "description": "Validate Rapid7 InsightVM with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -69840,7 +71130,22 @@
                 "duration": 0.5
               },
               {
+                "id": "sno-analytics",
                 "order": 4,
+                "task": "Enable Snowflake analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "sno-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 10 included analytics rules from the Snowflake content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Snowflake with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -69849,7 +71154,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "sno-content"
+                  "sno-analytics"
                 ],
                 "description": "Validate Snowflake with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -70140,7 +71445,22 @@
                 "duration": 0.5
               },
               {
+                "id": "spc-analytics",
                 "order": 4,
+                "task": "Enable SOC Prime CCF analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "spc-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 3 included analytics rules from the SOC Prime CCF content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate SOC Prime CCF with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -70149,7 +71469,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "spc-content"
+                  "spc-analytics"
                 ],
                 "description": "Validate SOC Prime CCF with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -71178,7 +72498,37 @@
                 "duration": 1.0
               },
               {
+                "id": "ta-analytics",
                 "order": 4,
+                "task": "Enable Tenable App analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ta-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 12 included analytics rules from the Tenable App content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "id": "ta-playbooks",
+                "order": 5,
+                "task": "Configure Tenable App playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ta-analytics"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 5 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 6,
                 "task": "Validate Tenable App with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -71187,7 +72537,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ta-content"
+                  "ta-playbooks"
                 ],
                 "description": "Validate Tenable App with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -71319,7 +72669,22 @@
                 "duration": 1.0
               },
               {
+                "id": "ti-playbooks",
                 "order": 4,
+                "task": "Configure Tenable IO playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "ti-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 5 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Tenable IO with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -71328,7 +72693,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "ti-content"
+                  "ti-playbooks"
                 ],
                 "description": "Validate Tenable IO with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -71476,7 +72841,22 @@
                 "duration": 1.0
               },
               {
+                "id": "th-playbooks",
                 "order": 4,
+                "task": "Configure The Hive playbooks and automation rules",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "th-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 4 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate The Hive with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -71485,7 +72865,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "th-content"
+                  "th-playbooks"
                 ],
                 "description": "Validate The Hive with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -72090,7 +73470,22 @@
                 "duration": 0.5
               },
               {
+                "id": "tmca-analytics",
                 "order": 4,
+                "task": "Enable Trend Micro Cloud App Security analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "tmca-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 10 included analytics rules from the Trend Micro Cloud App Security content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Trend Micro Cloud App Security with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -72099,7 +73494,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "tmca-content"
+                  "tmca-analytics"
                 ],
                 "description": "Validate Trend Micro Cloud App Security with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -72972,7 +74367,22 @@
                 "duration": 1.5
               },
               {
+                "id": "vee-playbooks",
                 "order": 4,
+                "task": "Configure Veeam playbooks and automation rules",
+                "duration": 1.5,
+                "effort_hours": 6.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "vee-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Deploy the 15 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
+              },
+              {
+                "order": 5,
                 "task": "Validate Veeam with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -72981,7 +74391,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "vee-content"
+                  "vee-playbooks"
                 ],
                 "description": "Validate Veeam with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5
@@ -73267,7 +74677,22 @@
                 "duration": 0.5
               },
               {
+                "id": "vc-analytics",
                 "order": 4,
+                "task": "Enable Versasec CMS analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "vc-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 1 included analytics rules from the Versasec CMS content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Versasec CMS with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -73276,7 +74701,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "vc-content"
+                  "vc-analytics"
                 ],
                 "description": "Validate Versasec CMS with a representative payload and confirm parsing, latency, and content mapping are correct.",
                 "duration": 0.5
@@ -73721,7 +75146,22 @@
                 "duration": 0.5
               },
               {
+                "id": "wstp-analytics",
                 "order": 4,
+                "task": "Enable Web Shells Threat Protection analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "wstp-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 3 included analytics rules from the Web Shells Threat Protection content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate Web Shells Threat Protection with a recent host event and confirm the expected schema and incident content in Sentinel.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -73730,7 +75170,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "wstp-content"
+                  "wstp-analytics"
                 ],
                 "description": "Validate Web Shells Threat Protection with a recent host event and confirm the expected schema and incident content in Sentinel.",
                 "duration": 0.5
@@ -76216,7 +77656,7 @@
                 "category": "setup",
                 "phase": "Infrastructure",
                 "depends_on": [
-                  "sysmon-verify-rbac"
+                  "sysmon-install-windows"
                 ],
                 "owner_role": "Linux Admin",
                 "description": "Install Sysmon for Linux from official Microsoft repositories, apply the approved config, and verify events are written to syslog.",
@@ -76231,7 +77671,6 @@
                 "category": "setup",
                 "phase": "Infrastructure",
                 "depends_on": [
-                  "sysmon-install-windows",
                   "sysmon-install-linux"
                 ],
                 "owner_role": "Azure Platform Admin",
@@ -76287,7 +77726,7 @@
                 "category": "phase-1",
                 "phase": "Configuration",
                 "depends_on": [
-                  "sysmon-ama-forwarder"
+                  "sysmon-windows-dcr"
                 ],
                 "owner_role": "Linux Admin",
                 "description": "Use the Linux Syslog AMA data source, select the required facilities and severities, and confirm Sysmon messages are forwarded into the Syslog table.",
@@ -76335,16 +77774,30 @@
                 "duration": 0.5
               },
               {
-                "id": "sysmon-validate",
+                "id": "sysmon-readiness-design-source",
                 "order": 9,
+                "task": "Configure Sysmon via AMA source devices to export logs",
+                "duration": 1.0,
+                "effort_hours": 4.0,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "sysmon-asim"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Configure each Sysmon via AMA device or appliance to forward Syslog/CEF events to the Linux log-forwarder. Set the correct facility, severity, and port settings; confirm that log streams arrive on the forwarder host."
+              },
+              {
+                "id": "sysmon-validate",
+                "order": 10,
                 "task": "Validate Windows and Linux Sysmon telemetry end to end",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
                 "category": "phase-2",
                 "phase": "Validation",
                 "depends_on": [
-                  "sysmon-windows-dcr",
-                  "sysmon-asim"
+                  "sysmon-readiness-design-source"
                 ],
                 "owner_role": "SOC Engineer",
                 "description": "Confirm Windows Sysmon events arrive in Event with EventLog = Microsoft-Windows-Sysmon/Operational, confirm Linux Sysmon arrives in Syslog with ProcessName = sysmon, and test at least one hunting or analytic query per platform.",
@@ -76352,7 +77805,7 @@
               },
               {
                 "id": "sysmon-handoff",
-                "order": 10,
+                "order": 11,
                 "task": "Document Sysmon configuration ownership and tuning policy",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -77146,7 +78599,22 @@
                 "duration": 0.5
               },
               {
+                "id": "xbo-analytics",
                 "order": 4,
+                "task": "Enable XBOW analytics rules",
+                "duration": 0.5,
+                "effort_hours": 2.0,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "xbo-content"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable the 4 included analytics rules from the XBOW content hub package. Review rule logic and tune thresholds to match the environment's event volume."
+              },
+              {
+                "order": 5,
                 "task": "Validate XBOW with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "effort_hours": 2.0,
                 "skill_level": "intermediate",
@@ -77155,7 +78623,7 @@
                 "phase": "Validation",
                 "owner_role": "SOC Analyst",
                 "depends_on": [
-                  "xbo-content"
+                  "xbo-analytics"
                 ],
                 "description": "Validate XBOW with a recent vendor event and confirm records land in the intended Sentinel tables.",
                 "duration": 0.5

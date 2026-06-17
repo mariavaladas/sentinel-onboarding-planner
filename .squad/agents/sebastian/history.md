@@ -306,3 +306,60 @@
 **Related:**
 - .squad/decisions/inbox/sebastian-cribl-refactor-plan.md — cribl_eligible field population strategy
 - Coordinator's topology fix log: .squad/orchestration-log/2026-06-12T0900-topology-fix.md
+
+### 2026-06-16T16:56:04+02:00: Task completeness audit and fix -- 85 solutions, 98 tasks added
+
+**What happened:**
+- Wrote `scripts/audit_task_completeness.py` to audit ALL 489 solutions for missing required tasks (requested by Maria: "make sure we include all required tasks").
+- 9 Tier-1 protected solutions skipped (same TIER1_PROTECTED list as recalibrate_durations.py).
+- 480 solutions audited. 85 had one or more missing task types. 98 tasks inserted in total.
+- Post-fix re-audit confirms 0 remaining gaps across all 480 non-Tier-1 solutions.
+- JSON valid, saved to `data/solutions.json`.
+
+**Missing tasks found (Phase 1):**
+
+| Issue type | Solutions affected | Root cause |
+|---|---|---|
+| PLAYBOOK_TASK | 56 | Connector-focused solutions had playbooks counted but no dedicated Logic App auth task |
+| ANALYTICS_TASK | 32 | Analytics count > 0 but tasks bundled into generic "content" step |
+| WORKBOOK_TASK | 4 | 4+ workbooks present but no dedicated workbook config task |
+| SOURCE_CONFIG | 6 | Syslog/CEF connector solutions missing the "configure source device to export logs" step |
+| **TOTAL** | **85** | Some solutions had 2-3 missing types simultaneously |
+
+**Tasks added (Phase 2):**
+
+| Task type | Count | Owner | Duration rule |
+|---|---|---|---|
+| `{abbrev}-playbooks` | 56 | SOC Engineer | 0.5d (<=3 pb), 1.0d (<=10), 1.5d (>10) |
+| `{abbrev}-analytics` | 32 | SOC Engineer | 0.5d (<=15 rules), 1.0d (<=50), 1.5d (>50) |
+| `{abbrev}-workbooks` | 4 | SOC Engineer | 0.5d (<=5 wb), 1.0d (>5) |
+| `{abbrev}-source` | 6 | SOC Engineer | 1.0d (fixed: configure syslog/cef device) |
+
+**Insertion positions:**
+- Source tasks: inserted after the last existing `phase == "Configuration"` task.
+- Analytics/workbooks/playbooks: each inserted just before the existing `phase == "Validation"` task (re-detected after each insert).
+- Validation task created fresh (`{abbrev}-validate`) only for solutions that had none.
+- Full linear depends_on chain rebuilt unconditionally after all insertions.
+- `order` field renumbered for all tasks.
+
+**Design decisions:**
+- `_is_validation_task()` uses `phase == "Validation"` as primary signal (keyword-only fallback: "validat" in task title). This avoids false-positives from "verify" appearing in Configuration-phase task descriptions.
+- Sequential one-at-a-time insertions (not batched) so each iteration correctly re-detects the validation index after the previous insertion shifted it.
+- Pre-existing "handoff" Operationalization tasks intentionally placed after Validation (sysmon-via-ama, windows-forwarded-events-via-ama, windows-firewall-via-ama) are preserved -- the "validation not last" check on these is expected and pre-dates this script.
+- `effort_hours = duration * 4` consistent with project-wide convention.
+- TIER1_PROTECTED solutions (9 solutions) are skipped entirely -- no modifications.
+
+**Spot-checks:**
+- `mimecast` (13 analytics, 5 workbooks, 1 playbook): added analytics, workbooks, playbooks tasks. Final: prereqs → configure → content → **analytics** → **workbooks** → **playbooks** → validate (7 tasks) ✓
+- `infoblox-cloud-data-connector` (8 analytics, 11 playbooks, syslog/cef): added source + playbooks. Final: prereqs → configure → **source** → content → **playbooks** → validate (6 tasks) ✓
+- `lookout` (5 analytics, 5 workbooks, 3 playbooks): added analytics, workbooks, playbooks. Final: prereqs → configure → content → **analytics** → **workbooks** → **playbooks** → validate (7 tasks) ✓
+- `hyas` (25 playbooks): added 1 playbook task (1.5d, as >10 playbooks). ✓
+
+**Key bugs fixed during development:**
+1. First draft used broad keyword list (`["validat", "verify", "confirm data", "kql", "query"]`) over full task + description text. "verify" in newly-inserted source task descriptions caused the script to misidentify source tasks as validation, breaking insertion order on second-insert solutions.
+2. Batch insert strategy with shared oper_anchor produced out-of-order tasks (playbooks before configure). Fixed by switching to sequential one-at-a-time inserts where each re-detects validation position.
+3. Windows cp1252 encoding error on print statements with Unicode checkmarks -- replaced all `✓` / `⚠` / `•` / `—` with ASCII equivalents.
+
+**Related:**
+- Script: `scripts/audit_task_completeness.py`
+- Data: `data/solutions.json` (85 solutions modified, 98 setup_tasks entries added)
