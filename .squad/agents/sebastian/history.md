@@ -6,20 +6,72 @@
 - **User:** madesous
 - **Created:** 2026-05-18
 
-## Summary (Consolidated 2026-06-12)
+## CONSOLIDATED SUMMARY (2026-05-18 through 2026-06-14)
 
-**Key learning areas established (May 18–June 11):**
-- **Data Model:** solutions.json enrichment with value_scoring, planner tasks, export metadata; field pack enum (9 packs); Cribl eligibility marking and routing.
-- **Task Hierarchy:** Windows Security Events pattern (subtasks, dependencies, effort rollups); RBAC deduplication via fingerprint matching; Excel export formatting.
-- **Capacity & Sizing:** AMA, WEC, Pipeline throughput patterns; EPS-driven collector scaling; Windows-conservative (5k EPS) vs Linux-aggressive (10k EPS) thresholds.
-- **Topology & Routing:** Cribl-eligible solution filtering; fieldPack enum application; vendor-row Cribl eligibility; connector visibility in routing logic.
-- **Business Logic:** Priority scoring (40% impact, 20% complexity, 15% setup time, 15% detection, 10% maturity); phased deployment grouping; connector sequencing for onboarding.
+**Core contributions:** Solutions.json data enrichment (task metadata, durations, capacity types, task descriptions), validation restructuring, Tier 1–3 connector task generation.
+
+**Key learnings from early work (May 18–June 9):**
+- Data model structure: solutions.json enrichment with value_scoring, planner tasks, export metadata, field pack enum (9 packs), Cribl eligibility marking
+- Task hierarchy: Windows Security Events pattern (subtasks, dependencies, effort rollups), RBAC deduplication, Excel export formatting
+- Capacity & Sizing: AMA, WEC, Pipeline patterns; EPS-driven collector scaling; Windows-conservative (5k EPS) vs Linux-aggressive (10k EPS) thresholds
+- Topology & Routing: Cribl-eligible solution filtering, vendor-row routing, connector visibility logic
+- Business Logic: Priority scoring (40% impact, 20% complexity, 15% setup time, 15% detection, 10% maturity), phased deployment
 
 **Detailed prior work archived to history-archive.md** (entries 2026-05-18 through 2026-06-09, 15+ sections covering data enrichment, RBAC analysis, solutions QA, capacity validation, topology refactoring).
 
+---
+
+## 2026-06-15 through 2026-06-17 — Current Batch
+
+### 2026-06-15T12:10:52+02:00 — Tier 1 Duration Enrichment (8 solutions)
+
+## Summary (Consolidated 2026-06-12)
+
+**Responsibilities:** Solutions.json data enrichment (task metadata, durations, capacity types), validation restructuring, connector task generation scripts (Tier 1–3), featured/high-value solution rewrites.
+
+**Key modules in use:**
+- `data/solutions.json` — Solution metadata, task definitions, capacity_type annotations, effort_hours, priority scoring
+- `scripts/patch_featured_tasks.py` — Featured solution hand-crafted tasks (11 solutions)
+- `scripts/patch_highvalue_tasks.py` — High-value non-featured hand-crafted tasks (24 solutions)
+- `scripts/patch_tier1_durations.py` — Tier 1 duration enrichment (8 solutions)
+- `scripts/patch_tier2_durations.py` — Tier 2 duration enrichment (41 solutions)
+- `scripts/patch_tier3_durations.py` — Tier 3 algorithmic enrichment (438 solutions)
+- `scripts/restructure_validation_order.py` — Validation task reordering and rewording
+
+**Data model learnings:**
+- Value scoring: 40% impact, 20% complexity, 15% setup time, 15% detection, 10% maturity
+- Field pack enum (9 packs): syslog_cef, rest_api, aws_s3, gcp_pubsub, codeless_connector, azure_function, azure_diagnostic, event_hub, logic_app
+- Capacity types: server_count, eps, throughput
+- Task hierarchy: phases (Prerequisites, Configuration, Operationalization, Validation), categories (setup, phase-1, phase-2), owner roles
+
+**See history-archive.md for earlier detailed work (2026-05-18 through 2026-06-14).**
+
 ## Recent Work
 
-### 2026-06-16T16:44:17+02:00: Duration recalibration — 479 solutions, -851.5d across catalog
+## Recent Work
+
+### 2026-06-15–2026-06-17 — Tier 1–3 Duration Enrichment + Featured/High-Value Task Rewrites
+
+**Tier 1 (8 solutions):** azure-activity, microsoft-entra-id, defender-xdr, azure-firewall, microsoft-365, common-event-format, windows-dns-events-via-ama, windows-forwarded-events. Canonical 4-task pattern (Prerequisites, Configuration, Operationalization, Validation).
+
+**Tier 2 (41 solutions):** M365 Security (20) + Azure Native (18) + Infrastructure (3). All follow canonical 4-task pattern.
+
+**Tier 3 (438 solutions):** Algorithmic enrichment. Standard 4-task template, ID abbreviation scheme (first letter × 4 + suffix), duration derivation formula, descriptions reuse task text.
+
+**Featured (11 solutions):** aws (6 tasks, 5.0d), gcp-iam (6, 5.0d), threat-intelligence (5, 3.0d), dns-essentials (4, 2.0d), and 7 others. Key design: Multi-cloud → AWS/GCP Cloud Admin; ASIM parsers as first-class tasks.
+
+**High-Value Batch A (24 solutions):** Zscaler (6 tasks, 8.0d with NSS topology as dedicated task), BloodHound (6 tasks, phased analytics), Vectra, Rubrik, Falcon Friday, and 19 others. Phased analytics for 100+ rule solutions; ASIM parser tests as acceptance criteria; product admin roles for product-side prerequisites.
+
+**Status:** All 489 solutions (9 Tier 1 hand-curated + 41 Tier 2 standardized + 11 featured hand-crafted + 24 high-value hand-crafted + 438 Tier 3 algorithmic) now have complete planner.setup_tasks metadata.
+
+**Session outcomes:** Orchestration logs written; decisions merged into decisions.md; cross-agent history updates completed.
+
+**Scripts:**
+- `scripts/patch_tier1_durations.py` — Tier 1 enrichment
+- `scripts/patch_tier2_durations.py` — Tier 2 with CATALOG dict
+- `scripts/patch_tier3_durations.py` — Tier 3 algorithmic
+- `scripts/patch_featured_tasks.py` — Featured hand-crafted
+- `scripts/patch_highvalue_tasks.py` — High-value Batch A hand-crafted
 
 **What happened:**
 - Wrote `scripts/recalibrate_durations.py` to recalibrate every `setup_tasks` duration in `data/solutions.json` based on realistic human effort, not generic category buckets.
@@ -376,3 +428,36 @@
 **Learnings:**
 - **Validation restructure pattern:** Treat prerequisites, connector setup, forwarder work, source-device export, and DCR work as one contiguous setup block. The ingestion-only validation task belongs immediately after that block, before analytics, workbook, or playbook enablement, with the linear `depends_on` chain rebuilt from the new order.
 - **AWS multi-service featured fix:** Cross-cloud featured tasks must name every supported feed explicitly. For `aws`, the task arc now has to call out CloudTrail, VPC Flow Logs, GuardDuty, and CloudWatch separately, and the validation step should query `AWSCloudTrail`, `AWSGuardDuty`, and `AWSCloudWatch` before the SOC Engineer enables downstream content.
+
+### 2026-06-17T15:02:21+02:00 — Session: Task rewrites & duration enrichment across 489 solutions
+
+**Status:** Completed  
+**Session type:** Parallel background agent run with Scribe orchestration  
+
+**Work completed:**
+
+1. **Featured solution task rewrite (11 solutions)**
+   - Replaced generic 4-task templates with product-specific task arcs
+   - Solutions: aws, google-cloud-platform-iam, threat-intelligence-new, dns-essentials, network-session-essentials, apache-log4j-vulnerability-detection, security-threat-essential-solution, virus-total, sentinel-soa-ressentials, soc-handbook, ueba-essentials
+   - Key design: Multi-cloud solutions assign infrastructure tasks to AWS/GCP Cloud Admin (not Azure Platform Admin); ASIM parsers as first-class tasks; realistic durations
+
+2. **High-value non-featured task rewrite — Batch A (24 solutions)**
+   - Bespoke task arcs for Zscaler, BloodHound Enterprise, Vectra XDR, Rubrik Security Cloud, CrowdStrike Falcon Friday, and 19 others
+   - Phased analytics deployment for high-rule-count solutions (BloodHound 102 rules, Falcon 30 rules)
+   - NSS/log-streaming as dedicated prerequisite task; AD collector agents separated from connector config
+   - Owner role discipline: product-side prerequisites to appropriate product admin
+
+3. **Tier 1 durations (8 solutions)**
+   - Populated `duration` field: azure-activity, microsoft-entra-id, defender-xdr, azure-firewall, microsoft-365, common-event-format, windows-dns-events-via-ama, windows-forwarded-events
+   - Established canonical 4-task pattern: Prerequisites, Configuration, Operationalization, Validation
+
+4. **Tier 2 durations (41 solutions)**
+   - M365 Security (20) and Azure Native (18) solutions enriched
+   - All follow canonical 4-task pattern; M365 uses Identity/RBAC Admin for task 1; Azure uses Azure Platform Admin
+
+5. **Tier 3 durations (438 solutions)**
+   - Algorithmic task metadata generation for remaining third-party solutions
+   - Standard 4-task template; ID abbreviation scheme; sequential dependency chain
+   - Duration distribution: 0.5d (98), 1.0d (683), 1.5d (629), 2.0d (265), 3.0d (141) tasks
+
+**Decisions recorded:** `decisions.md` (2026-06-16 Featured Solution Task Rewrite, High-Value Non-Featured Batch A, Tier 1/2/3 Durations)

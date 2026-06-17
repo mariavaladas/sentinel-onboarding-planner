@@ -296,3 +296,388 @@ Prioritized topology spec compliance fixes in dependency order:
 **Why**
 Audit revealed structural non-compliance with topology-spec.md. P0 is foundational — all other fixes depend on the layer model existing.
 
+## 2026-06-12
+
+### Joi — VM+DCR Chain Validation for Source Status
+
+**Date:** 2026-06-12  
+**Author:** Joi (documentation)  
+**Requested by:** Maria  
+**Status:** Implemented  
+
+**Context**
+
+Prior to v1.3, source status for all connector types (including `syslog_cef`, `windows_events`, and `linux_server`) was determined via table-based detection: if the connector's target table had recent rows, it was marked CONNECTED. This led to false-positive CONNECTED status when data arrived via legacy paths (e.g., direct syslog write) without the modern VM+AMA+DCR chain being deployed.
+
+**Decision**
+
+Source status for VM-dependent types (`syslog_cef`, `windows_events`, `linux_server`) is now determined by **VM+DCR chain validation** instead of table detection alone.
+
+**Chain:** Source → VM (with a matching DCR for that source type) → active data flow
+
+**DCR Type Mapping**
+
+| Source Type | Matching DCR Types |
+|-------------|-------------------|
+| `syslog_cef` | `cef`, `syslog` |
+| `windows_events` | `windows` |
+| `linux_server` | `syslog` |
+
+**Status Rules**
+
+| Condition | Resolved Status |
+|-----------|----------------|
+| Active VMs (EPS > 0) with matching DCR exist | CONNECTED |
+| Idle VMs (EPS = 0, heartbeat) with matching DCR exist | IDLE |
+| No VMs with matching DCR exist | NEW |
+
+Stale VMs are excluded from all chain validation and not rendered.
+
+**Impact**
+- `getSourceStatus()` in `topology.js` updated.
+- Existing VMs node rendering logic updated.
+- Calculated VMs node rendering logic updated.
+- Documentation: `docs/topology-spec.md` updated (v1.3), new §7 added.
+
+---
+
+## 2026-06-15
+
+### K — Layer Box Gap Increase — topology.js
+
+**Date:** 2026-06-15  
+**Author:** K (Frontend Dev)  
+**Status:** Applied
+
+**Problem**
+
+The "PIPELINE & TRANSFORMATIONS" layer box visually overlapped the "COLLECTION INFRASTRUCTURE" layer box in the top band of the topology diagram. Root cause: `LAYER_GAP = 20` in `createLayerBoxNodes` provided only 20 px between box borders — visually indistinguishable from overlap given 2 px dashed borders and labels.
+
+**Changes Applied**
+
+| File | Line | Change | Reason |
+|---|---|---|---|
+| `js/modules/topology.js` | 1129 | `topIntermediaryOffsetY` 420 → **460** | Extra separation between source band bottom and first intermediary layer (server/DCR nodes) |
+| `js/modules/topology.js` | 1837 | collectorVm Y offset `+80` → **`+120`** | Without this, collectorVm nodes protrude ABOVE the collection layer box when LAYER_GAP=45. `topIntermediaryOffsetY` does NOT control collectorVm positioning. |
+| `js/modules/topology.js` | 2005 | Same collectorVm offset for syslog path | Same reason as above |
+| `js/modules/topology.js` | 2338 | `LAYER_GAP` 20 → **45** | Primary fix — enforces 45 px minimum between layer box borders |
+
+**Rule reinforced**
+
+Do NOT fix layer overlap by shrinking box heights (FAILURE 5). The fix direction is always to ADD SPACE between nodes or increase gap constants.
+
+---
+
+### K — Measured EPS into syslog/CEF sizing drawer default
+
+**Author:** K  
+**Date:** 2026-06-15T12:10:52+02:00  
+**Status:** Implemented
+
+**Context**
+
+The workspace discovery KQL query (app.js lines 1016–1040) already measures actual EPS from Syslog + CommonSecurityLog + SecurityEvent tables over the last 24 h. The result lands at `window.discoveredInfrastructure.summary.totalEPS`. Until now, the syslog/CEF sizing drawer always defaulted to `DEFAULT_FIREWALL_EPS = 1000` regardless of what had been measured.
+
+**Decision**
+
+`createDefaultSizingDraft(type, options = {})` gains an optional second parameter. When `type === 'firewall'` and `options.measuredEps` is a positive number, it uses that value as the default EPS; otherwise it falls back to `DEFAULT_FIREWALL_EPS`.
+
+Both `solutions.js` and `gantt-planner.js` read `window.discoveredInfrastructure?.summary?.totalEPS` at the moment the drawer opens and pass it via `{ measuredEps }` to `createDefaultSizingDraft`.
+
+When `measuredEpsValue > 0` a note "📊 Based on workspace measurement (24h avg)" is shown immediately below the EPS input field in both drawers.
+
+**Files changed**
+
+- `js/modules/capacity.js` — `createDefaultSizingDraft` signature
+- `js/modules/solutions.js` — `buildDraft`, defaults button, EPS field visual indicator
+- `js/gantt-planner.js` — draft init, defaults button, EPS field visual indicator
+- `css/style.css` — `.solution-sizing-measurement-note`, `.gantt-detail-sizing__measurement-note`
+
+---
+
+### Sebastian — Populate duration data for 8 Tier 1 connectors
+
+**Author:** Sebastian  
+**Date:** 2026-06-15T12:10:52+02:00  
+**Status:** Implemented  
+**Requested by:** Maria (madesous)
+
+**Context**
+
+Only Windows Security Events had fully populated `planner.setup_tasks` duration data. The remaining 488 connectors had `duration: null`, breaking the planning card view and effort bar in the Gantt planner. This decision covers the enrichment of the 8 highest-priority Tier 1 connectors.
+
+**Connectors Enriched**
+
+| Connector | Type | Tasks | Total Duration |
+|---|---|---|---|
+| `azure-activity` | Native / Azure diagnostic | 4 | 2.0 days |
+| `microsoft-entra-id` | Native / M365 | 4 | 2.5 days |
+| `defender-xdr` | Native / M365 | 4 | 2.5 days |
+| `azure-firewall` | Native / Azure diagnostic | 4 | 2.5 days |
+| `microsoft-365` | Native / M365 | 4 | 2.0 days |
+| `common-event-format` | Infrastructure / CEF forwarder | 8 | 8.0 days |
+| `windows-dns-events-via-ama` | Infrastructure / AMA | 8 | 7.0 days |
+| `windows-forwarded-events` | Infrastructure / WEC + AMA | 10 | 11.0 days |
+
+**Key Decisions**
+
+1. Owner role split for content vs. tuning: Deployment → SOC Engineer; Validation → SOC Analyst
+2. Standard 4-task phase mapping for native connectors
+3. M365 connector prerequisite owner is Identity / RBAC Admin; Azure diagnostic is Azure Platform Admin
+4. CEF expansion from 4 to 8 tasks for VM provisioning, Arc onboarding, AMA installation, DCR creation, source device config
+
+**Files Changed**
+
+- `data/solutions.json` — 8 connectors' `planner.setup_tasks` arrays updated
+- `scripts/patch_tier1_durations.py` — reproducible patch script
+
+---
+
+## 2026-06-16
+
+### K — Cribl sizing signal and explicit routing
+
+**Date:** 2026-06-16 (~morning)  
+**Status:** Implemented  
+**Scope:** `data/solutions.json`, `js/modules/topology.js`, planner table defaults
+
+**Decision**
+
+- Syslog/CEF content packs that depend on shared CEF infrastructure but do not look like firewalls by name should carry explicit sizing metadata via `capacity_type: "eps"` instead of relying on text heuristics.
+- Topology Cribl routing should only activate when the saved sizing profile records an explicit drawer choice (`criblIngestionExplicit: true`) and the saved value is opted in.
+- The planner table's Task Name column default width must be updated in both CSS fallback layout and `gantt-planner.js` default column metadata because runtime JS sets `--gantt-table-columns`.
+
+**Why**
+
+- Trend Micro Deep Security, Tipping Point, and Apex One were `cribl_eligible` and `fieldPack: "syslog-cef"`, but their names did not match the firewall-family heuristic, so no EPS sizing drawer rendered.
+- Without an explicit drawer save, topology fallback routing could still send those solutions through Cribl, which contradicted the user's actual choice surface.
+- The Task Name column width change in CSS alone would be ignored in the default planner render because JS overwrites the column template.
+
+---
+
+### K — Cribl Default Routing for Eligible Connectors
+
+**Date:** 2026-06-15T12:10:52+02:00  
+**Author:** K  
+**Status:** Implemented  
+**File:** `js/modules/topology.js`
+
+**Context**
+
+When a user selects Cribl Stream (Step 2) and then adds a `cribl_eligible` connector (e.g. Barracuda) without opening its sizing drawer, the topology was incorrectly placing a collector VM on that connector path instead of routing it through Cribl Stream.
+
+**Decision**
+
+`isCriblRoutedSolution` was extended to accept a third parameter `criblActive: boolean` and now applies a three-priority resolution:
+
+1. **Explicit user preference (`criblIngestionExplicit: true`)** — return the saved `criblIngestion` value in either direction (opt-in or opt-out both respected).
+2. **Saved sizing with `criblIngestion: true`** (no explicit flag) — return `true`.
+3. **Default fallback** — return `criblActive && solution.cribl_eligible === true`.
+
+**Test Scenario**
+
+1. Select Cribl in Step 2.
+2. Select Barracuda (syslog/CEF, `cribl_eligible: true`) in Step 3.
+3. Navigate directly to topology (Step 4) without opening Barracuda's sizing drawer.
+4. **Expected:** Barracuda routes Source → Cribl Stream → Custom DCR → Sentinel (no collector VM).
+
+---
+
+### K — Welcome CTA workspace gate only applies to expired linked workspaces
+
+**Date:** 2026-06-16T10:38:59.953+02:00  
+**Author:** K  
+**Status:** Implemented  
+**File:** `js/app.js`
+
+**Context**
+
+The welcome CTA gate was disabling both **Start planning** and **Resume saved progress** whenever no workspace token was present, including immediately after a full reset. Reset clears `sentinelPlanner.workspaceConnectionState`, so a fresh reload should behave like an optional workspace connection, not a forced reconnect flow.
+
+**Decision**
+
+`syncWorkspaceValidationButtons()` now distinguishes between:
+
+1. **Expired workspace with preserved `selectedWorkspace`** → gate the CTA buttons and prompt a reconnect.
+2. **Plain disconnected state with no saved workspace** → keep CTA buttons enabled.
+
+**Outcome**
+
+- Reset/fresh-start flows are no longer blocked on workspace connection.
+- Saved progress that never used a workspace remains resumable without a reconnect prompt.
+- Expired linked workspace sessions still protect the user from continuing with stale workspace-bound state.
+
+---
+
+### Sebastian — Featured Solution Task Rewrite
+
+**Date:** 2026-06-16T13:45:48+02:00
+**Author:** Sebastian (Data Engineer)
+**Requested by:** Maria (madesous)
+**Status:** Implemented
+
+**Context**
+
+15 solutions are flagged `isFeatured: true`. Of these, 4 already had hand-crafted tasks (azure-activity, defender-for-cloud, defender-xdr, microsoft-entra-id). The remaining 11 had been enriched by the Tier 3 batch script with generic templated tasks. These are the most visible solutions in the app, so low-quality tasks were a UX and credibility problem.
+
+**Decision**
+
+Replace `planner.setup_tasks` for all 11 remaining featured solutions with product-specific, hand-crafted tasks written directly as Python data structures in `scripts/patch_featured_tasks.py`.
+
+**Solutions patched (11)**
+
+| Group | Solution | Old Tasks | New Tasks | Total Days |
+|-------|----------|-----------|-----------|------------|
+| A — Multi-cloud | aws | 4 (generic) | 6 | 5.0d |
+| A — Multi-cloud | google-cloud-platform-iam | 4 (generic) | 6 | 5.0d |
+| A — Multi-cloud | threat-intelligence-new | 4 (generic) | 5 | 3.0d |
+| B — Domain/content | dns-essentials | 4 (generic) | 4 | 2.0d |
+| B — Domain/content | network-session-essentials | 4 (generic) | 4 | 2.0d |
+| B — Domain/content | apache-log4j-vulnerability-detection | 4 (generic) | 4 | 2.0d |
+| B — Domain/content | security-threat-essential-solution | 4 (generic) | 4 | 2.0d |
+| C — Playbooks | virus-total | 4 (generic) | 4 | 2.5d |
+| C — Playbooks | sentinel-soa-ressentials | 4 (generic) | 5 | 3.5d |
+| D — Workbooks | soc-handbook | 4 (generic) | 4 | 2.0d |
+| D — Workbooks | ueba-essentials | 4 (generic) | 4 | 2.5d |
+
+**Key Design Choices**
+
+1. **Group-specific task arcs** — Multi-cloud needs infrastructure-setup; Domain solutions need prerequisite *verification*; Vulnerability packs name source tables explicitly; Playbook-only skip connector/analytics; Workbook-only include UEBA baseline window requirement.
+2. **Owner role discipline** — Infrastructure tasks to AWS/GCP Cloud Admin; Connector config to AWS Cloud Admin; Content deployment to SOC Engineer; Validation to SOC Analyst.
+3. **ASIM parser as first-class task** — DNS Essentials and Network Session Essentials require ASIM parsers deployed before analytics rules can function.
+4. **Realistic durations** — Multi-cloud infrastructure 1.0–1.5d; Content deployment 0.5d; Playbook API 0.5–1.0d; Validation/tuning 0.5d each.
+
+**Impact**
+
+The 11 most visible solutions in the planner app now show accurate, actionable onboarding task descriptions. Engineers will no longer be misled by generic descriptions that omit critical infrastructure steps.
+
+---
+
+### Sebastian — High-Value Non-Featured Task Rewrite — Batch A
+
+**Date:** 2026-06-16T13:51:05+02:00
+**Author:** Sebastian (Data Engineer)
+**Requested by:** Maria (madesous)
+**Status:** Implemented
+
+**Context**
+
+After rewriting tasks for 11 featured solutions, the next tier is the 25 highest-impact non-featured solutions. These are major enterprise security products (Zscaler, BloodHound Enterprise, Vectra XDR) where onboarding complexity warrants product-specific guidance.
+
+**Decision**
+
+Replace `planner.setup_tasks` for 24 high-value non-featured solutions with bespoke, product-specific tasks written directly as Python data structures in `scripts/patch_highvalue_tasks.py`.
+
+**Key Design Choices**
+
+1. **Phased analytics deployment** — BloodHound Enterprise (102 rules) and Falcon Friday (30 rules) use Phase 1 / Phase 2 analytics deployment tasks to avoid false positive storms.
+2. **NSS/log-streaming topology as dedicated task** — Zscaler NSS requires architectural decisions before connector config begins (2.0-day task).
+3. **AD collector agents separate from BloodHound connector** — Makes explicit that BHE portal data collection is the prerequisite to Sentinel connector.
+4. **ASIM parser test as task acceptance criterion** — Content-only ASIM domain solutions include exact KQL parser calls as verifiable acceptance criteria.
+5. **Owner role discipline for third-party products** — Product-side prerequisites assigned to appropriate product admin role (BloodHound Admin, Zscaler Admin, etc.).
+6. **Table name specificity** — Every solution references its actual Sentinel log table.
+
+**Solutions patched (24)**
+
+Includes microsoft-business-applications, microsoft-defender-for-endpoint, blood-hound-enterprise, zscaler, vectra-xdr, rubrik-security-cloud, corelight, cisco-umbrella, sap-btp, palo-alto-prisma-cloud-2, sentinelone, cisco-secure-endpoint, cloudflare, imperva-cloud-waf, google-cloud-platform-dns, google-workspace-reports, tanium, theom, falcon-friday, web-session-essentials, endpoint-threat-protection-essentials, censys, global-secure-access, microsoft-defender-threat-intelligence
+
+**Protected / skipped solutions**
+
+- azure-activity, defender-for-cloud, defender-xdr, microsoft-entra-id (existing Tier 1)
+- azure-firewall (already Tier 1 quality, explicitly skipped per brief)
+
+**Impact**
+
+The 24 highest-value non-featured solutions now show accurate, actionable onboarding task descriptions. The 3 most complex third-party solutions (Zscaler, BloodHound Enterprise, Vectra XDR) have task arcs specifically designed around their unique onboarding requirements.
+
+---
+
+### Sebastian — Populate full planner task metadata for 41 Tier 2 connectors
+
+**Author:** Sebastian  
+**Date:** 2026-06-16T12:02:17+02:00  
+**Status:** Implemented  
+**Requested by:** Maria (madesous)
+
+**Context**
+
+After Tier 1 enrichment (9 connectors), 479 solutions remained without `duration` in their `planner.setup_tasks`. This decision covers enrichment of all 41 Tier 2 connectors.
+
+**Standard 4-task phase mapping**
+
+| Order | `category` | `phase` | Owner Role | Skill |
+|---|---|---|---|---|
+| 1 | `setup` | `Prerequisites` | `Identity / RBAC Admin` (M365) / `Azure Platform Admin` (Azure) | beginner |
+| 2 | `setup` | `Configuration` | `Azure Platform Admin` | beginner |
+| 3 | `phase-1` | `Operationalization` | `SOC Engineer` | intermediate |
+| 4 | `phase-2` | `Validation` | `SOC Analyst` | intermediate |
+
+**Solutions enriched (41)**
+
+- M365 Security: 20 solutions (defender-for-cloud, defender-for-cloud-apps, mde, mdi, dfo, mdti, gsa, eia, eip, a365, m365a, mcop, exop, exol, pbi, proj, purv, pip, teams, mba)
+- Azure Native: 18 solutions (batch, cognitive-search, ddos, devops-auditing, event-hubs, key-vault, aks, logic-apps, nsg, resource-graph, security-benchmark, service-bus, sql-database, storage, stream-analytics, waf, sysmon-for-linux, windows-sql)
+- Infrastructure: 3 solutions (windows-firewall-via-ama, windows-forwarded-events-via-ama, sysmon-via-ama — duration addition only)
+
+**Files Changed**
+
+- `data/solutions.json` — 41 connectors' `planner.setup_tasks` arrays updated
+- `scripts/patch_tier2_durations.py` — reproducible patch script with full CATALOG dict
+
+---
+
+### Sebastian — Populate full planner task metadata for 438 Tier 3 third-party connectors
+
+**Author:** Sebastian  
+**Date:** 2026-06-16T13:00:41+02:00  
+**Status:** Implemented  
+**Requested by:** Maria (madesous)
+
+**Context**
+
+After Tier 1 (9) and Tier 2 (41) enrichment, 438 third-party solutions remained without full `planner.setup_tasks` metadata. All had `effort_hours` populated but were missing `id`, `duration`, `category`, `phase`, `owner_role`, `depends_on`, and `description`.
+
+**Standard 4-task metadata table (uniform across all 438 solutions)**
+
+| Order | `category` | `phase` | `owner_role` | `skill_level` |
+|---|---|---|---|---|
+| 1 | `setup` | `Prerequisites` | `Azure Platform Admin` | `beginner` |
+| 2 | `setup` | `Configuration` | `SOC Engineer` | `beginner` |
+| 3 | `phase-1` | `Operationalization` | `SOC Engineer` | `intermediate` |
+| 4 | `phase-2` | `Validation` | `SOC Analyst` | `intermediate` |
+
+**ID abbreviation scheme**
+
+- Take the first letter of each hyphen-separated word in the solution `id`, max 4 chars
+- Append suffix: `-prereqs`, `-configure`, `-content`, `-validate`
+- Examples: `azure-cloud-ngfw-by-palo-alto-networks` → `acnb-*`; `crowdstrike` → `cro-*`; `blackberry-cylance-protect` → `bcp-*`
+
+**Duration derivation formula**
+
+```
+effort_hours <= 1.5  →  duration = 0.5 days
+effort_hours <= 3.0  →  duration = 1.0 day
+effort_hours <= 5.0  →  duration = 1.5 days
+effort_hours <= 8.0  →  duration = 2.0 days
+effort_hours >  8.0  →  duration = 3.0 days
+```
+
+**Key Decisions**
+
+1. **Uniform owner_role for task 1** across all Tier 3 solutions is `Azure Platform Admin`. Third-party connectors (CEF/syslog, APIs, agents) route through Azure infrastructure.
+2. **Description strategy:** Reuse task text verbatim — with 438 × 4 tasks, bespoke descriptions have marginal value when existing `task` field is already descriptive.
+3. **Batch script approach** — Derives all metadata algorithmically. No per-solution catalog needed at 438-connector scale.
+4. **Skill level override** — Overwrites tasks 3 and 4 with `skill_level: "intermediate"` to conform to canonical 4-task pattern.
+
+**Verification**
+
+- **488 total solutions** with full duration data (9 Tier 1 + 41 Tier 2 + 438 Tier 3)
+- **0 validation errors**
+- **0 Tier 1/2 solutions modified** — idempotency guard prevented any re-patching
+- **JSON valid** — parseable with `json.load()`
+- **Duration distribution (Tier 3):** `{0.5: 98, 1.0: 683, 1.5: 629, 2.0: 265, 3.0: 141}` tasks across all 438 solutions (1,816 tasks total)
+
+**Files Changed**
+
+- `data/solutions.json` — 438 connectors' `planner.setup_tasks` arrays updated in-place
+- `scripts/patch_tier3_durations.py` — reproducible algorithmic patch script
+
