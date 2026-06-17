@@ -275,3 +275,10 @@ K delivered end-to-end Cribl ingestion feature:
 - **Callsite pattern:** `hasStandaloneCriblSelection` is computed at render scope (line 812) as a boolean that is true when `cribl-stream` is among selected solutions. `splitSolutionsByRoute` is a closure inside that render scope, so it reads `hasStandaloneCriblSelection` directly — no prop threading needed. Both filter calls at lines 1219-1220 now pass it as the third argument.
 - **No other callsites changed:** `isCriblRoutedSolution` had exactly two call sites (lines 1219-1220); line 1578 filters `row.route` (already resolved) and was not a call site.
 - **Key file paths:** `js/modules/topology.js` (lines 108-120, 1219-1220).
+
+### 2026-06-17T15:05:05+02:00 — Trend Micro Cribl sizing + planner column width fixes
+
+- **Architecture decisions:** For syslog/CEF content packs whose names do not match the firewall heuristic, use explicit data metadata (`capacity_type: "eps"`) so `getConnectorCapacityMetadata()` resolves a `firewall` sizing profile without relying on vendor-name regexes.
+- **Patterns:** Step 4 Cribl routing must only honor explicit drawer saves (`criblIngestionExplicit === true`); selecting the Cribl environment alone is not enough to route a solution through Cribl. The Gantt table's Task Name default width must be updated in both `css/style.css` and `js/gantt-planner.js` because JS writes `--gantt-table-columns` at runtime.
+- **User preferences:** Keep these fixes surgical and preserve the existing drawer/topology behavior for connectors that already expose explicit Cribl sizing choices.
+- **Key file paths:** `data/solutions.json`, `js/modules/topology.js`, `js/gantt-planner.js`, `css/style.css`, `.squad/decisions/inbox/k-cribl-sizing-fix.md`.

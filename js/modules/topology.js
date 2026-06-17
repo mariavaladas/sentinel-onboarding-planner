@@ -107,16 +107,11 @@ function getUniqueSolutionNames(solutions = []) {
 
 function isCriblRoutedSolution(solution = {}, capacitySnapshot = {}, criblActive = false) {
     const profile = getSolutionCapacityProfile(solution, capacitySnapshot);
-    // Explicit user preference wins in both directions
-    if (profile?.values?.criblIngestionExplicit) {
-        return Boolean(profile?.criblIngestion);
+    if (!criblActive || solution?.cribl_eligible !== true) {
+        return false;
     }
-    // Saved sizing (non-explicit) with criblIngestion set
-    if (profile?.criblIngestion) {
-        return true;
-    }
-    // Default: eligible connectors route through Cribl when the environment is active
-    return criblActive && solution?.cribl_eligible === true;
+
+    return Boolean(profile?.values?.criblIngestionExplicit) && Boolean(profile?.criblIngestion);
 }
 
 function buildWindowsSharedDcrPlan(zoneLayouts = []) {

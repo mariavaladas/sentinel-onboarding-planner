@@ -232,6 +232,16 @@ function getConnectorCapacityMetadata(solution = {}) {
         };
     }
 
+    // Any cribl_eligible solution needs EPS-based sizing for Cribl/forwarder capacity planning
+    if (solution?.cribl_eligible === true) {
+        return {
+            type: 'firewall',
+            populationKind: '',
+            sharedPopulationGroup: '',
+            serverCountLabel: ''
+        };
+    }
+
     return {
         type: 'none',
         populationKind: '',

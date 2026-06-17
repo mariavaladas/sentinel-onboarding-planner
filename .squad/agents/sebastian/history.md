@@ -363,3 +363,16 @@
 **Related:**
 - Script: `scripts/audit_task_completeness.py`
 - Data: `data/solutions.json` (85 solutions modified, 98 setup_tasks entries added)
+
+### 2026-06-17T15:05:06+02:00: Validation reorder pass and AWS multi-service fix
+
+**What happened:**
+- Wrote `scripts/restructure_validation_order.py` to move ingestion validation immediately after the connector or infrastructure block, rewrite validation language to focus on data arrival only, and rebuild the task dependency chain.
+- Updated `data/solutions.json` so 473 solutions now have revised validation wording or order relative to `HEAD`; 436 of those changed the validation task position.
+- Reworked the Amazon Web Services featured solution to cover all supported services explicitly: CloudTrail, VPC Flow Logs, GuardDuty, and CloudWatch across the 3 AWS connectors, with validation moved before the 62-rule and 2-workbook content deployment step.
+- Preserved 3 bespoke late-setup flows unchanged (`apache-log4j-vulnerability-detection`, `common-event-format`, `sysmon-via-ama`) to avoid breaking custom sequencing that does not fit the generic reorder pattern.
+- Verified JSON validity, SOC Analyst ownership on validation tasks, 0.5-day validation duration, tuning tasks last, and no processed validation tasks still require rule-firing confirmation language.
+
+**Learnings:**
+- **Validation restructure pattern:** Treat prerequisites, connector setup, forwarder work, source-device export, and DCR work as one contiguous setup block. The ingestion-only validation task belongs immediately after that block, before analytics, workbook, or playbook enablement, with the linear `depends_on` chain rebuilt from the new order.
+- **AWS multi-service featured fix:** Cross-cloud featured tasks must name every supported feed explicitly. For `aws`, the task arc now has to call out CloudTrail, VPC Flow Logs, GuardDuty, and CloudWatch separately, and the validation step should query `AWSCloudTrail`, `AWSGuardDuty`, and `AWSCloudWatch` before the SOC Engineer enables downstream content.

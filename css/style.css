@@ -2548,7 +2548,7 @@ body.is-resizing-gantt {
 .gantt-table-header,
 .gantt-table-row {
     display: grid;
-    grid-template-columns: var(--gantt-table-columns, 72px minmax(320px, 1.8fr) 156px 148px 124px 128px 224px 118px);
+    grid-template-columns: var(--gantt-table-columns, 72px minmax(420px, 2.5fr) 156px 148px 124px 128px 224px 118px);
 }
 
 .gantt-table-header {

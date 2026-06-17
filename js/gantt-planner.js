@@ -45,8 +45,8 @@ const GANTT_TABLE_COLUMNS = [
         key: 'name',
         label: 'Task name',
         headerClassName: 'gantt-table-cell gantt-table-header-cell gantt-table-header-cell--task',
-        width: 360,
-        minWidth: 220
+        width: 420,
+        minWidth: 420
     },
     {
         key: 'status',
