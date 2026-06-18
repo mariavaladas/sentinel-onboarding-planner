@@ -1515,7 +1515,7 @@ export function renderTopology(selectedSolutions, containerEl) {
   const rowHasDcr = (row) => {
       if (usesSharedDcr(row.type)) {
           if ((row.route || ROUTE_STANDARD) === ROUTE_CRIBL) {
-              return false;
+              return true; // Cribl path uses Custom DCR (Logs Ingestion API)
           }
           return (getSharedPlanForRow(row)?.dcrs?.length || 0) > 0;
       }

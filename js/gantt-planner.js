@@ -729,6 +729,15 @@ function findSelectedSolutionForFieldPack(fieldPack = '', selectedSolutions = []
     }) || null;
 }
 
+function isGeneratedPlanCriblRoutedSolution(solution = {}, capacitySnapshot = {}, criblActive = false) {
+    if (!criblActive || String(solution?.fieldPack || '').trim().toLowerCase() !== 'syslog-cef') {
+        return false;
+    }
+
+    const profile = getSolutionCapacityProfile(solution, capacitySnapshot);
+    return Boolean(profile?.values?.criblIngestionExplicit) && Boolean(profile?.criblIngestion);
+}
+
 function buildSyntheticInfrastructureSolution(fieldPack = '') {
     const normalizedFieldPack = String(fieldPack || '').trim() || 'shared-infrastructure';
     const solutionName = formatFieldPackDisplayName(normalizedFieldPack) || 'Shared Infrastructure';
@@ -3515,7 +3524,7 @@ function addGeneratedInfrastructureRows({
             latestEndWeek = Math.max(latestEndWeek, shiftedTerminalRow?.endWeek || phaseStartWeek);
         }
 
-        const joinRowId = taskRowIdMap.get(getPackJoinTaskId(fieldPack, generatedPlan?.summary?.criblActive));
+        const joinRowId = taskRowIdMap.get(getPackJoinTaskId(fieldPack, false));
         if (joinRowId) {
             terminalRowIds.push(joinRowId);
         }
@@ -4495,7 +4504,7 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
     const counters = new Map();
     const generatedFieldPackSolutions = solutions.filter((solution) => hasGeneratedFieldPack(solution));
     const generatedPlan = generatedFieldPackSolutions.length > 0
-        ? buildGeneratedGanttPlan(generatedFieldPackSolutions)
+        ? buildGeneratedGanttPlan(generatedFieldPackSolutions, capacitySnapshot)
         : null;
     const generatedConnectorTasksBySolutionId = (generatedPlan?.tasks || []).reduce((map, task) => {
         if (task?.shared || task?.phase !== 2 || !task?.connectorId) {
@@ -4537,8 +4546,12 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
             .sort((left, right) => {
                 // Cribl-dependent solutions sort first (immediately below Cribl Stream infra)
                 const criblActive = generatedPlan?.summary?.criblActive || false;
-                const leftJoin = hasGeneratedFieldPack(left) ? getPackJoinTaskId(left.fieldPack, criblActive) : null;
-                const rightJoin = hasGeneratedFieldPack(right) ? getPackJoinTaskId(right.fieldPack, criblActive) : null;
+                const leftJoin = hasGeneratedFieldPack(left)
+                    ? getPackJoinTaskId(left.fieldPack, isGeneratedPlanCriblRoutedSolution(left, capacitySnapshot, criblActive))
+                    : null;
+                const rightJoin = hasGeneratedFieldPack(right)
+                    ? getPackJoinTaskId(right.fieldPack, isGeneratedPlanCriblRoutedSolution(right, capacitySnapshot, criblActive))
+                    : null;
                 const CRIBL_JOIN = 'CRIBL-INFRA-02';
                 const leftCribl = leftJoin === CRIBL_JOIN ? 1 : 0;
                 const rightCribl = rightJoin === CRIBL_JOIN ? 1 : 0;
@@ -4561,7 +4574,14 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
                 ? createEngineBackedSolution(solution, generatedConnectorTasks)
                 : solution;
             const joinTaskId = usesGeneratedTasks
-                ? getPackJoinTaskId(solution.fieldPack, generatedPlan?.summary?.criblActive)
+                ? getPackJoinTaskId(
+                    solution.fieldPack,
+                    isGeneratedPlanCriblRoutedSolution(
+                        solution,
+                        capacitySnapshot,
+                        generatedPlan?.summary?.criblActive || false
+                    )
+                )
                 : '';
             const joinRowId = joinTaskId ? generatedInfraPlan.taskRowIdMap.get(joinTaskId) : '';
             const defaultDependencies = usesGeneratedTasks && joinRowId

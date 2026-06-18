@@ -196,3 +196,11 @@
 - `css/style.css` — Task Name column fallback width increased
 
 **Decisions recorded:** `decisions.md` (2026-06-17 K — Cribl sizing signal and explicit routing)
+
+## Learnings
+
+### 2026-06-18T10:15:33+02:00 — Per-connector Cribl routing in generated Gantt plans
+
+- `js/modules/gantt-tasks.js` must receive the live `capacitySnapshot` so syslog/CEF routing follows each connector's saved `criblIngestionExplicit` + `criblIngestion` choice instead of the global Cribl toggle.
+- Mixed syslog/CEF estates need both infra packs when preferences split: keep `CEF-INFRA` for VM/AMA connectors and generate `CRIBL-INFRA` only for explicitly Cribl-routed connectors.
+- `js/gantt-planner.js` also has to derive generated join dependencies from the same per-connector rule; otherwise VM-routed syslog connectors still sort under and depend on the Cribl join row.

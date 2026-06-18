@@ -1,3 +1,5 @@
+import { getSolutionCapacityProfile } from './capacity.js?v=18';
+
 /**
  * gantt-tasks.js — Sentinel Onboarding Planner
  * Task generation engine: converts selected connectors into a structured Gantt task plan.
@@ -45,7 +47,7 @@ export const FIELD_PACK = {
 
 /**
  * Connector IDs (from solutions.json) that are treated as Cribl Stream itself.
- * Selecting any of these activates Cribl infrastructure and suppresses CEF-INFRA.
+ * Selecting any of these activates Cribl infrastructure for opted-in syslog/CEF connectors.
  */
 const CRIBL_CONNECTOR_IDS = new Set(['cribl-stream']);
 
@@ -868,6 +870,11 @@ export function inferFieldPack(connector) {
     return FIELD_PACK.NATIVE_DIRECT;
 }
 
+function isConnectorCriblRouted(connector = {}, capacitySnapshot = {}) {
+    const profile = getSolutionCapacityProfile(connector, capacitySnapshot);
+    return Boolean(profile?.values?.criblIngestionExplicit) && Boolean(profile?.criblIngestion);
+}
+
 // ---------------------------------------------------------------------------
 // Connector abbreviation generator
 // ---------------------------------------------------------------------------
@@ -1402,6 +1409,7 @@ function applyDurationOverride(task, overrides) {
  *   → Phase 4 (OPS-01, OPS-02, OPS-03)
  *
  * @param {Array<Object>} selectedConnectors - connector/solution objects from solutions.json
+ * @param {Object} [capacitySnapshot={}] - saved sizing state used for per-connector routing
  * @returns {{
  *   tasks: Array<Object>,
  *   phases: Array<{phase: number, name: string, taskIds: string[]}>,
@@ -1416,7 +1424,7 @@ function applyDurationOverride(task, overrides) {
  *   }
  * }}
  */
-export function buildGanttPlan(selectedConnectors) {
+export function buildGanttPlan(selectedConnectors, capacitySnapshot = {}) {
     resetAbbrevRegistry();
 
     const connectors = Array.isArray(selectedConnectors) ? selectedConnectors : [];
@@ -1438,8 +1446,7 @@ export function buildGanttPlan(selectedConnectors) {
     for (const connector of taskableConnectors) {
         const pack = inferFieldPack(connector);
         if (pack) {
-            // If Cribl is active, syslog-cef connectors use the Cribl pack for infra.
-            const effectivePack = (criblActive && pack === FIELD_PACK.SYSLOG_CEF)
+            const effectivePack = (criblActive && pack === FIELD_PACK.SYSLOG_CEF && isConnectorCriblRouted(connector, capacitySnapshot))
                 ? FIELD_PACK.CRIBL
                 : pack;
             packsNeeded.add(effectivePack);
@@ -1451,9 +1458,14 @@ export function buildGanttPlan(selectedConnectors) {
         }
     }
 
-    // If Cribl is active and Cribl pack is not yet queued (possible if only Cribl Stream itself
-    // was selected with no CEF connectors), still add it so the infra block generates.
-    if (criblActive) packsNeeded.add(FIELD_PACK.CRIBL);
+    const hasCriblRoutedConnector = [...connectorPackMap.values()].some((packInfo) => packInfo.infraPack === FIELD_PACK.CRIBL);
+    const hasSyslogCefConnector = [...connectorPackMap.values()].some((packInfo) => packInfo.sourcePack === FIELD_PACK.SYSLOG_CEF);
+
+    // Preserve standalone Cribl infra when only Cribl Stream itself is selected, but avoid
+    // generating the Cribl infra pack when no syslog/CEF connector actually routes through it.
+    if (criblActive && (hasCriblRoutedConnector || (!hasSyslogCefConnector && taskableConnectors.length === 0))) {
+        packsNeeded.add(FIELD_PACK.CRIBL);
+    }
 
     // 4. Precompute abbreviations + universal permission tasks per connector.
     const connectorTaskMeta = taskableConnectors.map((connector) => {
@@ -1494,9 +1506,6 @@ export function buildGanttPlan(selectedConnectors) {
     for (const pack of PACK_ORDER) {
         if (!packsNeeded.has(pack)) continue;
 
-        // If Cribl is active, skip CEF-INFRA entirely
-        if (criblActive && pack === FIELD_PACK.SYSLOG_CEF) continue;
-
         const packPermissionTaskIds = connectorTaskMeta
             .filter(({ connector }) => {
                 const packInfo = connectorPackMap.get(connector.id);
@@ -1523,15 +1532,17 @@ export function buildGanttPlan(selectedConnectors) {
         const packInfo = connectorPackMap.get(connector.id);
         if (!packInfo) continue;
 
+        const criblRouted = Boolean(
+            criblActive
+            && packInfo.sourcePack === FIELD_PACK.SYSLOG_CEF
+            && isConnectorCriblRouted(connector, capacitySnapshot)
+        );
         const joinTaskId = packInfo.minimalPack
             ? 'SETUP-02'
-            : (criblActive && packInfo.sourcePack === FIELD_PACK.SYSLOG_CEF
-                ? PACK_JOIN_TASK[FIELD_PACK.CRIBL]
-                : PACK_JOIN_TASK[packInfo.infraPack]);
+            : PACK_JOIN_TASK[packInfo.infraPack];
 
         if (!joinTaskId) continue;
 
-        const criblRouted = Boolean(criblActive && packInfo.sourcePack === FIELD_PACK.SYSLOG_CEF);
         const pcTasks = buildPerConnectorTasks(connector, abbrev, joinTaskId, permissionTaskId, { criblRouted });
 
         for (const task of pcTasks) {
