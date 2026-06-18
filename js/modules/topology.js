@@ -1777,8 +1777,28 @@ export function renderTopology(selectedSolutions, containerEl) {
               height: sentinelNodeHeight
           }
       });
-      edges.push(buildMiddleEdge(CRIBL_NODE_ID_TOP, 'sentinel', PATH_CONFIGS.cribl.color, 'top', {
-          id: `e-${CRIBL_NODE_ID_TOP}--sentinel`
+      // DCR node between Cribl Stream and Sentinel (Logs Ingestion API requires a DCR)
+      const criblDcrTopId = 'cribl-dcr-top';
+      nodes.push({
+          id: criblDcrTopId,
+          type: 'dcr',
+          position: {
+              x: clampNodeX(criblTopCenterX - (dcrNodeWidth / 2), dcrNodeWidth),
+              y: getTopLayerY(2)
+          },
+          data: {
+              label: 'Custom DCR (Logs Ingestion API)',
+              color: PATH_CONFIGS.cribl.color,
+              band: 'top',
+              status: criblNodeStatus
+          },
+          style: { width: dcrNodeWidth }
+      });
+      edges.push(buildMiddleEdge(CRIBL_NODE_ID_TOP, criblDcrTopId, PATH_CONFIGS.cribl.color, 'top', {
+          id: `e-${CRIBL_NODE_ID_TOP}--${criblDcrTopId}`
+      }));
+      edges.push(buildMiddleEdge(criblDcrTopId, 'sentinel', PATH_CONFIGS.cribl.color, 'top', {
+          id: `e-${criblDcrTopId}--sentinel`
       }));
   }
 
@@ -1803,8 +1823,28 @@ export function renderTopology(selectedSolutions, containerEl) {
               height: sentinelNodeHeight
           }
       });
-      edges.push(buildMiddleEdge(CRIBL_NODE_ID_BOTTOM, 'sentinel', PATH_CONFIGS.cribl.color, 'bottom', {
-          id: `e-${CRIBL_NODE_ID_BOTTOM}--sentinel`
+      // DCR node between Cribl Stream and Sentinel (bottom band)
+      const criblDcrBottomId = 'cribl-dcr-bottom';
+      nodes.push({
+          id: criblDcrBottomId,
+          type: 'dcr',
+          position: {
+              x: clampNodeX(criblBottomCenterX - (dcrNodeWidth / 2), dcrNodeWidth),
+              y: getBottomLayerY(2)
+          },
+          data: {
+              label: 'Custom DCR (Logs Ingestion API)',
+              color: PATH_CONFIGS.cribl.color,
+              band: 'bottom',
+              status: connectedSolutionIds.has(CRIBL_SOLUTION_ID) ? 'existing' : 'new'
+          },
+          style: { width: dcrNodeWidth }
+      });
+      edges.push(buildMiddleEdge(CRIBL_NODE_ID_BOTTOM, criblDcrBottomId, PATH_CONFIGS.cribl.color, 'bottom', {
+          id: `e-${CRIBL_NODE_ID_BOTTOM}--${criblDcrBottomId}`
+      }));
+      edges.push(buildMiddleEdge(criblDcrBottomId, 'sentinel', PATH_CONFIGS.cribl.color, 'bottom', {
+          id: `e-${criblDcrBottomId}--sentinel`
       }));
   }
 
