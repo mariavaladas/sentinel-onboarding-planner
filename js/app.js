@@ -1,5 +1,5 @@
 import { exportToExcel } from './modules/export.js?v=16';
-import { initGanttPlanner } from './gantt-planner.js?v=27';
+import { initGanttPlanner } from './gantt-planner.js?v=28';
 import { renderMitreCoverage } from './modules/mitre.js?v=16';
 import { handleNlpInput, handleNlpKeydown } from './modules/search.js?v=17';
 import {

@@ -2562,7 +2562,7 @@ body {
 
 .gantt-layout {
     display: grid;
-    grid-template-columns: 320px 12px minmax(0, 1fr);
+    grid-template-columns: 420px 12px minmax(0, 1fr);
     width: 100%;
     min-width: 0;
     align-items: start;
@@ -4992,7 +4992,7 @@ body.is-resizing-gantt {
 
 @media (max-width: 1200px) {
     .gantt-layout {
-        grid-template-columns: 300px 12px minmax(0, 1fr);
+        grid-template-columns: 360px 12px minmax(0, 1fr);
     }
 
     .gantt-table-inline-trigger {

@@ -1904,6 +1904,15 @@ function getDurationOverrideState() {
         }
 
         const parsed = JSON.parse(rawValue);
+
+        // Version mismatch — discard stale state to prevent broken durations
+        if (!parsed || parsed.version !== DURATION_OVERRIDE_STATE_VERSION) {
+            window.localStorage.removeItem(DURATION_OVERRIDE_STORAGE_KEY);
+            durationOverrideState = emptyState;
+            durationOverridesPersistToStorage = true;
+            return durationOverrideState;
+        }
+
         durationOverrideState = {
             ...emptyState,
             ...(parsed && typeof parsed === 'object' ? parsed : {}),
