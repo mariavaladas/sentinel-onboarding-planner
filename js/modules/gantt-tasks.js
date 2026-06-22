@@ -50,7 +50,7 @@ export const FIELD_PACK = {
  * Connector IDs (from solutions.json) that are treated as Cribl Stream itself.
  * Selecting any of these activates Cribl infrastructure for opted-in syslog/CEF connectors.
  */
-const CRIBL_CONNECTOR_IDS = new Set(['cribl-stream']);
+const CRIBL_CONNECTOR_IDS = new Set(['cribl-stream', 'cribl']);
 
 /**
  * Connector IDs that use the shared GCP Pub/Sub infrastructure pattern.
@@ -993,19 +993,20 @@ const KNOWN_ABBREVS = {
     'windows-dns-events-via-ama': 'WDNS',
     'sysmon-via-ama': 'SYSMON',
     'cisco-asa-2': 'ASA',
-    'cisco-firepower': 'FPW',
-    'cisco-meraki': 'MERAKI',
-    'palo-alto-networks': 'PAN',
+    'cisco-firepower-e-streamer': 'FPW',
+    'cisco-meraki-events-via-rest-api': 'MERAKI',
+    'palo-alto-cdl': 'PAN',
     'azure-cloud-ngfw-by-palo-alto-networks': 'PAN-NGFW',
     'palo-alto-prisma-cloud-2': 'PRISMA',
-    'fortinet-fortigate': 'FORTI',
+    'fortinet-forti-gate-next-generation-firewall-connector-for-microsoft-sentinel': 'FORTI',
     'f5-big-ip': 'F5',
     'checkpoint': 'CHKP',
     'barracuda-waf': 'BWAF',
     'common-event-format': 'CEF',
     'linux-syslog': 'LSYS',
     'microsoft-sysmon-for-linux': 'SYSML',
-    'cribl-stream': 'CRIBL'
+    'cribl-stream': 'CRIBL',
+    'cribl': 'CRIBL'
 };
 
 /**
@@ -1230,7 +1231,7 @@ const PER_CONNECTOR_OVERRIDES = {
         ],
         sourceCfgHours: 1.5
     },
-    'palo-alto-networks': {
+    'palo-alto-cdl': {
         sourceCfgName: 'Configure PAN-OS syslog profile',
         sourceCfgSubtasks: [
             'Create syslog server profile in PAN-OS (Panorama or device-level)',

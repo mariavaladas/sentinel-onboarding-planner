@@ -41465,7 +41465,8 @@
           },
           "is_connector": true,
           "category": "identity-access",
-          "isFeatured": false
+          "isFeatured": false,
+          "fieldPack": "cribl-intermediary"
         },
         {
           "id": "dynatrace",

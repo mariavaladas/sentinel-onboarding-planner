@@ -2591,7 +2591,7 @@ export function clearConnectorCriblIngestion() {
     if (typeof window !== 'undefined') {
         window.dispatchEvent(new CustomEvent('sentinelPlanner:capacity-changed', {
             detail: {
-                solutionId: 'cribl-stream',
+                solutionId: 'cribl',
                 cleared: true
             }
         }));
