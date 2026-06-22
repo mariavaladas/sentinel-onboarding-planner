@@ -26,7 +26,7 @@ const PATH_CONFIGS = {
 
 const ZONE_CONFIGS = {
     onprem: { label: '🏢 On-Premises', color: '#f59e0b' },
-    azure: { label: '⛅ Azure', color: '#0078d4' },
+    azure: { label: '⛅ Azure & Microsoft 365', color: '#0078d4' },
     saas: { label: '☁️ 3rd Party Cloud / SaaS', color: '#8b5cf6' }
 };
 
@@ -554,8 +554,8 @@ function getZonesForType(type, capacitySnapshot = {}) {
             ...(fallbackOnPremPercent < 100 ? ['azure'] : [])
         ];
     }
-    if (type === 'azure_native' || type === 'event_hub') return ['azure'];
-    if (type === 'direct' || type === 'api' || type === 'logic_app') return ['saas'];
+    if (type === 'azure_native' || type === 'event_hub' || type === 'direct') return ['azure'];
+    if (type === 'api' || type === 'logic_app') return ['saas'];
     if (type === 'windows_events') {
         const windowsState = getWindowsEnvironmentPresence(capacitySnapshot);
         const zones = [];
