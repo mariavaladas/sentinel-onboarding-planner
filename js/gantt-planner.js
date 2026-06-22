@@ -15,7 +15,7 @@ import {
     formatTaskDuration as formatGeneratedTaskDuration,
     parseDurationToHours as parseGeneratedTaskDurationToHours,
     getPackJoinTaskId
-} from './modules/gantt-tasks.js?v=17';
+} from './modules/gantt-tasks.js?v=18';
 import { calculatePriorityScore, getPhase } from './modules/scoring.js?v=16';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
@@ -27,7 +27,7 @@ const BUSINESS_DAY_START_HOUR = 9;
 const BUSINESS_DAY_END_HOUR = BUSINESS_DAY_START_HOUR + HOURS_PER_DAY;
 const GENERAL_SENTINEL_DOC_URL = 'https://learn.microsoft.com/en-us/azure/sentinel/';
 const DURATION_OVERRIDE_STORAGE_KEY = 'sentinelPlanner.taskDurationOverrides.v1';
-const DURATION_OVERRIDE_STATE_VERSION = 7;
+const DURATION_OVERRIDE_STATE_VERSION = 8;
 const DATE_FORMAT_STORAGE_KEY = 'sentinelPlanner.dateFormat.v1';
 const TABLE_DATE_FORMAT = 'MM/DD/YYYY';
 const START_WEEK_MIN = 1;
