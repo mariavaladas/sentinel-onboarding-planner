@@ -3121,7 +3121,7 @@ function createSolutionItem(solution, recommendedIds = new Set()) {
         mandatoryBadge.className = 'existing-connector-badge';
         mandatoryBadge.style.background = 'var(--accent-primary, #4fc3f7)';
         mandatoryBadge.style.color = '#000';
-        mandatoryBadge.textContent = '⚡ USX Required';
+        mandatoryBadge.textContent = '⚡ Required to onboard Sentinel to Defender';
         mandatoryBadge.title = 'Mandatory for all new customers as part of the Unified SecOps (USX) motion';
         name.appendChild(mandatoryBadge);
     }
