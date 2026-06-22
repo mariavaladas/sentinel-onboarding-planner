@@ -42,7 +42,8 @@ export const FIELD_PACK = {
     NATIVE_DIRECT: 'native-direct',
     DIAGNOSTIC_SETTINGS: 'diagnostic-settings',
     API_CCP: 'api-ccp',
-    AZURE_FUNCTION: 'azure-function'
+    AZURE_FUNCTION: 'azure-function',
+    GCP_PUBSUB: 'gcp-pubsub'
 };
 
 /**
@@ -50,6 +51,30 @@ export const FIELD_PACK = {
  * Selecting any of these activates Cribl infrastructure for opted-in syslog/CEF connectors.
  */
 const CRIBL_CONNECTOR_IDS = new Set(['cribl-stream']);
+
+/**
+ * Connector IDs that use the shared GCP Pub/Sub infrastructure pattern.
+ * These connectors share IAM service account + Pub/Sub topic/subscription setup.
+ */
+const GCP_PUBSUB_CONNECTOR_IDS = new Set([
+    'google-cloud-platform-audit-logs',
+    'google-cloud-platform-dns',
+    'google-cloud-platform-iam',
+    'google-cloud-platform-security-command-center',
+    'google-cloud-platform-firewall-logs',
+    'google-cloud-platform-vpc-flow-logs',
+    'google-cloud-platform-load-balancer-logs',
+    'google-cloud-platform-big-query',
+    'google-cloud-platform-cdn',
+    'google-cloud-platform-cloud-monitoring',
+    'google-cloud-platform-cloud-run',
+    'google-cloud-platform-compute-engine',
+    'google-cloud-platform-nat',
+    'google-cloud-platform-resource-manager',
+    'google-cloud-platform-sql',
+    'google-cloud-platform-ids',
+    'google-kubernetes-engine'
+]);
 
 /**
  * The last (join-node) infra task per field pack. Per-connector tasks depend on this.
@@ -60,7 +85,8 @@ const PACK_JOIN_TASK = {
     [FIELD_PACK.WINDOWS_AMA]: 'WIN-INFRA-04',
     [FIELD_PACK.WEC_WEF]: 'WEC-INFRA-05',
     [FIELD_PACK.AMA_CUSTOM_LOGS]: 'CL-INFRA-03',
-    [FIELD_PACK.CRIBL]: 'CRIBL-INFRA-02'
+    [FIELD_PACK.CRIBL]: 'CRIBL-INFRA-02',
+    [FIELD_PACK.GCP_PUBSUB]: 'GCP-INFRA-03'
 };
 
 // ---------------------------------------------------------------------------
@@ -459,6 +485,71 @@ export const TASK_CATALOG = {
     },
 
     // -----------------------------------------------------------------------
+    // Phase 1 — GCP Pub/Sub shared infrastructure (done once for all GCP connectors)
+    // -----------------------------------------------------------------------
+    'GCP-INFRA-01': {
+        id: 'GCP-INFRA-01',
+        name: 'Create GCP service account and enable APIs',
+        description: 'Create a dedicated service account for Sentinel ingestion and enable required GCP APIs',
+        phase: 1,
+        category: 'INFRA',
+        fieldPack: FIELD_PACK.GCP_PUBSUB,
+        shared: true,
+        duration: '2h',
+        durationHours: 2,
+        ownerRole: 'GCP Cloud Admin',
+        dependsOn: ['SETUP-02'],
+        subtasks: [
+            'Create a dedicated service account for Microsoft Sentinel ingestion',
+            'Assign roles/logging.viewer, roles/browser, and roles/pubsub.subscriber',
+            'Enable Cloud Resource Manager API and Cloud Logging API'
+        ],
+        configurable: false,
+        configurableNote: null
+    },
+    'GCP-INFRA-02': {
+        id: 'GCP-INFRA-02',
+        name: 'Create Pub/Sub topic, subscription, and log sink',
+        description: 'Set up the shared GCP log routing infrastructure for Sentinel',
+        phase: 1,
+        category: 'INFRA',
+        fieldPack: FIELD_PACK.GCP_PUBSUB,
+        shared: true,
+        duration: '2h',
+        durationHours: 2,
+        ownerRole: 'GCP Cloud Admin',
+        dependsOn: ['GCP-INFRA-01'],
+        subtasks: [
+            'Create a Pub/Sub topic for Sentinel log ingestion',
+            'Create a pull subscription on the topic with appropriate message retention',
+            'Configure an organization-level log sink to route selected log types to the topic',
+            'Grant the service account permissions on the subscription'
+        ],
+        configurable: false,
+        configurableNote: null
+    },
+    'GCP-INFRA-03': {
+        id: 'GCP-INFRA-03',
+        name: 'Validate GCP Pub/Sub pipeline',
+        description: 'Confirm logs are flowing from GCP through Pub/Sub and reachable by Sentinel',
+        phase: 1,
+        category: 'INFRA',
+        fieldPack: FIELD_PACK.GCP_PUBSUB,
+        shared: true,
+        duration: '30m',
+        durationHours: 0.5,
+        ownerRole: 'GCP Cloud Admin',
+        dependsOn: ['GCP-INFRA-02'],
+        subtasks: [
+            'Trigger a test action in GCP (e.g., create/delete a test resource)',
+            'Verify the event appears in the Pub/Sub subscription via GCP Console',
+            'Confirm the service account can pull messages from the subscription'
+        ],
+        configurable: false,
+        configurableNote: null
+    },
+
+    // -----------------------------------------------------------------------
     // Phase 1 — Cribl Pack infrastructure (Sentinel-side only; replaces CEF-INFRA when active)
     // -----------------------------------------------------------------------
     'CRIBL-INFRA-01': {
@@ -848,6 +939,8 @@ export function inferFieldPack(connector) {
     const id = String(connector?.id || '').toLowerCase().trim();
 
     if (CRIBL_CONNECTOR_IDS.has(id)) return FIELD_PACK.CRIBL;
+
+    if (GCP_PUBSUB_CONNECTOR_IDS.has(id)) return FIELD_PACK.GCP_PUBSUB;
 
     const populationKind = String(connector?.server_population_kind || '').toLowerCase();
     if (populationKind === 'wec') return FIELD_PACK.WEC_WEF;
@@ -1339,6 +1432,46 @@ function buildPerConnectorTasks(connector, abbrev, dependencyTaskId, permissionT
         // Fall through to generic minimal-pack path when no types are selected
     }
 
+    // GCP Pub/Sub connectors: shared infra is handled by GCP-INFRA tasks,
+    // per-connector tasks just configure the specific connector in Sentinel + validate.
+    if (fieldPack === FIELD_PACK.GCP_PUBSUB) {
+        return [
+            {
+                ...base,
+                id: pc01Id,
+                name: `${name} — Configure connector in Sentinel`,
+                description: 'Add GCP project credentials and configure the connector in Sentinel',
+                category: 'SENT-CFG',
+                duration: '30m',
+                durationHours: 0.5,
+                ownerRole: 'SOC Engineers',
+                dependsOn: entryDependsOn,
+                subtasks: [
+                    `Open Microsoft Sentinel → Data Connectors → ${name}`,
+                    'Provide GCP project ID, Pub/Sub subscription name, and service account credentials',
+                    'Configure the log sink filter for this specific log type (if not already routed)',
+                    'Confirm the connector reports as Connected'
+                ]
+            },
+            {
+                ...base,
+                id: pc02Id,
+                name: `${name} — Validate Data Flow`,
+                description: 'Verify GCP logs are arriving in the target Sentinel table',
+                category: 'VALID',
+                duration: '15m',
+                durationHours: 0.25,
+                ownerRole: 'SOC Analysts',
+                dependsOn: [pc01Id],
+                subtasks: [
+                    'Query the target table to confirm events are flowing',
+                    'Verify timestamps, service names, and principal emails are populated',
+                    'Spot-check a recent GCP action to confirm end-to-end visibility'
+                ]
+            }
+        ];
+    }
+
     if (fieldPack === FIELD_PACK.NATIVE_DIRECT) {
         return [
             {
@@ -1662,6 +1795,7 @@ export function buildGanttPlan(selectedConnectors, capacitySnapshot = {}) {
 
     // Phase 1 — one infra block per required field pack
     const PACK_ORDER = [
+        FIELD_PACK.GCP_PUBSUB,
         FIELD_PACK.WINDOWS_AMA,
         FIELD_PACK.WEC_WEF,
         FIELD_PACK.SYSLOG_CEF,

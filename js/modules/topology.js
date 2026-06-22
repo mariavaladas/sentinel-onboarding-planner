@@ -15,7 +15,7 @@ const TOPOLOGY_LOGOS = {
 const PATH_CONFIGS = {
     syslog_cef: { color: '#f59e0b', sourceLabel: 'On-Premises / IaaS', sourceIcon: '🖥️', logoUrl: TOPOLOGY_LOGOS.linux, pathType: 'server', serverLabel: 'Linux Forwarder', agentLabel: 'AMA Agent', serverOs: 'linux', dcr: 'DCR: Syslog/CEF', protocol: 'Syslog / CEF' },
     linux_server: { color: '#22c55e', sourceLabel: 'Linux Servers', sourceIcon: '🐧', logoUrl: TOPOLOGY_LOGOS.linux, pathType: 'server', serverLabel: 'Linux Server', agentLabel: 'AMA Agent', serverOs: 'linux', dcr: 'Linux DCR', protocol: 'Syslog (via AMA)' },
-    api: { color: '#8b5cf6', sourceLabel: 'Cloud / SaaS Vendors', sourceIcon: '☁️', pathType: 'boxes', pathBoxes: [{ icon: '🔌', label: 'CCP / API Connector' }], dcr: 'DCR: Custom Tables', protocol: 'REST API (Polling)' },
+    api: { color: '#8b5cf6', sourceLabel: 'Cloud / SaaS Vendors', sourceIcon: '☁️', pathType: 'boxes', pathBoxes: [{ icon: '🔌', label: 'CCP / API Connector' }], dcr: 'DCR', protocol: 'REST API (Polling)' },
     azure_native: { color: '#0078d4', sourceLabel: 'Azure Resources', sourceIcon: '⛅', logoUrl: TOPOLOGY_LOGOS.azure, pathType: 'boxes', pathBoxes: [{ icon: '⚙️', label: 'Diagnostic Settings' }], dcr: null, protocol: 'Azure Resource Manager' },
     direct: { color: '#10b981', sourceLabel: 'Microsoft 365 / Defender', sourceIcon: '🛡️', logoUrl: TOPOLOGY_LOGOS.microsoft365, pathType: 'boxes', pathBoxes: [{ icon: '⚡', label: 'Native Connector' }], dcr: null, protocol: 'Direct Integration' },
     logic_app: { color: '#ec4899', sourceLabel: 'Custom / Third-Party APIs', sourceIcon: '🔗', pathType: 'boxes', pathBoxes: [{ icon: '⚙️', label: 'Logic App / Function' }, { icon: '📡', label: 'Data Collector API' }], dcr: 'DCR: Custom Logs', protocol: 'HTTP (Webhook/Poll)' },
@@ -2526,12 +2526,15 @@ export function renderTopology(selectedSolutions, containerEl) {
             // Per-solution badge respects the verified source-level status.
             // If the source has no proven VM+DCR path (status='new'), don't show CONNECTED badges.
             const solStatus = (status === 'new') ? 'new' : getSolutionStatus(s);
+            const hasContent = (s.analytics || 0) + (s.workbooks || 0) + (s.playbooks || 0) > 0;
             const statusLabel = solStatus === 'connected' ? 'CONNECTED'
                 : solStatus === 'connected-idle' ? 'IDLE'
+                : solStatus === 'new' && !hasContent ? 'CONNECTOR ONLY'
                 : solStatus === 'new' ? 'NEW'
                 : null;
+            const statusClass = solStatus === 'new' && !hasContent ? 'connector-only' : solStatus;
             const statusEl = statusLabel
-                ? h('span', { className: `rf-sol-inline-status rf-sol-inline-status--${solStatus}` }, statusLabel)
+                ? h('span', { className: `rf-sol-inline-status rf-sol-inline-status--${statusClass}` }, statusLabel)
                 : null;
             return h('div', { key: i, className: 'rf-source-item', style: { borderLeftColor: pc.color } },
                 h('div', { className: 'rf-source-name' }, s.name),

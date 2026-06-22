@@ -30067,8 +30067,8 @@
             "governance"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -30080,81 +30080,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpa-prereqs",
-                "order": 1,
-                "task": "GCP prerequisites & IAM for Google Cloud Platform Audit Logs",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a service account with Pub/Sub Subscriber and Log Viewer roles. Enable the Google Cloud Platform Audit Logs log type in Cloud Logging if not already active."
-              },
-              {
-                "id": "gcpa-infra",
-                "order": 2,
-                "task": "Log sink & Pub/Sub topic for Google Cloud Platform Audit Logs",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpa-prereqs"
-                ],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a log export sink filtered to Google Cloud Platform Audit Logs events routing to a Pub/Sub topic. Create a subscription for the Sentinel connector to pull from."
-              },
-              {
-                "id": "gcpa-verify",
-                "order": 3,
-                "task": "Configure GCP connector in Sentinel for Google Cloud Platform Audit Logs",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcpa-infra"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the GCP connector in Sentinel with the project ID, subscription name, and service account credentials."
-              },
-              {
-                "id": "gcpa-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform Audit Logs ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpa-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Audit and Logs tables to confirm recent Google Cloud Platform Audit Logs records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling analytics."
-              },
-              {
-                "id": "gcpa-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform Audit Logs content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpa-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules and workbooks from the Google Cloud Platform Audit Logs content hub package."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform Audit Logs records appear in the Audit and Logs tables within the connector's normal service latency window.",
               "Run a simple KQL query against the Audit and Logs tables to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -30236,8 +30161,8 @@
             "data"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -30249,96 +30174,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpb-prereqs",
-                "order": 1,
-                "task": "GCP prerequisites & IAM for Google Cloud Platform Big Query",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a service account with Pub/Sub Subscriber and Log Viewer roles. Enable the Google Cloud Platform Big Query log type in Cloud Logging if not already active."
-              },
-              {
-                "id": "gcpb-infra",
-                "order": 2,
-                "task": "Log sink & Pub/Sub topic for Google Cloud Platform Big Query",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpb-prereqs"
-                ],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a log export sink filtered to Google Cloud Platform Big Query events routing to a Pub/Sub topic. Create a subscription for the Sentinel connector to pull from."
-              },
-              {
-                "id": "gcpb-verify",
-                "order": 3,
-                "task": "Configure GCP connector in Sentinel for Google Cloud Platform Big Query",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcpb-infra"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the GCP connector in Sentinel with the project ID, subscription name, and service account credentials."
-              },
-              {
-                "id": "gcpb-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform Big Query ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpb-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the expected Sentinel table(s) to confirm recent Google Cloud Platform Big Query records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling playbooks."
-              },
-              {
-                "id": "gcpb-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform Big Query content hub package",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpb-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules and workbooks from the Google Cloud Platform Big Query content hub package."
-              },
-              {
-                "id": "gcpb-playbooks",
-                "order": 6,
-                "task": "Configure Google Cloud Platform Big Query playbooks and automation rules",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpb-content"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy the 4 included Logic App playbooks. Authorize API connections (e.g., Teams, M365, Sentinel) for each playbook. Attach playbooks to automation rules for automatic incident enrichment or response."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform Big Query records appear in the expected Sentinel table(s) within the connector's normal service latency window.",
               "Run a simple KQL query against the expected Sentinel table(s) to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -30419,8 +30254,8 @@
             "api"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -30432,81 +30267,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpc-prereqs",
-                "order": 1,
-                "task": "Prerequisites & API credentials for Google Cloud Platform CDN",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "Google Cloud Admin",
-                "description": "Obtain API credentials (key, OAuth client, or service account) from the Google Cloud Platform CDN admin console. Confirm the account has read-only audit/event API access."
-              },
-              {
-                "id": "gcpc-connector",
-                "order": 2,
-                "task": "Configure Google Cloud Platform CDN data connector in Microsoft Sentinel",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpc-prereqs"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the Google Cloud Platform CDN data connector in Microsoft Sentinel. Provide the API endpoint, credentials, and select the log types to ingest."
-              },
-              {
-                "id": "gcpc-verify",
-                "order": 3,
-                "task": "Verify initial Google Cloud Platform CDN data flow",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcpc-connector"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Confirm events from Google Cloud Platform CDN appear in the target Log Analytics table within 15 minutes of connector activation. Check record count and schema."
-              },
-              {
-                "id": "gcpc-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform CDN ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpc-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Audit, Logging, and Technologies tables to confirm recent Google Cloud Platform CDN records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling the remaining onboarding tasks."
-              },
-              {
-                "id": "gcpc-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform CDN content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpc-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules, workbooks, and playbooks from the Google Cloud Platform CDN content hub package. Tune rule thresholds to match the environment's event volume."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform CDN records appear in the Audit, Logging, and Technologies tables within the connector's normal service latency window.",
               "Run a simple KQL query against the Audit, Logging, and Technologies tables to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -30587,8 +30347,8 @@
             "api"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -30601,81 +30361,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpc-prereqs",
-                "order": 1,
-                "task": "Prerequisites & API credentials for Google Cloud Platform Cloud Monitoring",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "Google Cloud Admin",
-                "description": "Obtain API credentials (key, OAuth client, or service account) from the Google Cloud Platform Cloud Monitoring admin console. Confirm the account has read-only audit/event API access."
-              },
-              {
-                "id": "gcpc-connector",
-                "order": 2,
-                "task": "Configure Google Cloud Platform Cloud Monitoring data connector in Microsoft Sentinel",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpc-prereqs"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the Google Cloud Platform Cloud Monitoring data connector in Microsoft Sentinel. Provide the API endpoint, credentials, and select the log types to ingest."
-              },
-              {
-                "id": "gcpc-verify",
-                "order": 3,
-                "task": "Verify initial Google Cloud Platform Cloud Monitoring data flow",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcpc-connector"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Confirm events from Google Cloud Platform Cloud Monitoring appear in the target Log Analytics table within 15 minutes of connector activation. Check record count and schema."
-              },
-              {
-                "id": "gcpc-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform Cloud Monitoring ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpc-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Technologies table to confirm recent Google Cloud Platform Cloud Monitoring records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling the remaining onboarding tasks."
-              },
-              {
-                "id": "gcpc-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform Cloud Monitoring content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpc-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules, workbooks, and playbooks from the Google Cloud Platform Cloud Monitoring content hub package. Tune rule thresholds to match the environment's event volume."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform Cloud Monitoring records appear in the Technologies table within the connector's normal service latency window.",
               "Run a simple KQL query against the Technologies table to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -30756,8 +30441,8 @@
             "api"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -30769,81 +30454,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpc-prereqs",
-                "order": 1,
-                "task": "Prerequisites & API credentials for Google Cloud Platform Cloud Run",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "Google Cloud Admin",
-                "description": "Obtain API credentials (key, OAuth client, or service account) from the Google Cloud Platform Cloud Run admin console. Confirm the account has read-only audit/event API access."
-              },
-              {
-                "id": "gcpc-connector",
-                "order": 2,
-                "task": "Configure Google Cloud Platform Cloud Run data connector in Microsoft Sentinel",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpc-prereqs"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the Google Cloud Platform Cloud Run data connector in Microsoft Sentinel. Provide the API endpoint, credentials, and select the log types to ingest."
-              },
-              {
-                "id": "gcpc-verify",
-                "order": 3,
-                "task": "Verify initial Google Cloud Platform Cloud Run data flow",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcpc-connector"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Confirm events from Google Cloud Platform Cloud Run appear in the target Log Analytics table within 15 minutes of connector activation. Check record count and schema."
-              },
-              {
-                "id": "gcpc-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform Cloud Run ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpc-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Logging and Technologies tables to confirm recent Google Cloud Platform Cloud Run records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling the remaining onboarding tasks."
-              },
-              {
-                "id": "gcpc-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform Cloud Run content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpc-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules, workbooks, and playbooks from the Google Cloud Platform Cloud Run content hub package. Tune rule thresholds to match the environment's event volume."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform Cloud Run records appear in the Logging and Technologies tables within the connector's normal service latency window.",
               "Run a simple KQL query against the Logging and Technologies tables to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -30925,8 +30535,8 @@
             "api"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -30938,81 +30548,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpc-prereqs",
-                "order": 1,
-                "task": "Prerequisites & API credentials for Google Cloud Platform Compute Engine",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "Google Cloud Admin",
-                "description": "Obtain API credentials (key, OAuth client, or service account) from the Google Cloud Platform Compute Engine admin console. Confirm the account has read-only audit/event API access."
-              },
-              {
-                "id": "gcpc-connector",
-                "order": 2,
-                "task": "Configure Google Cloud Platform Compute Engine data connector in Microsoft Sentinel",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpc-prereqs"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the Google Cloud Platform Compute Engine data connector in Microsoft Sentinel. Provide the API endpoint, credentials, and select the log types to ingest."
-              },
-              {
-                "id": "gcpc-verify",
-                "order": 3,
-                "task": "Verify initial Google Cloud Platform Compute Engine data flow",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcpc-connector"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Confirm events from Google Cloud Platform Compute Engine appear in the target Log Analytics table within 15 minutes of connector activation. Check record count and schema."
-              },
-              {
-                "id": "gcpc-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform Compute Engine ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpc-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Audit and Technologies tables to confirm recent Google Cloud Platform Compute Engine records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling the remaining onboarding tasks."
-              },
-              {
-                "id": "gcpc-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform Compute Engine content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpc-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules, workbooks, and playbooks from the Google Cloud Platform Compute Engine content hub package. Tune rule thresholds to match the environment's event volume."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform Compute Engine records appear in the Audit and Technologies tables within the connector's normal service latency window.",
               "Run a simple KQL query against the Audit and Technologies tables to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -31095,8 +30630,8 @@
             "api"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -31110,67 +30645,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpdns-prereqs",
-                "order": 1,
-                "task": "Enable GCP Cloud DNS logging and configure log export to Pub/Sub",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "GCP Admin",
-                "description": "In Google Cloud Console, enable Cloud DNS query logging for the target DNS zones under DNS → Zones → Logging. Create a Cloud Logging export sink routing DNS query logs to a Pub/Sub topic or Cloud Storage bucket that the Sentinel connector can access via a GCP service account with Pub/Sub Subscriber or Storage Object Viewer permissions."
-              },
-              {
-                "id": "gcpdns-connector",
-                "order": 2,
-                "task": "Configure GCP DNS Sentinel connector",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpdns-prereqs"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy the Google Cloud Platform DNS connector in Sentinel, providing the GCP project ID and service account key JSON for the Pub/Sub subscription. Verify that DNS query events populate GCP_DNSLogs_CL with fields including queryName, queryType, responseCode, and sourceIP."
-              },
-              {
-                "id": "gcpdns-validate",
-                "order": 3,
-                "task": "Validate GCP DNS log ingestion",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpdns-connector"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query GCP_DNSLogs_CL to confirm zone coverage and verify DNS query volume aligns with GCP project-level DNS traffic expectations. Tune query rate anomaly detection thresholds to baseline normal GCP workload DNS patterns and exclude internal GCP service discovery queries.",
-                "duration_days": 0.5
-              },
-              {
-                "id": "gcpdns-analytics",
-                "order": 4,
-                "task": "Deploy GCP DNS analytics rules covering DNS-based threats",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpdns-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Enable the 11 included analytics rules for GCP Cloud DNS covering DNS tunnelling, DGA domain queries, high query rate anomalies, and queries to threat intelligence indicators from GCP_DNSLogs_CL. Review entity mapping for source IP and domain fields to ensure Sentinel incident generation includes accurate host and domain entities."
-              }
-            ],
             "validation_steps": [
               "Verify Google Cloud Platform DNS records appear in the expected Sentinel tables within the connector's normal service latency window.",
               "Run a simple KQL query to confirm Google Cloud Platform DNS entities, timestamps, and core fields are populated and parsable.",
@@ -31253,8 +30727,8 @@
             "governance"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -31268,81 +30742,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpf-prereqs",
-                "order": 1,
-                "task": "GCP prerequisites & IAM for Google Cloud Platform Firewall Logs",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a service account with Pub/Sub Subscriber and Log Viewer roles. Enable the Google Cloud Platform Firewall Logs log type in Cloud Logging if not already active."
-              },
-              {
-                "id": "gcpf-infra",
-                "order": 2,
-                "task": "Log sink & Pub/Sub topic for Google Cloud Platform Firewall Logs",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpf-prereqs"
-                ],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a log export sink filtered to Google Cloud Platform Firewall Logs events routing to a Pub/Sub topic. Create a subscription for the Sentinel connector to pull from."
-              },
-              {
-                "id": "gcpf-verify",
-                "order": 3,
-                "task": "Configure GCP connector in Sentinel for Google Cloud Platform Firewall Logs",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcpf-infra"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the GCP connector in Sentinel with the project ID, subscription name, and service account credentials."
-              },
-              {
-                "id": "gcpf-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform Firewall Logs ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpf-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Logs table to confirm recent Google Cloud Platform Firewall Logs records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling the remaining onboarding tasks."
-              },
-              {
-                "id": "gcpf-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform Firewall Logs content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpf-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules and workbooks from the Google Cloud Platform Firewall Logs content hub package."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform Firewall Logs records appear in the Logs table within the connector's normal service latency window.",
               "Run a simple KQL query against the Logs table to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -31426,8 +30825,8 @@
             "api"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -31441,96 +30840,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpi-prereqs",
-                "order": 1,
-                "task": "Create GCP service account, assign IAM roles, and enable the required GCP APIs.",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "GCP Cloud Admin",
-                "description": "In Google Cloud Console, create a dedicated service account for Sentinel integration and grant it the roles/pubsub.subscriber and roles/logging.configWriter IAM roles. Enable the Cloud Pub/Sub API and Cloud Logging API on the target GCP project. Download a JSON key for the service account — this credential will be used by the Sentinel GCP connector to authenticate to your Pub/Sub subscription."
-              },
-              {
-                "id": "gcpi-pubsub",
-                "order": 2,
-                "task": "Create the Pub/Sub topic, subscription, and log sink that routes GCP audit logs to Sentinel.",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [
-                  "gcpi-prereqs"
-                ],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a Pub/Sub topic (e.g., sentinel-gcp-logs) and a pull subscription with a 7-day message retention policy. Create a Log Sink using Cloud Logging export with the filter 'logName:(activity OR data_access OR system_event)' and set the sink destination to your Pub/Sub topic. This pipeline ensures GCP Admin Activity and Data Access audit logs flow into Sentinel's GCPAuditLogs table."
-              },
-              {
-                "id": "gcpi-connector",
-                "order": 3,
-                "task": "Configure the Google Cloud Platform IAM connector in Microsoft Sentinel.",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpi-pubsub"
-                ],
-                "owner_role": "GCP Cloud Admin",
-                "description": "In Microsoft Sentinel, open the Google Cloud Platform IAM connector and enter the GCP project ID, Pub/Sub subscription name, and the service account JSON key. Save the connector and verify within 10–20 minutes that the GCPAuditLogs table receives records and that the connector status shows Connected."
-              },
-              {
-                "id": "gcpi-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform IAM ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpi-connector"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Logging, Technologies, and GCPAuditLogs tables to confirm recent Google Cloud Platform IAM records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling analytics, workbooks, and playbooks."
-              },
-              {
-                "id": "gcpi-content",
-                "order": 5,
-                "task": "Deploy GCP analytics rules, workbook, and playbooks from the solution content pack.",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpi-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Enable the 10 GCP IAM analytics rules covering privilege escalation, service account key creation, IAM policy changes, and log sink modification. Deploy the GCP workbook for IAM activity dashboards. Deploy the 4 packaged playbooks for automated response to high-severity GCP IAM incidents, configuring the Logic App managed identity or API connections during deployment."
-              },
-              {
-                "id": "gcpi-playbooks",
-                "order": 6,
-                "task": "Configure Logic App API connections for the 4 GCP response playbooks.",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpi-content"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Open each deployed GCP playbook in the Logic Apps designer and authorize the Microsoft Sentinel and Microsoft Teams (or email) API connections. Attach the playbooks to Sentinel automation rules so they fire when GCP IAM analytics rules generate incidents. Test each connection by triggering a manual playbook run from a test incident."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform IAM records appear in the Logging, Technologies, and GCPAuditLogs tables within the connector's normal service latency window.",
               "Run a simple KQL query against the Logging, Technologies, and GCPAuditLogs tables to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -31611,8 +30920,8 @@
             "api"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -31624,81 +30933,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpi-prereqs",
-                "order": 1,
-                "task": "Prerequisites & API credentials for Google Cloud Platform IDS",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "Google Cloud Admin",
-                "description": "Obtain API credentials (key, OAuth client, or service account) from the Google Cloud Platform IDS admin console. Confirm the account has read-only audit/event API access."
-              },
-              {
-                "id": "gcpi-connector",
-                "order": 2,
-                "task": "Configure Google Cloud Platform IDS data connector in Microsoft Sentinel",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpi-prereqs"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the Google Cloud Platform IDS data connector in Microsoft Sentinel. Provide the API endpoint, credentials, and select the log types to ingest."
-              },
-              {
-                "id": "gcpi-verify",
-                "order": 3,
-                "task": "Verify initial Google Cloud Platform IDS data flow",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcpi-connector"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Confirm events from Google Cloud Platform IDS appear in the target Log Analytics table within 15 minutes of connector activation. Check record count and schema."
-              },
-              {
-                "id": "gcpi-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform IDS ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpi-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Audit, Threat, and Technologies tables to confirm recent Google Cloud Platform IDS records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling the remaining onboarding tasks."
-              },
-              {
-                "id": "gcpi-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform IDS content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpi-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules, workbooks, and playbooks from the Google Cloud Platform IDS content hub package. Tune rule thresholds to match the environment's event volume."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform IDS records appear in the Audit, Threat, and Technologies tables within the connector's normal service latency window.",
               "Run a simple KQL query against the Audit, Threat, and Technologies tables to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -31782,8 +31016,8 @@
             "data"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -31797,81 +31031,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpl-prereqs",
-                "order": 1,
-                "task": "GCP prerequisites & IAM for Google Cloud Platform Load Balancer Logs",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a service account with Pub/Sub Subscriber and Log Viewer roles. Enable the Google Cloud Platform Load Balancer Logs log type in Cloud Logging if not already active."
-              },
-              {
-                "id": "gcpl-infra",
-                "order": 2,
-                "task": "Log sink & Pub/Sub topic for Google Cloud Platform Load Balancer Logs",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpl-prereqs"
-                ],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a log export sink filtered to Google Cloud Platform Load Balancer Logs events routing to a Pub/Sub topic. Create a subscription for the Sentinel connector to pull from."
-              },
-              {
-                "id": "gcpl-verify",
-                "order": 3,
-                "task": "Configure GCP connector in Sentinel for Google Cloud Platform Load Balancer Logs",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcpl-infra"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the GCP connector in Sentinel with the project ID, subscription name, and service account credentials."
-              },
-              {
-                "id": "gcpl-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform Load Balancer Logs ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpl-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Logs table to confirm recent Google Cloud Platform Load Balancer Logs records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling the remaining onboarding tasks."
-              },
-              {
-                "id": "gcpl-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform Load Balancer Logs content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpl-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules and workbooks from the Google Cloud Platform Load Balancer Logs content hub package."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform Load Balancer Logs records appear in the Logs table within the connector's normal service latency window.",
               "Run a simple KQL query against the Logs table to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -31952,8 +31111,8 @@
             "api"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -31965,81 +31124,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpn-prereqs",
-                "order": 1,
-                "task": "Prerequisites & API credentials for Google Cloud Platform NAT",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "Google Cloud Admin",
-                "description": "Obtain API credentials (key, OAuth client, or service account) from the Google Cloud Platform NAT admin console. Confirm the account has read-only audit/event API access."
-              },
-              {
-                "id": "gcpn-connector",
-                "order": 2,
-                "task": "Configure Google Cloud Platform NAT data connector in Microsoft Sentinel",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpn-prereqs"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the Google Cloud Platform NAT data connector in Microsoft Sentinel. Provide the API endpoint, credentials, and select the log types to ingest."
-              },
-              {
-                "id": "gcpn-verify",
-                "order": 3,
-                "task": "Verify initial Google Cloud Platform NAT data flow",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcpn-connector"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Confirm events from Google Cloud Platform NAT appear in the target Log Analytics table within 15 minutes of connector activation. Check record count and schema."
-              },
-              {
-                "id": "gcpn-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform NAT ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpn-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Audit, Logging, and Technologies tables to confirm recent Google Cloud Platform NAT records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling the remaining onboarding tasks."
-              },
-              {
-                "id": "gcpn-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform NAT content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpn-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules, workbooks, and playbooks from the Google Cloud Platform NAT content hub package. Tune rule thresholds to match the environment's event volume."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform NAT records appear in the Audit, Logging, and Technologies tables within the connector's normal service latency window.",
               "Run a simple KQL query against the Audit, Logging, and Technologies tables to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -32123,8 +31207,8 @@
             "api"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -32138,81 +31222,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpr-prereqs",
-                "order": 1,
-                "task": "Prerequisites & API credentials for Google Cloud Platform Resource Manager",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "Google Cloud Admin",
-                "description": "Obtain API credentials (key, OAuth client, or service account) from the Google Cloud Platform Resource Manager admin console. Confirm the account has read-only audit/event API access."
-              },
-              {
-                "id": "gcpr-connector",
-                "order": 2,
-                "task": "Configure Google Cloud Platform Resource Manager data connector in Microsoft Sentinel",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpr-prereqs"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the Google Cloud Platform Resource Manager data connector in Microsoft Sentinel. Provide the API endpoint, credentials, and select the log types to ingest."
-              },
-              {
-                "id": "gcpr-verify",
-                "order": 3,
-                "task": "Verify initial Google Cloud Platform Resource Manager data flow",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcpr-connector"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Confirm events from Google Cloud Platform Resource Manager appear in the target Log Analytics table within 15 minutes of connector activation. Check record count and schema."
-              },
-              {
-                "id": "gcpr-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform Resource Manager ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpr-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Audit, Logging, and Technologies tables to confirm recent Google Cloud Platform Resource Manager records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling the remaining onboarding tasks."
-              },
-              {
-                "id": "gcpr-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform Resource Manager content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpr-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules, workbooks, and playbooks from the Google Cloud Platform Resource Manager content hub package. Tune rule thresholds to match the environment's event volume."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform Resource Manager records appear in the Audit, Logging, and Technologies tables within the connector's normal service latency window.",
               "Run a simple KQL query against the Audit, Logging, and Technologies tables to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -32295,8 +31304,8 @@
             "vulnerability"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -32309,81 +31318,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcps-prereqs",
-                "order": 1,
-                "task": "GCP prerequisites & IAM for Google Cloud Platform Security Command Center",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a service account with Pub/Sub Subscriber and Log Viewer roles. Enable the Google Cloud Platform Security Command Center log type in Cloud Logging if not already active."
-              },
-              {
-                "id": "gcps-infra",
-                "order": 2,
-                "task": "Log sink & Pub/Sub topic for Google Cloud Platform Security Command Center",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcps-prereqs"
-                ],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a log export sink filtered to Google Cloud Platform Security Command Center events routing to a Pub/Sub topic. Create a subscription for the Sentinel connector to pull from."
-              },
-              {
-                "id": "gcps-verify",
-                "order": 3,
-                "task": "Configure GCP connector in Sentinel for Google Cloud Platform Security Command Center",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcps-infra"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the GCP connector in Sentinel with the project ID, subscription name, and service account credentials."
-              },
-              {
-                "id": "gcps-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform Security Command Center ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcps-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the expected Sentinel table(s) to confirm recent Google Cloud Platform Security Command Center records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling analytics."
-              },
-              {
-                "id": "gcps-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform Security Command Center content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcps-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules and workbooks from the Google Cloud Platform Security Command Center content hub package."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform Security Command Center records appear in the expected Sentinel table(s) within the connector's normal service latency window.",
               "Run a simple KQL query against the expected Sentinel table(s) to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -32465,8 +31399,8 @@
             "api"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -32479,81 +31413,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcps-prereqs",
-                "order": 1,
-                "task": "Prerequisites & API credentials for Google Cloud Platform SQL",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "Google Cloud Admin",
-                "description": "Obtain API credentials (key, OAuth client, or service account) from the Google Cloud Platform SQL admin console. Confirm the account has read-only audit/event API access."
-              },
-              {
-                "id": "gcps-connector",
-                "order": 2,
-                "task": "Configure Google Cloud Platform SQL data connector in Microsoft Sentinel",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcps-prereqs"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the Google Cloud Platform SQL data connector in Microsoft Sentinel. Provide the API endpoint, credentials, and select the log types to ingest."
-              },
-              {
-                "id": "gcps-verify",
-                "order": 3,
-                "task": "Verify initial Google Cloud Platform SQL data flow",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcps-connector"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Confirm events from Google Cloud Platform SQL appear in the target Log Analytics table within 15 minutes of connector activation. Check record count and schema."
-              },
-              {
-                "id": "gcps-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform SQL ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcps-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Logging and Technologies tables to confirm recent Google Cloud Platform SQL records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling the remaining onboarding tasks."
-              },
-              {
-                "id": "gcps-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform SQL content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcps-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules, workbooks, and playbooks from the Google Cloud Platform SQL content hub package. Tune rule thresholds to match the environment's event volume."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform SQL records appear in the Logging and Technologies tables within the connector's normal service latency window.",
               "Run a simple KQL query against the Logging and Technologies tables to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -32637,8 +31496,8 @@
             "governance"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 22,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -32652,81 +31511,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gcpv-prereqs",
-                "order": 1,
-                "task": "GCP prerequisites & IAM for Google Cloud Platform VPC Flow Logs",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a service account with Pub/Sub Subscriber and Log Viewer roles. Enable the Google Cloud Platform VPC Flow Logs log type in Cloud Logging if not already active."
-              },
-              {
-                "id": "gcpv-infra",
-                "order": 2,
-                "task": "Log sink & Pub/Sub topic for Google Cloud Platform VPC Flow Logs",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gcpv-prereqs"
-                ],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a log export sink filtered to Google Cloud Platform VPC Flow Logs events routing to a Pub/Sub topic. Create a subscription for the Sentinel connector to pull from."
-              },
-              {
-                "id": "gcpv-verify",
-                "order": 3,
-                "task": "Configure GCP connector in Sentinel for Google Cloud Platform VPC Flow Logs",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gcpv-infra"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the GCP connector in Sentinel with the project ID, subscription name, and service account credentials."
-              },
-              {
-                "id": "gcpv-validate",
-                "order": 4,
-                "task": "Validate Google Cloud Platform VPC Flow Logs ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gcpv-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the Logs table to confirm recent Google Cloud Platform VPC Flow Logs records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling the remaining onboarding tasks."
-              },
-              {
-                "id": "gcpv-content",
-                "order": 5,
-                "task": "Deploy Google Cloud Platform VPC Flow Logs content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gcpv-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules and workbooks from the Google Cloud Platform VPC Flow Logs content hub package."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Cloud Platform VPC Flow Logs records appear in the Logs table within the connector's normal service latency window.",
               "Run a simple KQL query against the Logs table to confirm timestamps, entities, and core fields are populated and parsable.",
@@ -32980,8 +31764,8 @@
             "data"
           ],
           "value_scoring": {
-            "complexity_level": 4,
-            "setup_hours": 28,
+            "complexity_level": 2,
+            "setup_hours": 6,
             "data_volume_risk": "high",
             "business_impact": "high",
             "maturity": "ga",
@@ -32993,81 +31777,6 @@
             "dependencies": []
           },
           "planner": {
-            "setup_tasks": [
-              {
-                "id": "gke-prereqs",
-                "order": 1,
-                "task": "GCP prerequisites & IAM for Google Kubernetes Engine",
-                "duration": 1,
-                "effort_hours": 4,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Prerequisites",
-                "depends_on": [],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a service account with Pub/Sub Subscriber and Log Viewer roles. Enable the Google Kubernetes Engine log type in Cloud Logging if not already active."
-              },
-              {
-                "id": "gke-infra",
-                "order": 2,
-                "task": "Log sink & Pub/Sub topic for Google Kubernetes Engine",
-                "duration": 1.5,
-                "effort_hours": 6,
-                "skill_level": "intermediate",
-                "category": "setup",
-                "phase": "Configuration",
-                "depends_on": [
-                  "gke-prereqs"
-                ],
-                "owner_role": "GCP Cloud Admin",
-                "description": "Create a log export sink filtered to Google Kubernetes Engine events routing to a Pub/Sub topic. Create a subscription for the Sentinel connector to pull from."
-              },
-              {
-                "id": "gke-verify",
-                "order": 3,
-                "task": "Configure GCP connector in Sentinel for Google Kubernetes Engine",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "beginner",
-                "category": "setup",
-                "phase": "Data Verification",
-                "depends_on": [
-                  "gke-infra"
-                ],
-                "owner_role": "Azure Platform Admin",
-                "description": "Configure the GCP connector in Sentinel with the project ID, subscription name, and service account credentials."
-              },
-              {
-                "id": "gke-validate",
-                "order": 4,
-                "task": "Validate Google Kubernetes Engine ingestion in Sentinel.",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-2",
-                "phase": "Validation",
-                "depends_on": [
-                  "gke-verify"
-                ],
-                "owner_role": "SOC Analyst",
-                "description": "Query the expected Sentinel table(s) to confirm recent Google Kubernetes Engine records are arriving within the connector's expected latency window. Verify timestamps, source identifiers, and core fields are populated and parsable before enabling the remaining onboarding tasks."
-              },
-              {
-                "id": "gke-content",
-                "order": 5,
-                "task": "Deploy Google Kubernetes Engine content hub package",
-                "duration": 0.5,
-                "effort_hours": 2,
-                "skill_level": "intermediate",
-                "category": "phase-1",
-                "phase": "Operationalization",
-                "depends_on": [
-                  "gke-validate"
-                ],
-                "owner_role": "SOC Engineer",
-                "description": "Deploy analytics rules and workbooks from the Google Kubernetes Engine content hub package."
-              }
-            ],
             "validation_steps": [
               "Verify recent Google Kubernetes Engine records appear in the expected Sentinel table(s) within the connector's normal service latency window.",
               "Run a simple KQL query against the expected Sentinel table(s) to confirm timestamps, entities, and core fields are populated and parsable.",
