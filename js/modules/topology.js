@@ -2528,6 +2528,7 @@ export function renderTopology(selectedSolutions, containerEl) {
             const solStatus = (status === 'new') ? 'new' : getSolutionStatus(s);
             const statusLabel = solStatus === 'connected' ? 'CONNECTED'
                 : solStatus === 'connected-idle' ? 'IDLE'
+                : solStatus === 'new' ? 'NEW'
                 : null;
             const statusEl = statusLabel
                 ? h('span', { className: `rf-sol-inline-status rf-sol-inline-status--${solStatus}` }, statusLabel)

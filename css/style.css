@@ -1951,6 +1951,7 @@ body {
 .rf-sol-inline-status { font-size: 0.58rem; font-weight: 700; letter-spacing: 0.05em; padding: 1px 5px; border-radius: 3px; white-space: nowrap; flex-shrink: 0; margin-left: 6px; }
 .rf-sol-inline-status--connected { color: #10B981; background: rgba(16, 185, 129, 0.12); border: 1px solid rgba(16, 185, 129, 0.3); }
 .rf-sol-inline-status--connected-idle { color: #FBBF24; background: rgba(251, 191, 36, 0.12); border: 1px solid rgba(251, 191, 36, 0.3); }
+.rf-sol-inline-status--new { color: #60a5fa; background: rgba(96, 165, 250, 0.12); border: 1px solid rgba(96, 165, 250, 0.3); }
 .rf-node-footer { display: flex; justify-content: flex-end; margin-top: 4px; }
 
 /* Footer */
