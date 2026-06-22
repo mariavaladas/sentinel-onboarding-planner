@@ -2065,25 +2065,7 @@ function createSizingEditor(solution, profile, snapshot = {}) {
         const list = document.createElement('div');
         list.className = 'log-type-selector';
 
-        const warning = document.createElement('div');
-        warning.className = 'log-type-selector__warning';
-        warning.hidden = true;
-        const warnText = document.createElement('span');
-        warning.append('\u26A0 ', warnText);
-
         const checkboxes = new Map();
-
-        const updateWarning = () => {
-            const rawSelected = logTypes.filter((lt) => checkboxes.get(lt.id)?.checked && !lt.has_content);
-            if (rawSelected.length > 0) {
-                const names = rawSelected.map((lt) => lt.label).join(', ');
-                const verb = rawSelected.length === 1 ? 'has' : 'have';
-                warnText.textContent = `${names} ${verb} no built-in analytics. Value comes from hunting and investigations.`;
-                warning.hidden = false;
-            } else {
-                warning.hidden = true;
-            }
-        };
 
         const autoSave = () => {
             const selectedLogTypes = logTypes
@@ -2101,7 +2083,6 @@ function createSizingEditor(solution, profile, snapshot = {}) {
                 syncSolutionCardState(card, solution.id, { capacitySnapshot: snap });
             }
             syncSizingDrawerSelection();
-            updateWarning();
         };
 
         logTypes.forEach((lt) => {
@@ -2135,15 +2116,22 @@ function createSizingEditor(solution, profile, snapshot = {}) {
         });
 
         form.appendChild(list);
-        form.appendChild(warning);
 
-        const note = document.createElement('div');
-        note.className = 'solution-sizing-drawer-note';
-        note.textContent = 'Log type selections update the Gantt task plan — each source gets infrastructure setup and validation tasks. Content deployment is only added when at least one selected source has built-in analytics rules.';
-        form.appendChild(note);
-
-        // Show initial warning for any defaults that are raw-only
-        updateWarning();
+        // Save button to confirm and close the drawer
+        const actions = document.createElement('div');
+        actions.className = 'solution-sizing-actions';
+        const saveButton = document.createElement('button');
+        saveButton.type = 'button';
+        saveButton.className = 'app-button app-button--accent';
+        saveButton.textContent = 'Save';
+        saveButton.addEventListener('click', (event) => {
+            event.preventDefault();
+            autoSave();
+            closeSizingDrawer();
+            refreshVisibleSolutionCards();
+        });
+        actions.appendChild(saveButton);
+        form.appendChild(actions);
 
         return form;
     }
