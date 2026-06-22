@@ -4669,32 +4669,13 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
                     insertIndex += 1;
                 }
 
-                // The merged group should start where per-connector tasks begin
-                // (not at infra start) because infra subtasks are dropped from
-                // the merged output. Use the earliest shiftedRow start as the
-                // group's natural start position.
-                const connectorStartWeek = shiftedRows.length > 0
-                    ? shiftedRows.reduce(
-                        (minStart, row) => Math.min(minStart, row?.startWeek ?? Infinity),
-                        Infinity
-                    )
-                    : existingGroupRow.startWeek;
-                const safeConnectorStart = Number.isFinite(connectorStartWeek)
-                    ? connectorStartWeek
-                    : existingGroupRow.startWeek;
-
-                const groupEndWeek = shiftedRows.length > 0
-                    ? shiftedRows.reduce(
-                        (maxEndWeek, row) => Math.max(maxEndWeek, row?.endWeek || safeConnectorStart),
-                        safeConnectorStart
-                    )
-                    : existingGroupRow.endWeek;
-
-                // Respect user override: if the user dragged the group, keep
-                // their position; otherwise use per-connector task start.
-                const effectiveGroupStart = existingGroupRow.hasDirectStartWeekOverride
-                    ? existingGroupRow.startWeek
-                    : safeConnectorStart;
+                // Group bar spans ALL children (infra + per-connector tasks).
+                // Both sets are kept in the output so the bar width is justified
+                // by visible subtasks when expanded.
+                const groupEndWeek = [...existingGroupRows, ...shiftedRows].reduce(
+                    (maxEndWeek, row) => Math.max(maxEndWeek, row?.endWeek || existingGroupRow.endWeek),
+                    existingGroupRow.endWeek
+                );
 
                 const mergedGroupRow = buildSolutionGroupRow({
                     solution: plannedSolution,
@@ -4702,14 +4683,14 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
                     counters,
                     number: solutionNumber,
                     startWeekState: {
-                        defaultStartWeek: safeConnectorStart,
-                        effectiveStartWeek: effectiveGroupStart,
+                        defaultStartWeek: existingGroupRow.defaultStartWeek,
+                        effectiveStartWeek: existingGroupRow.startWeek,
                         hasDirectStartWeekOverride: existingGroupRow.hasDirectStartWeekOverride,
                         hasDerivedCustomStartWeek: false,
                         isCustomStartWeek: existingGroupRow.isCustomStartWeek,
                         isStartWeekEditable: true
                     },
-                    durationWeeks: Math.max(MIN_TASK_DURATION_WEEKS, roundWeekPrecision(groupEndWeek - effectiveGroupStart)),
+                    durationWeeks: Math.max(MIN_TASK_DURATION_WEEKS, roundWeekPrecision(groupEndWeek - existingGroupRow.startWeek)),
                     dependencies: [...existingGroupRow.dependencies],
                     hasDerivedCustomSchedule: Boolean(existingGroupRow.hasDerivedCustomSchedule || shiftedRows.some((row) => row.isCustomSchedule)),
                     capacityProfile: getSolutionCapacityProfile(plannedSolution, capacitySnapshot)
@@ -4721,9 +4702,10 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
 
                 // Remove old group + children from their original position, then append
                 // in sorted order so Cribl-dependent solutions stay below Cribl Stream.
+                // Keep BOTH infra rows and per-connector rows so expanded view fills the bar.
                 const removeCount = 1 + existingGroupRows.length;
                 rows.splice(existingGroupRowIndex, removeCount);
-                rows.push(mergedGroupRow, ...shiftedRows);
+                rows.push(mergedGroupRow, ...existingGroupRows, ...shiftedRows);
             } else {
                 const solutionGroupRow = buildSolutionGroupRow({
                     solution: plannedSolution,
