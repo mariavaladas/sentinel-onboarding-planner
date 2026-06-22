@@ -4634,12 +4634,18 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
             const existingGroupRow = existingGroupRowIndex >= 0 ? rows[existingGroupRowIndex] : null;
             const groupState = readSolutionGroupState(solution.id, baselineStartWeek, solution.name, defaultSolutionGroupCollapsed);
             const solutionNumber = existingGroupRow?.number || getNextNumber(counters);
+            // Per-connector tasks start after their own infra chain completes,
+            // not after ALL infra chains. This eliminates the gap between the
+            // last infra subtask and the first per-connector task.
+            const solutionPhaseStart = existingGroupRow
+                ? existingGroupRow.endWeek
+                : baselineStartWeek;
             const solutionPlan = createSolutionPlanRows({
                 solution: plannedSolution,
                 phaseKey,
                 counters,
                 solutionNumber,
-                phaseStartWeek: baselineStartWeek,
+                phaseStartWeek: solutionPhaseStart,
                 defaultDependencies,
                 durationOverrides,
                 customTaskEntries,
