@@ -1630,7 +1630,7 @@ body {
 
 .log-type-selector__item {
     display: grid;
-    grid-template-columns: 1.25rem 1fr auto auto;
+    grid-template-columns: 1.25rem 1fr auto;
     align-items: center;
     gap: 6px 10px;
     padding: 8px 10px;
@@ -1674,9 +1674,7 @@ body {
 }
 
 .log-type-selector__infra {
-    font-size: 0.76rem;
-    color: var(--text-muted);
-    white-space: nowrap;
+    display: none;
 }
 
 .log-type-selector__warning {
@@ -1685,10 +1683,10 @@ body {
     padding: 10px 12px;
     margin-top: 4px;
     border-radius: 6px;
-    border: 1px solid rgba(234, 179, 8, 0.28);
-    background: rgba(234, 179, 8, 0.07);
+    border: 1px solid rgba(234, 179, 8, 0.4);
+    background: rgba(234, 179, 8, 0.1);
     font-size: 0.83rem;
-    color: var(--text-secondary, #94a3b8);
+    color: #f5d580;
     line-height: 1.5;
 }
 
