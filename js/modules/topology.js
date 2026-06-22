@@ -1293,7 +1293,14 @@ export function renderTopology(selectedSolutions, containerEl) {
           const zoneStartY = bandStartY;
           const sourceY = zoneStartY + zoneTopPadding;
           const primaryRows = rows.filter((entry) => !shouldUseSentinelAlignedRowSlot(entry));
-          const sentinelAlignedRows = rows.filter((entry) => shouldUseSentinelAlignedRowSlot(entry));
+          let sentinelAlignedRows = rows.filter((entry) => shouldUseSentinelAlignedRowSlot(entry));
+
+          // When multiple sentinel-aligned groups exist in the same zone, lay them out
+          // side by side (as primary rows) instead of stacking vertically.
+          if (sentinelAlignedRows.length > 1) {
+              primaryRows.push(...sentinelAlignedRows);
+              sentinelAlignedRows = [];
+          }
           const positionedRows = [];
           let rowCursorX = zoneInnerPaddingX;
           let nextStackedRowY = sourceY;
