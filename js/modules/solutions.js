@@ -2044,6 +2044,110 @@ function createCollectorVmPlacementControls(profile = {}, { onChange = () => {} 
 }
 
 function createSizingEditor(solution, profile, snapshot = {}) {
+    // Log-type selector for solutions with log_types[] (e.g. AWS)
+    if (profile.type === 'log_selector') {
+        const form = document.createElement('div');
+        form.className = 'solution-sizing-form solution-sizing-drawer-form';
+
+        const intro = document.createElement('p');
+        intro.className = 'solution-sizing-intro';
+        intro.textContent = 'Select which log sources to include in the onboarding plan. Each selected source gets its own S3/SQS setup and validation task. Changes auto-save immediately.';
+        form.appendChild(intro);
+
+        const logTypes = Array.isArray(profile.logTypes) ? profile.logTypes : [];
+        const savedTypes = profile.values?.selectedLogTypes;
+        const currentSelected = new Set(
+            Array.isArray(savedTypes)
+                ? savedTypes
+                : logTypes.filter((lt) => lt.default_selected !== false).map((lt) => lt.id)
+        );
+
+        const list = document.createElement('div');
+        list.className = 'log-type-selector';
+
+        const warning = document.createElement('div');
+        warning.className = 'log-type-selector__warning';
+        warning.hidden = true;
+        const warnText = document.createElement('span');
+        warning.append('\u26A0 ', warnText);
+
+        const checkboxes = new Map();
+
+        const updateWarning = () => {
+            const rawSelected = logTypes.filter((lt) => checkboxes.get(lt.id)?.checked && !lt.has_content);
+            if (rawSelected.length > 0) {
+                const names = rawSelected.map((lt) => lt.label).join(', ');
+                const verb = rawSelected.length === 1 ? 'has' : 'have';
+                warnText.textContent = `${names} ${verb} no built-in analytics. Value comes from hunting and investigations.`;
+                warning.hidden = false;
+            } else {
+                warning.hidden = true;
+            }
+        };
+
+        const autoSave = () => {
+            const selectedLogTypes = logTypes
+                .filter((lt) => checkboxes.get(lt.id)?.checked)
+                .map((lt) => lt.id);
+
+            saveConnectorCapacityValues(solution, { selectedLogTypes, isDefault: false }, {
+                selectedSolutions: getSelectedSolutionsData()
+            });
+
+            // Refresh the solution card badge without re-rendering the drawer
+            const snap = getCurrentCapacitySnapshot();
+            const card = document.querySelector(`.solution-item[data-id="${solution.id}"]`);
+            if (card instanceof Element) {
+                syncSolutionCardState(card, solution.id, { capacitySnapshot: snap });
+            }
+            syncSizingDrawerSelection();
+            updateWarning();
+        };
+
+        logTypes.forEach((lt) => {
+            const item = document.createElement('label');
+            item.className = 'log-type-selector__item';
+
+            const checkbox = document.createElement('input');
+            checkbox.type = 'checkbox';
+            checkbox.checked = currentSelected.has(lt.id);
+            checkboxes.set(lt.id, checkbox);
+
+            const nameSpan = document.createElement('span');
+            nameSpan.className = 'log-type-selector__name';
+            nameSpan.textContent = lt.label;
+
+            const badge = document.createElement('span');
+            const hasContent = Boolean(lt.has_content);
+            badge.className = `log-type-selector__badge${hasContent ? '' : ' is-raw'}`;
+            badge.textContent = lt.analytics_count > 0
+                ? `${lt.analytics_count} rule${lt.analytics_count === 1 ? '' : 's'}`
+                : 'raw only';
+
+            const infra = document.createElement('span');
+            infra.className = 'log-type-selector__infra';
+            infra.textContent = lt.infra_label || 'S3 + SQS';
+
+            item.append(checkbox, nameSpan, badge, infra);
+            list.appendChild(item);
+
+            checkbox.addEventListener('change', autoSave);
+        });
+
+        form.appendChild(list);
+        form.appendChild(warning);
+
+        const note = document.createElement('div');
+        note.className = 'solution-sizing-drawer-note';
+        note.textContent = 'Log type selections update the Gantt task plan — each source gets infrastructure setup and validation tasks. Content deployment is only added when at least one selected source has built-in analytics rules.';
+        form.appendChild(note);
+
+        // Show initial warning for any defaults that are raw-only
+        updateWarning();
+
+        return form;
+    }
+
     const form = document.createElement('div');
     form.className = 'solution-sizing-form solution-sizing-drawer-form';
 
@@ -2700,7 +2804,9 @@ function createSizingDrawerOverview(snapshot = {}) {
                         : 'Windows AMA server pool'
             : profile.type === 'linux'
                 ? 'Linux server population'
-                : 'Per-site firewall sizing';
+                : profile.type === 'log_selector'
+                    ? 'Log source selection'
+                    : 'Per-site firewall sizing';
 
         return {
             solutionId: solution.id,

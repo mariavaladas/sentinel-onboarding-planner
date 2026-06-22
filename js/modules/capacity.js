@@ -242,6 +242,16 @@ function getConnectorCapacityMetadata(solution = {}) {
         };
     }
 
+    // Solutions with log_types[] (e.g. AWS) get a log-source selector instead of EPS/server sizing
+    if (Array.isArray(solution?.log_types) && solution.log_types.length > 0) {
+        return {
+            type: 'log_selector',
+            populationKind: '',
+            sharedPopulationGroup: '',
+            serverCountLabel: ''
+        };
+    }
+
     return {
         type: 'none',
         populationKind: '',
@@ -597,6 +607,14 @@ export function createDefaultSizingDraft(type = 'none', options = {}) {
         };
     }
 
+    if (type === 'log_selector') {
+        const logTypes = Array.isArray(options?.logTypes) ? options.logTypes : [];
+        return {
+            selectedLogTypes: logTypes.filter((lt) => lt.default_selected !== false).map((lt) => lt.id),
+            isDefault: true
+        };
+    }
+
     return {};
 }
 
@@ -626,6 +644,13 @@ export function normalizeSizingValues(type = 'none', values = {}) {
             eps: sanitizeCount(values?.eps),
             criblIngestion: Boolean(values?.criblIngestion),
             criblIngestionExplicit: Boolean(values?.criblIngestionExplicit),
+            isDefault: Boolean(values?.isDefault)
+        };
+    }
+
+    if (type === 'log_selector') {
+        return {
+            selectedLogTypes: Array.isArray(values?.selectedLogTypes) ? [...values.selectedLogTypes] : [],
             isDefault: Boolean(values?.isDefault)
         };
     }
@@ -704,6 +729,11 @@ export function validateSizingDraft(type = 'none', values = {}) {
                 advisories.push('EPS above 100,000 usually needs a pipeline-first architecture review.');
             }
         }
+    }
+
+    if (type === 'log_selector') {
+        // Any selection (including empty) is valid — user may intentionally select zero sources
+        return { fieldErrors: {}, warnings: [], advisories: [], isValid: true };
     }
 
     return {
@@ -799,6 +829,24 @@ export function computeSizingResult(type = 'none', values = {}, options = {}) {
             docLabel: 'CEF via AMA sizing guidance',
             recommendedVmSize: RECOMMENDED_FORWARDER_VM_SIZE,
             loadBalancerRecommended: vmCount >= 3,
+            isDefault: normalized.isDefault
+        };
+    }
+
+    if (type === 'log_selector') {
+        const normalized = normalizeSizingValues('log_selector', values);
+        const count = normalized.selectedLogTypes.length;
+        const summary = count === 0
+            ? 'No log types selected'
+            : `${count} log type${count === 1 ? '' : 's'} selected`;
+        return {
+            type,
+            selectedLogTypes: normalized.selectedLogTypes,
+            summary,
+            badge: summary,
+            label: summary,
+            docUrl: '',
+            docLabel: '',
             isDefault: normalized.isDefault
         };
     }
@@ -978,7 +1026,8 @@ export function getSolutionCapacityProfile(solution = {}, snapshot = {}) {
         serverCountLabel: metadata.serverCountLabel,
         collectorVmZone,
         collectorVmZoneLabel: getCollectorVmZoneLabel(collectorVmZone),
-        hasCollectorVmZonePreference: Boolean(snapshot?.hasCollectorVmZonePreference)
+        hasCollectorVmZonePreference: Boolean(snapshot?.hasCollectorVmZonePreference),
+        ...(type === 'log_selector' ? { logTypes: Array.isArray(solution?.log_types) ? solution.log_types : [] } : {})
     };
 }
 
@@ -1158,7 +1207,7 @@ export function updateConnectorCapacityEntries(solutionGroupEntries = {}, soluti
         return nextEntries;
     }
 
-    if (metadata.type === 'firewall' || metadata.type === 'linux') {
+    if (metadata.type === 'firewall' || metadata.type === 'linux' || metadata.type === 'log_selector') {
         const existingEntry = nextEntries?.[solution.id] && typeof nextEntries[solution.id] === 'object'
             ? nextEntries[solution.id]
             : {};
@@ -1174,12 +1223,17 @@ export function updateConnectorCapacityEntries(solutionGroupEntries = {}, soluti
                     criblIngestionExplicit: Boolean(values?.criblIngestionExplicit),
                     isDefault: Boolean(values?.isDefault)
                 }
-                : {
-                    eps: sizingMessages.result.eps,
-                    criblIngestion: Boolean(values?.criblIngestion),
-                    criblIngestionExplicit: Boolean(values?.criblIngestionExplicit),
-                    isDefault: Boolean(values?.isDefault)
-                }
+                : metadata.type === 'log_selector'
+                    ? {
+                        selectedLogTypes: Array.isArray(values?.selectedLogTypes) ? [...values.selectedLogTypes] : [],
+                        isDefault: Boolean(values?.isDefault)
+                    }
+                    : {
+                        eps: sizingMessages.result.eps,
+                        criblIngestion: Boolean(values?.criblIngestion),
+                        criblIngestionExplicit: Boolean(values?.criblIngestionExplicit),
+                        isDefault: Boolean(values?.isDefault)
+                    }
         };
 
         const sharedState = cloneJson(readPersistedPoolState(nextEntries).state) || createEmptyPoolState();

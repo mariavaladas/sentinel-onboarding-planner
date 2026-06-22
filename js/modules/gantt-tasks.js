@@ -893,6 +893,7 @@ function resetAbbrevRegistry() {
  * Avoids algorithmic collisions for the most common connectors.
  */
 const KNOWN_ABBREVS = {
+    'aws': 'AWS',
     'windows-security-events': 'WSE',
     'windows-forwarded-events': 'WFE',
     'windows-forwarded-events-via-ama': 'WFEA',
@@ -971,6 +972,155 @@ export function makeConnectorAbbrev(connectorId, connectorName = '') {
 // ---------------------------------------------------------------------------
 // Per-connector task builder
 // ---------------------------------------------------------------------------
+
+/**
+ * Short codes for AWS log type IDs, used in task ID generation.
+ */
+const LOG_TYPE_TASK_CODES = {
+    cloudtrail: 'CTL',
+    guardduty: 'GDT',
+    vpcflow: 'VPF',
+    cloudwatch: 'CWL',
+    custom: 'CSL'
+};
+
+function getLogTypeTaskCode(logTypeId) {
+    return LOG_TYPE_TASK_CODES[logTypeId]
+        || (String(logTypeId).slice(0, 2) + String(logTypeId).slice(-2)).toUpperCase();
+}
+
+/**
+ * Build Gantt tasks for a connector that exposes log_types[] (e.g. AWS S3-based connectors).
+ * Generates:
+ *   1. IAM prerequisites (always)
+ *   2. Per selected log type: Configure S3+SQS + Validate ingestion
+ *   3. Deploy analytics rules (only when any selected type has built-in content)
+ *   4. Tune detections (only when content was deployed)
+ *
+ * @param {Object} base - shared task metadata (phase, fieldPack, connectorId, etc.)
+ * @param {string} abbrev - connector abbreviation prefix (e.g. "AWS")
+ * @param {string} name - connector display name
+ * @param {string[]} entryDependsOn - upstream dependency task IDs
+ * @param {Array<Object>} selectedTypes - filtered log_types array for selected sources
+ * @returns {Array<Object>} task objects
+ */
+function buildLogTypeTasks(base, abbrev, name, entryDependsOn, selectedTypes) {
+    const tasks = [];
+
+    // 1 — IAM prerequisites (always)
+    const iamId = `${abbrev}-IAM`;
+    tasks.push({
+        ...base,
+        id: iamId,
+        name: `${name} — IAM prerequisites`,
+        description: 'Configure IAM role, trust policy, and cross-account access for Sentinel ingestion',
+        category: 'INFRA',
+        duration: formatTaskDuration(0.5 * HOURS_PER_DAY),
+        durationHours: 0.5 * HOURS_PER_DAY,
+        ownerRole: 'AWS Cloud Admin',
+        dependsOn: entryDependsOn,
+        subtasks: [
+            'Create or confirm the IAM role with trust policy for Microsoft Sentinel',
+            'Attach S3 read and SQS receive/delete permissions to the role',
+            'Enable required AWS services in all target regions (CloudTrail, GuardDuty, etc.)'
+        ]
+    });
+
+    // 2 — Per log type: S3/SQS setup + ingestion validation
+    const validateIds = [];
+    selectedTypes.forEach((lt) => {
+        const code = getLogTypeTaskCode(lt.id);
+        const cfgId = `${abbrev}-${code}-CFG`;
+        const valId = `${abbrev}-${code}-VAL`;
+        const setupHours = (lt.setup_duration_days || 0.5) * HOURS_PER_DAY;
+        const infraLabel = lt.infra_label || 'S3 bucket + SQS queue';
+        const tableName = lt.table || 'the target table';
+
+        tasks.push({
+            ...base,
+            id: cfgId,
+            name: `${lt.label} — Configure ${infraLabel}`,
+            description: `Set up the ${infraLabel} for ${lt.label} ingestion into Sentinel`,
+            category: 'INFRA',
+            duration: formatTaskDuration(setupHours),
+            durationHours: setupHours,
+            ownerRole: 'AWS Cloud Admin',
+            dependsOn: [iamId],
+            subtasks: [
+                `Create or configure the S3 bucket for ${lt.label} exports`,
+                'Set up SQS queue and configure S3 object-create event notifications',
+                'Grant the Sentinel IAM role bucket read + SQS receive/delete permissions'
+            ]
+        });
+
+        tasks.push({
+            ...base,
+            id: valId,
+            name: `${lt.label} — Validate ingestion`,
+            description: `Confirm ${lt.label} data arrives in the ${tableName} table`,
+            category: 'VALID',
+            duration: formatTaskDuration(0.25 * HOURS_PER_DAY),
+            durationHours: 0.25 * HOURS_PER_DAY,
+            ownerRole: 'SOC Engineers',
+            dependsOn: [cfgId],
+            subtasks: [
+                `Run KQL query against ${tableName} to confirm recent records`,
+                'Verify account identifiers, regions, and timestamps are populated',
+                'Confirm at least one parseable event is present before enabling content'
+            ]
+        });
+
+        validateIds.push(valId);
+    });
+
+    // 3 — Content deployment (only when any selected type has built-in analytics rules)
+    const contentTypes = selectedTypes.filter((lt) => lt.has_content);
+    if (contentTypes.length > 0) {
+        const totalAnalytics = selectedTypes.reduce((sum, lt) => sum + (Number(lt.analytics_count) || 0), 0);
+        // Scale content duration: 5 min per rule, minimum 4h (0.5d), rounded up to nearest 4h block
+        const rawHours = Math.max(4, totalAnalytics * (5 / 60));
+        const contentHours = Math.ceil(rawHours / 4) * 4;
+        const contentId = `${abbrev}-CONTENT`;
+        const tuneId = `${abbrev}-TUNE`;
+
+        tasks.push({
+            ...base,
+            id: contentId,
+            name: `${name} — Deploy analytics rules`,
+            description: `Enable ${totalAnalytics} analytics rules and workbooks from the solution content pack`,
+            category: 'SENT-CFG',
+            duration: formatTaskDuration(contentHours),
+            durationHours: contentHours,
+            ownerRole: 'SOC Engineers',
+            dependsOn: validateIds.length > 0 ? validateIds : entryDependsOn,
+            subtasks: [
+                `Enable the ${totalAnalytics} AWS analytics rules in Microsoft Sentinel`,
+                'Review entity mappings, severity defaults, and workspace parameters',
+                'Deploy AWS workbooks and confirm data binding to the ingested tables'
+            ]
+        });
+
+        // 4 — Tuning (only when content was deployed)
+        tasks.push({
+            ...base,
+            id: tuneId,
+            name: `${name} — Tune detections`,
+            description: 'Tune analytics rules to reduce noise for your AWS account topology',
+            category: 'VALID',
+            duration: formatTaskDuration(0.5 * HOURS_PER_DAY),
+            durationHours: 0.5 * HOURS_PER_DAY,
+            ownerRole: 'SOC Engineers',
+            dependsOn: [contentId],
+            subtasks: [
+                'Review first 48 hours of AWS-driven incidents in Microsoft Sentinel',
+                'Add environment-specific exclusions for approved automation and shared services',
+                'Adjust thresholds for GuardDuty findings and CloudTrail correlation patterns'
+            ]
+        });
+    }
+
+    return tasks;
+}
 
 /**
  * Per-connector task overrides: connector-specific source-configuration subtasks.
@@ -1151,7 +1301,7 @@ function getAnalyticsRuleReviewHours(connectors) {
  * @param {string} permissionTaskId - ID of the universal connector permission gate task
  * @returns {Array<Object>} array of task objects for the connector
  */
-function buildPerConnectorTasks(connector, abbrev, dependencyTaskId, permissionTaskId, { criblRouted = false } = {}) {
+function buildPerConnectorTasks(connector, abbrev, dependencyTaskId, permissionTaskId, { criblRouted = false, capacitySnapshot = {} } = {}) {
     const id = String(connector?.id || '').toLowerCase().trim();
     const name = connector?.name || id;
     const overrides = PER_CONNECTOR_OVERRIDES[id] || {};
@@ -1172,6 +1322,22 @@ function buildPerConnectorTasks(connector, abbrev, dependencyTaskId, permissionT
         configurable: false,
         configurableNote: null
     };
+
+    // Log-type-based dynamic task generation (e.g. AWS S3-based connectors)
+    if (Array.isArray(connector?.log_types) && connector.log_types.length > 0) {
+        const logTypes = connector.log_types;
+        const solutionEntry = capacitySnapshot?.solutionGroupEntries?.[id];
+        const savedIds = solutionEntry?.sizing?.selectedLogTypes;
+        const selectedIds = Array.isArray(savedIds)
+            ? savedIds
+            : logTypes.filter((lt) => lt.default_selected !== false).map((lt) => lt.id);
+        const selectedTypes = logTypes.filter((lt) => selectedIds.includes(lt.id));
+
+        if (selectedTypes.length > 0) {
+            return buildLogTypeTasks(base, abbrev, name, entryDependsOn, selectedTypes);
+        }
+        // Fall through to generic minimal-pack path when no types are selected
+    }
 
     if (fieldPack === FIELD_PACK.NATIVE_DIRECT) {
         return [
@@ -1543,7 +1709,7 @@ export function buildGanttPlan(selectedConnectors, capacitySnapshot = {}) {
 
         if (!joinTaskId) continue;
 
-        const pcTasks = buildPerConnectorTasks(connector, abbrev, joinTaskId, permissionTaskId, { criblRouted });
+        const pcTasks = buildPerConnectorTasks(connector, abbrev, joinTaskId, permissionTaskId, { criblRouted, capacitySnapshot });
 
         for (const task of pcTasks) {
             tasks.push(applyDurationOverride(task, overrides));

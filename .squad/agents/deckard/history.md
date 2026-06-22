@@ -256,3 +256,34 @@ All specs now canonical in `decisions.md` and ready for team reference.
 - Task engine: `js/modules/gantt-tasks.js` (`TASK_CATALOG`, `PER_CONNECTOR_OVERRIDES`, `buildPerConnectorTasks`)
 - Scoring: `js/modules/scoring.js` (`calculatePriorityScore`, `getEstimatedSetupHours`)
 - Data catalog: `data/solutions.json` (`planner.setup_tasks[].duration` — the primary v1 gap)
+
+### 2026-06-22: AWS Log Type Selector — Architecture Decision
+
+**Design question answered:**
+Maria requested a UX mechanism for customers to choose which AWS log types (CloudTrail, VPC Flow Logs, GuardDuty, CloudWatch) to onboard, since each has different infrastructure requirements, analytics coverage, and setup effort.
+
+**Key Decisions:**
+- **Pattern:** Reuse the existing sizing drawer shell with a new content renderer (`createLogTypeEditor`). Same accessibility, same lock mechanism, same card summary badge pattern. ~60 new lines vs ~200+ for a new surface.
+- **Data model:** New `log_types[]` array on connectors that support sub-type selection. Fields: `id`, `name`, `description`, `analytics_rules`, `analytics_tier`, `infrastructure`, `infrastructure_label`, `effort_hours_delta`, `recommended`, `table`. AWS gets 4 entries.
+- **State storage:** Extend existing `sentinelPlanner.taskDurationOverrides.v1` with a `logTypeSelections` map (keyed by connector ID). Avoids a new localStorage root.
+- **Default:** Pre-check `recommended: true` log types (CloudTrail + GuardDuty for AWS). Plan generates correctly without drawer interaction.
+- **Task generation:** AWS connector moves out of minimal-pack treatment. `buildPerConnectorTasks` generates PC-01..04 with log-type-aware subtasks. Duration scales by `effort_hours_delta` per selected type (min 6h, max 15h for AWS).
+- **Analytics scaling:** Content Deployment phase analytics duration driven by sum of `analytics_rules` across selected log types, not the connector-level `analytics` field.
+- **Generalisation:** Pattern applies to GCP (deferred to v2). Azure native connectors excluded — their sub-types are managed inside the connector blade.
+
+**Pattern established:**
+The sizing drawer is the canonical surface for **any connector-level configuration that affects task generation**. Log type selection is a new variant of that same pattern, not a new surface.
+
+**Artifacts:**
+- Decision proposal: `.squad/decisions/inbox/deckard-aws-log-type-selector.md`
+
+**Key Paths:**
+- Drawer system: `js/modules/solutions.js` (sizingDrawer functions; new `createLogTypeEditor`, `hasLogTypes`)
+- Task engine: `js/modules/gantt-tasks.js` (`PER_CONNECTOR_OVERRIDES`, `buildPerConnectorTasks`, `getAnalyticsRuleReviewHours`)
+- Data catalog: `data/solutions.json` (`aws.log_types[]` — new field; `aws.planner.setup_tasks` subtask descriptions)
+- State: `sentinelPlanner.taskDurationOverrides.v1.logTypeSelections`
+
+**Open questions deferred:**
+- GCP log type selector (v2)
+- "None selected" guard UX (disable Save vs. remove connector from plan)
+- Excel export: show selected log types in the sizing summary section
