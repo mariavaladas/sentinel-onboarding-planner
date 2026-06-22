@@ -914,6 +914,15 @@ function getPreselectedSolutionIds() {
     const preSelectedIds = new Set();
     const selectedVendorsList = Array.from(selectedVendors);
 
+    // Mandatory solutions are always pre-selected regardless of vendor selection
+    Object.values(solutionsData?.categories || {}).forEach((category) => {
+        (category?.solutions || []).forEach((solution) => {
+            if (solution?.mandatory === true) {
+                preSelectedIds.add(solution.id);
+            }
+        });
+    });
+
     if (selectedVendorsList.length === 0) {
         return preSelectedIds;
     }
@@ -3011,6 +3020,16 @@ function createSolutionItem(solution, recommendedIds = new Set()) {
         recommendedText.className = 'solution-item-recommended-inline';
         recommendedText.textContent = '— Based on your environment selection';
         name.appendChild(recommendedText);
+    }
+
+    if (solution.mandatory === true) {
+        const mandatoryBadge = document.createElement('span');
+        mandatoryBadge.className = 'existing-connector-badge';
+        mandatoryBadge.style.background = 'var(--accent-primary, #4fc3f7)';
+        mandatoryBadge.style.color = '#000';
+        mandatoryBadge.textContent = '⚡ USX Required';
+        mandatoryBadge.title = 'Mandatory for all new customers as part of the Unified SecOps (USX) motion';
+        name.appendChild(mandatoryBadge);
     }
 
     if (connectedSolutionIds.has(solution.id)) {
