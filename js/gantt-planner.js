@@ -4401,7 +4401,13 @@ function createVisiblePlanData(planData, collapsedSummaryIds = new Set(), collap
     const visibleRowIds = new Set(visibleRows.map((row) => row.id));
 
     const tasks = visibleRows.map((row) => {
-        const visibleDependencies = [...new Set((row.dependencies || []).map((dependencyId) => {
+        // Suppress noisy dependency arrows for subtask rows inside solution
+        // groups and closeout-phase rows (Training, Go-Live). Only infrastructure-
+        // level arrows (e.g. Cribl → connector group) add visual value.
+        const suppressArrows = (row.solutionGroupId && !row.isSolutionGroup)
+            || row.phaseKey === 'closeout';
+
+        const visibleDependencies = suppressArrows ? [] : [...new Set((row.dependencies || []).map((dependencyId) => {
             if (visibleRowIds.has(dependencyId)) return dependencyId;
 
             const dependencyRow = rowById.get(dependencyId);
@@ -4656,10 +4662,15 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
                     insertIndex += 1;
                 }
 
-                const groupEndWeek = [...existingGroupRows, ...shiftedRows].reduce(
-                    (maxEndWeek, row) => Math.max(maxEndWeek, row?.endWeek || existingGroupRow.endWeek),
-                    existingGroupRow.endWeek
-                );
+                // Group bar width spans only the per-connector tasks (shiftedRows),
+                // not the existing infrastructure rows — infra is already visible as
+                // subtasks and shouldn't inflate the collapsed group bar.
+                const groupEndWeek = shiftedRows.length > 0
+                    ? shiftedRows.reduce(
+                        (maxEndWeek, row) => Math.max(maxEndWeek, row?.endWeek || existingGroupRow.startWeek),
+                        existingGroupRow.startWeek
+                    )
+                    : existingGroupRow.endWeek;
                 const mergedGroupRow = buildSolutionGroupRow({
                     solution: plannedSolution,
                     phaseKey: existingGroupRow.phaseKey || phaseKey,
