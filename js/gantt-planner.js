@@ -4401,26 +4401,33 @@ function createVisiblePlanData(planData, collapsedSummaryIds = new Set(), collap
     const visibleRowIds = new Set(visibleRows.map((row) => row.id));
 
     const tasks = visibleRows.map((row) => {
-        // Suppress noisy dependency arrows for subtask rows inside solution
-        // groups and closeout-phase rows (Training, Go-Live). Only infrastructure-
-        // level arrows (e.g. Cribl → connector group) add visual value.
-        const suppressArrows = (row.solutionGroupId && !row.isSolutionGroup)
-            || row.phaseKey === 'closeout';
+        // Suppress dependency arrows that cross group boundaries or point to
+        // closeout-phase rows. Keep arrows between tasks within the SAME group
+        // (sequential subtask chains) since those communicate useful ordering.
+        const isCloseout = row.phaseKey === 'closeout';
+        const rowGroupId = row.solutionGroupId || '';
 
-        const visibleDependencies = suppressArrows ? [] : [...new Set((row.dependencies || []).map((dependencyId) => {
-            if (visibleRowIds.has(dependencyId)) return dependencyId;
+        const visibleDependencies = isCloseout ? [] : [...new Set((row.dependencies || []).map((dependencyId) => {
+            if (visibleRowIds.has(dependencyId)) {
+                // Only keep the arrow if the dependency is in the same group
+                const depRow = rowById.get(dependencyId);
+                const depGroupId = depRow?.solutionGroupId || '';
+                if (rowGroupId && depGroupId && rowGroupId === depGroupId) return dependencyId;
+                if (!rowGroupId && !depGroupId) return dependencyId;
+                return null;
+            }
 
             const dependencyRow = rowById.get(dependencyId);
             if (dependencyRow?.parentId
                 && collapsedSummaryIds.has(dependencyRow.parentId)
                 && visibleRowIds.has(dependencyRow.parentId)) {
-                return dependencyRow.parentId;
+                return null; // Cross-group when collapsed — suppress
             }
 
             if (dependencyRow?.solutionGroupId
                 && collapsedSolutionGroupIds.has(dependencyRow.solutionGroupId)
                 && visibleRowIds.has(dependencyRow.solutionGroupId)) {
-                return dependencyRow.solutionGroupId;
+                return null; // Cross-group when collapsed — suppress
             }
 
             return null;
@@ -4662,29 +4669,47 @@ export function buildGanttPlanData(selectedSolutions = [], options = {}) {
                     insertIndex += 1;
                 }
 
-                // Group bar width spans only the per-connector tasks (shiftedRows),
-                // not the existing infrastructure rows — infra is already visible as
-                // subtasks and shouldn't inflate the collapsed group bar.
+                // The merged group should start where per-connector tasks begin
+                // (not at infra start) because infra subtasks are dropped from
+                // the merged output. Use the earliest shiftedRow start as the
+                // group's natural start position.
+                const connectorStartWeek = shiftedRows.length > 0
+                    ? shiftedRows.reduce(
+                        (minStart, row) => Math.min(minStart, row?.startWeek ?? Infinity),
+                        Infinity
+                    )
+                    : existingGroupRow.startWeek;
+                const safeConnectorStart = Number.isFinite(connectorStartWeek)
+                    ? connectorStartWeek
+                    : existingGroupRow.startWeek;
+
                 const groupEndWeek = shiftedRows.length > 0
                     ? shiftedRows.reduce(
-                        (maxEndWeek, row) => Math.max(maxEndWeek, row?.endWeek || existingGroupRow.startWeek),
-                        existingGroupRow.startWeek
+                        (maxEndWeek, row) => Math.max(maxEndWeek, row?.endWeek || safeConnectorStart),
+                        safeConnectorStart
                     )
                     : existingGroupRow.endWeek;
+
+                // Respect user override: if the user dragged the group, keep
+                // their position; otherwise use per-connector task start.
+                const effectiveGroupStart = existingGroupRow.hasDirectStartWeekOverride
+                    ? existingGroupRow.startWeek
+                    : safeConnectorStart;
+
                 const mergedGroupRow = buildSolutionGroupRow({
                     solution: plannedSolution,
                     phaseKey: existingGroupRow.phaseKey || phaseKey,
                     counters,
                     number: solutionNumber,
                     startWeekState: {
-                        defaultStartWeek: existingGroupRow.defaultStartWeek,
-                        effectiveStartWeek: existingGroupRow.startWeek,
+                        defaultStartWeek: safeConnectorStart,
+                        effectiveStartWeek: effectiveGroupStart,
                         hasDirectStartWeekOverride: existingGroupRow.hasDirectStartWeekOverride,
                         hasDerivedCustomStartWeek: false,
                         isCustomStartWeek: existingGroupRow.isCustomStartWeek,
                         isStartWeekEditable: true
                     },
-                    durationWeeks: Math.max(MIN_TASK_DURATION_WEEKS, roundWeekPrecision(groupEndWeek - existingGroupRow.startWeek)),
+                    durationWeeks: Math.max(MIN_TASK_DURATION_WEEKS, roundWeekPrecision(groupEndWeek - effectiveGroupStart)),
                     dependencies: [...existingGroupRow.dependencies],
                     hasDerivedCustomSchedule: Boolean(existingGroupRow.hasDerivedCustomSchedule || shiftedRows.some((row) => row.isCustomSchedule)),
                     capacityProfile: getSolutionCapacityProfile(plannedSolution, capacitySnapshot)
