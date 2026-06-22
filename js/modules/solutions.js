@@ -2121,7 +2121,7 @@ function createSizingEditor(solution, profile, snapshot = {}) {
             const hasContent = Boolean(lt.has_content);
             badge.className = `log-type-selector__badge${hasContent ? '' : ' is-raw'}`;
             badge.textContent = lt.analytics_count > 0
-                ? `${lt.analytics_count} analytics`
+                ? `${lt.analytics_count} analytic rules`
                 : 'connector only';
 
             const infra = document.createElement('span');
