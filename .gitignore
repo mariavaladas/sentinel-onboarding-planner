@@ -12,8 +12,14 @@ test-results/
 
 # Scripts (local dev helpers)
 apply_k_patch.py
-scripts/patch_fieldpack.py
-scripts/verify_fieldpack.py
+scripts/
 
 # Generated reports (local)
 gantt-task-model-proposal.xlsx
+
+# Internal team state
+.squad/
+decisions.md
+decisions-archive.md
+docs/
+.original_index.html
