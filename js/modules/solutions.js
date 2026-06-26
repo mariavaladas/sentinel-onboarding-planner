@@ -2150,7 +2150,7 @@ function createSizingEditor(solution, profile, snapshot = {}) {
             ? 'Enter the WEC server count plus the on-prem split. Windows Forwarded Events always stays separate from the AMA host estate.'
             : 'Enter the Windows server count plus the on-prem split. The planner will size collection VMs and show the math transparently.'
         : profile.type === 'linux'
-            ? 'Enter the Linux server count plus the on-prem split. The planner will use that mix when sizing shared Linux DCR capacity.'
+            ? 'Enter the EPS and Linux server count plus the on-prem split. EPS drives DCR throughput; the server count and split are used when sizing shared Linux DCR capacity.'
             : 'Enter expected EPS for this connector. The planner will size CEF forwarder VMs and flag when a load balancer or pipeline-first design should be considered.';
     form.appendChild(intro);
 
@@ -2174,7 +2174,7 @@ function createSizingEditor(solution, profile, snapshot = {}) {
             ? Boolean(nextDraft.criblIngestion)
             : hasSavedCriblIngestionPreference
                 ? Boolean(profile.values?.criblIngestion)
-                : true;
+                : false;
 
         nextDraft.criblIngestion = criblEligible ? resolvedCriblIngestion : false;
         nextDraft.criblIngestionExplicit = criblEligible && (hasExplicitCriblIngestionPreference || hasSavedCriblIngestionPreference);
@@ -2269,6 +2269,7 @@ function createSizingEditor(solution, profile, snapshot = {}) {
         }
         : profile.type === 'linux'
             ? {
+                eps: fieldRefs.eps?.value,
                 servers: fieldRefs.servers?.value,
                 onPremPercent: fieldRefs.onPremPercent?.value,
                 criblIngestion: getSelectedCriblIngestion(),
@@ -2297,6 +2298,9 @@ function createSizingEditor(solution, profile, snapshot = {}) {
             return;
         }
         if (profile.type === 'linux') {
+            if (fieldRefs.eps instanceof HTMLInputElement) {
+                fieldRefs.eps.value = String(nextDraft?.eps ?? '');
+            }
             if (fieldRefs.servers instanceof HTMLInputElement) {
                 fieldRefs.servers.value = String(nextDraft?.servers ?? '');
             }
@@ -2315,7 +2319,9 @@ function createSizingEditor(solution, profile, snapshot = {}) {
         let noteText = '';
 
         if (profile.type === 'linux') {
-            noteText = 'This sizing is specific to this Linux connector instance. Shared Linux DCR planning uses the on-prem vs. Azure split you set here.';
+            noteText = getSelectedCriblIngestion()
+                ? 'This sizing is specific to this Linux connector instance. EPS drives DCR throughput — Cribl handles log collection so no AMA collector VMs are needed.'
+                : 'This sizing is specific to this Linux connector instance. Shared Linux DCR planning uses the EPS and on-prem vs. Azure split you set here.';
         } else if (profile.type !== 'windows') {
             noteText = getSelectedCriblIngestion()
                 ? 'This sizing is specific to this firewall / CEF connector instance. EPS is still used for Sentinel DCR sizing, but Cribl handles log collection.'
@@ -2347,7 +2353,15 @@ function createSizingEditor(solution, profile, snapshot = {}) {
             criblToggleNote.hidden = !criblIngestion;
         }
         collectorPlacementControls?.setDisabled?.(criblIngestion);
-        if (profile.type === 'windows' || profile.type === 'linux') {
+        if (profile.type === 'linux') {
+            // For linux: EPS always shown — only hide the server count / split container
+            if (fieldRefs.serverFieldsContainer instanceof HTMLElement) {
+                fieldRefs.serverFieldsContainer.hidden = criblIngestion;
+            }
+            intro.textContent = criblIngestion
+                ? 'Enter the expected EPS for this Linux source. Cribl handles log collection — EPS still drives DCR throughput sizing.'
+                : 'Enter the EPS and Linux server count plus the on-prem split. EPS drives DCR throughput; the server count and split are used when sizing shared Linux DCR capacity.';
+        } else if (profile.type === 'windows') {
             if (fieldRefs.splitFieldEl instanceof HTMLElement) {
                 fieldRefs.splitFieldEl.classList.toggle('solution-sizing-collector--disabled', criblIngestion);
             }
@@ -2361,11 +2375,9 @@ function createSizingEditor(solution, profile, snapshot = {}) {
             docLink.hidden = criblIngestion;
             intro.textContent = criblIngestion
                 ? 'Cribl handles log collection for this source — no collection VMs are needed. Save to confirm.'
-                : profile.type === 'linux'
-                    ? 'Enter the Linux server count plus the on-prem split. The planner will use that mix when sizing shared Linux DCR capacity.'
-                    : profile.populationKind === 'wec'
-                        ? 'Enter the WEC server count plus the on-prem split. Windows Forwarded Events always stays separate from the AMA host estate.'
-                        : 'Enter the Windows server count plus the on-prem split. The planner will size collection VMs and show the math transparently.';
+                : profile.populationKind === 'wec'
+                    ? 'Enter the WEC server count plus the on-prem split. Windows Forwarded Events always stays separate from the AMA host estate.'
+                    : 'Enter the Windows server count plus the on-prem split. The planner will size collection VMs and show the math transparently.';
         }
     };
 
@@ -2573,6 +2585,23 @@ function createSizingEditor(solution, profile, snapshot = {}) {
             grid.appendChild(sourceComputersField.field);
         }
     } else if (profile.type === 'linux') {
+        // EPS field — always shown (drives DCR throughput regardless of collection method)
+        const epsInput = document.createElement('input');
+        epsInput.type = 'number';
+        epsInput.min = '0';
+        epsInput.step = '100';
+        epsInput.inputMode = 'numeric';
+        epsInput.value = String(draft.eps ?? '');
+        const epsField = createField('What is the expected EPS for this Linux source?', epsInput, 'Events per second — drives DCR throughput sizing');
+        epsField.field.classList.add('solution-sizing-field--prominent', 'solution-sizing-field--wide');
+        fieldRefs.eps = epsInput;
+        grid.appendChild(epsField.field);
+
+        // Server fields container — hidden when Cribl is handling collection
+        const serverFieldsContainer = document.createElement('div');
+        serverFieldsContainer.className = 'solution-sizing-server-fields';
+        serverFieldsContainer.hidden = Boolean(draft.criblIngestion);
+
         const serversInput = document.createElement('input');
         serversInput.type = 'number';
         serversInput.min = '0';
@@ -2596,7 +2625,9 @@ function createSizingEditor(solution, profile, snapshot = {}) {
         fieldRefs.onPremPercent = splitInput;
         fieldRefs.azureHelper = splitField.helper;
         fieldRefs.splitFieldEl = splitField.field;
-        grid.append(serversField.field, splitField.field);
+        fieldRefs.serverFieldsContainer = serverFieldsContainer;
+        serverFieldsContainer.append(serversField.field, splitField.field);
+        grid.appendChild(serverFieldsContainer);
     } else {
         const epsInput = document.createElement('input');
         epsInput.type = 'number';

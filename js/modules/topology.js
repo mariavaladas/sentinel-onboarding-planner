@@ -20,7 +20,7 @@ const PATH_CONFIGS = {
     direct: { color: '#10b981', sourceLabel: 'Microsoft 365 / Defender', sourceIcon: '🛡️', logoUrl: TOPOLOGY_LOGOS.microsoft365, pathType: 'boxes', pathBoxes: [{ icon: '⚡', label: 'Native Connector' }], dcr: null, protocol: 'Direct Integration' },
     logic_app: { color: '#ec4899', sourceLabel: 'Custom / Third-Party APIs', sourceIcon: '🔗', pathType: 'boxes', pathBoxes: [{ icon: '⚙️', label: 'Logic App / Function' }, { icon: '📡', label: 'Data Collector API' }], dcr: 'DCR: Custom Logs', protocol: 'HTTP (Webhook/Poll)' },
     windows_events: { color: '#06b6d4', sourceLabel: 'Windows Servers', sourceIcon: '🪟', logoUrl: TOPOLOGY_LOGOS.windows, pathType: 'server', serverLabel: 'Windows Server', agentLabel: 'AMA Agent', serverOs: 'windows', dcr: 'Windows DCR', protocol: 'Windows Events (XPath)' },
-    event_hub: { color: '#f97316', sourceLabel: 'Event Hub Sources', sourceIcon: '📨', logoUrl: TOPOLOGY_LOGOS.azure, pathType: 'boxes', pathBoxes: [{ icon: '📨', label: 'Event Hub' }, { icon: '⚙️', label: 'Ingestion Pipeline' }], dcr: 'DCR: Event Hub', protocol: 'Event Hub Streaming' },
+    event_hub: { color: '#f97316', sourceLabel: 'Event Hub Sources', sourceIcon: '📨', logoUrl: TOPOLOGY_LOGOS.azure, pathType: 'boxes', pathBoxes: [{ icon: '📨', label: 'Event Hub' }], dcr: 'DCR: Event Hub', protocol: 'Event Hub Streaming' },
     cribl: { color: '#5bc4f1', sourceLabel: 'Cribl Stream', sourceIcon: '🔀', logoUrl: TOPOLOGY_LOGOS.cribl, pathType: 'boxes', pathBoxes: [{ icon: '🔀', label: 'Cribl Stream' }], dcr: 'Custom DCR (Logs Ingestion API)', protocol: 'Logs Ingestion API' }
 };
 
@@ -804,18 +804,6 @@ export function renderTopology(selectedSolutions, containerEl) {
     }
 
     const allSelectedSolutions = Array.isArray(selectedSolutions) ? selectedSolutions : [];
-    console.log('[Topology] renderTopology state:', {
-        connectedSolutionCount: connectedSolutionIds.size,
-        connectedSolutionIds: Array.from(connectedSolutionIds),
-        allSelectedSolutions: allSelectedSolutions.length
-    });
-    console.info(
-        '[Topology] Input solutions:',
-        allSelectedSolutions.length,
-        'Connected IDs:',
-        connectedSolutionIds.size,
-        Array.from(connectedSolutionIds).slice(0, 10)
-    );
     const hasStandaloneCriblSelection = allSelectedSolutions.some((solution) => String(solution?.id || '').trim().toLowerCase() === CRIBL_SOLUTION_ID);
     const topologySolutions = allSelectedSolutions.filter((solution) =>
         String(solution?.id || '').trim().toLowerCase() !== CRIBL_SOLUTION_ID
@@ -1382,12 +1370,13 @@ export function renderTopology(selectedSolutions, containerEl) {
       return { zoneLayouts: layouts, bandBottomY, bandRightX };
   }
 
-  const hasOnPremSources = zoneRows.onprem.length > 0;
-  const topBandZones = hasOnPremSources
-      ? ['onprem']
-      : zoneOrder.filter((zone) => zoneRows[zone].length);
-  const bottomBandZones = hasOnPremSources
-      ? zoneOrder.filter((zone) => zone !== 'onprem' && zoneRows[zone].length)
+  const hasOnPremOrAzureSources = zoneRows.onprem.length > 0 || zoneRows.azure.length > 0;
+  const hasSaasSources = zoneRows.saas.length > 0;
+  const topBandZones = hasOnPremOrAzureSources
+      ? ['onprem', 'azure'].filter((z) => zoneRows[z].length)
+      : zoneOrder.filter((z) => zoneRows[z].length);
+  const bottomBandZones = (hasOnPremOrAzureSources && hasSaasSources)
+      ? ['saas']
       : [];
 
   const cloneZoneLayoutsForRoute = (layouts = [], route = ROUTE_STANDARD) => (Array.isArray(layouts) ? layouts : [])
@@ -1760,6 +1749,28 @@ export function renderTopology(selectedSolutions, containerEl) {
           });
       });
   });
+
+  // Aggregate capacity from all Cribl DCR plans for display on Cribl DCR nodes
+  const criblDcrCapacity = (() => {
+      const totalEps = criblSyslogDcrPlan?.totalEps || 0;
+      const windowsReqPerMin = (criblWindowsDcrPlan?.dcrs || [])
+          .reduce((sum, dcr) => sum + (Number(dcr.requestsPerMinute) || 0), 0);
+      const linuxReqPerMin = (criblLinuxDcrPlan?.dcrs || [])
+          .reduce((sum, dcr) => sum + (Number(dcr.requestsPerMinute) || 0), 0);
+      const totalReqPerMin = windowsReqPerMin + linuxReqPerMin;
+      const isNearLimit = (criblSyslogDcrPlan?.dcrs || []).some((dcr) => dcr.isNearLimit)
+          || (criblWindowsDcrPlan?.dcrs || []).some((dcr) => dcr.isNearLimit)
+          || (criblLinuxDcrPlan?.dcrs || []).some((dcr) => dcr.isNearLimit);
+      const dataSources = dedupe([
+          ...(criblSyslogDcrPlan?.dataSources || []),
+          ...(criblWindowsDcrPlan?.dcrs || []).flatMap((dcr) => Array.isArray(dcr.dataSources) ? dcr.dataSources : []),
+          ...(criblLinuxDcrPlan?.dcrs || []).flatMap((dcr) => Array.isArray(dcr.dataSources) ? dcr.dataSources : [])
+      ]);
+      const parts = [];
+      if (totalEps > 0) parts.push(`${formatEps(totalEps)} EPS`);
+      if (totalReqPerMin > 0) parts.push(`${formatReqPerMin(totalReqPerMin)} req/min`);
+      return { isNearLimit, dataSources, capacityLabel: parts.join(' · ') };
+  })();
 
   if (criblIngress.top) {
       // Cribl is 'existing' if the cribl-stream solution was already connected in the user's env
@@ -1797,7 +1808,10 @@ export function renderTopology(selectedSolutions, containerEl) {
               label: 'Custom DCR (Logs Ingestion API)',
               color: PATH_CONFIGS.cribl.color,
               band: 'top',
-              status: criblNodeStatus
+              status: criblNodeStatus,
+              dataSources: criblDcrCapacity.dataSources,
+              isNearLimit: criblDcrCapacity.isNearLimit,
+              ...(criblDcrCapacity.capacityLabel ? { capacityLabel: criblDcrCapacity.capacityLabel } : {})
           },
           style: { width: dcrNodeWidth }
       });
@@ -1843,7 +1857,10 @@ export function renderTopology(selectedSolutions, containerEl) {
               label: 'Custom DCR (Logs Ingestion API)',
               color: PATH_CONFIGS.cribl.color,
               band: 'bottom',
-              status: connectedSolutionIds.has(CRIBL_SOLUTION_ID) ? 'existing' : 'new'
+              status: connectedSolutionIds.has(CRIBL_SOLUTION_ID) ? 'existing' : 'new',
+              dataSources: criblDcrCapacity.dataSources,
+              isNearLimit: criblDcrCapacity.isNearLimit,
+              ...(criblDcrCapacity.capacityLabel ? { capacityLabel: criblDcrCapacity.capacityLabel } : {})
           },
           style: { width: dcrNodeWidth }
       });
@@ -1922,10 +1939,9 @@ export function renderTopology(selectedSolutions, containerEl) {
           style: {
               width: layout.zoneEndX - layout.zoneStartX,
               height: (layout.zoneEndY - layout.zoneStartY) + 25,
-              zIndex: -1,
-              pointerEvents: 'none'
+              zIndex: -1
           },
-          draggable: false,
+          draggable: true,
           selectable: false
       });
   });
@@ -2471,6 +2487,20 @@ export function renderTopology(selectedSolutions, containerEl) {
   const layerBoxNodes = createLayerBoxNodes(nodes);
   const allRenderNodes = [...layerBoxNodes, ...nodes];
 
+  // Restore saved node positions from sessionStorage
+  const TOPO_POS_KEY = 'sentinelPlanner.topoNodePositions';
+  try {
+      const saved = sessionStorage.getItem(TOPO_POS_KEY);
+      if (saved) {
+          const posMap = JSON.parse(saved);
+          allRenderNodes.forEach(n => {
+              if (posMap[n.id]) {
+                  n.position = posMap[n.id];
+              }
+          });
+      }
+  } catch(e) { /* ignore parse errors */ }
+
   const legendSeeds = [
         ...groupEntries.map(([type]) => {
             const pc = PATH_CONFIGS[type] || PATH_CONFIGS.api;
@@ -2489,6 +2519,11 @@ export function renderTopology(selectedSolutions, containerEl) {
                     <button type="button" class="topo-toolbar-btn topo-filter-btn" data-filter="connected">✓ Existing</button>
                     <button type="button" class="topo-toolbar-btn topo-filter-btn" data-filter="new">+ New</button>
                 </div>
+            </div>
+            <div class="topo-overlap-hint">
+                <span class="topo-overlap-hint-icon">ℹ️</span>
+                <span>Some boxes may overlap due to automatic layout. You can drag any box to rearrange the diagram.</span>
+                <button type="button" class="topo-overlap-hint-dismiss" aria-label="Dismiss">&times;</button>
             </div>
             <div id="reactflow-topology" class="topo-flow-wrapper"></div>
             <div class="topo-legend">
@@ -2813,6 +2848,16 @@ export function renderTopology(selectedSolutions, containerEl) {
 
     function FlowWrapper() {
         const nt = React.useMemo(() => ({ source: SourceNode, pathBox: PathBoxNode, cribl: CriblNode, server: ServerNode, dcr: DCRNode, sentinel: SentinelNode, uberBox: UberBoxNode, collectorVm: CollectorVmNode, layerBox: LayerBoxNode }), []);
+
+        const onNodeDragStop = React.useCallback((_evt, node) => {
+            try {
+                const raw = sessionStorage.getItem(TOPO_POS_KEY);
+                const posMap = raw ? JSON.parse(raw) : {};
+                posMap[node.id] = node.position;
+                sessionStorage.setItem(TOPO_POS_KEY, JSON.stringify(posMap));
+            } catch(e) { /* quota or parse error */ }
+        }, []);
+
         return h(RF, {
             defaultNodes: allRenderNodes,
             defaultEdges: edges,
@@ -2824,6 +2869,7 @@ export function renderTopology(selectedSolutions, containerEl) {
             minZoom: 0.3,
             maxZoom: 2,
             nodesDraggable: true,
+            onNodeDragStop: onNodeDragStop,
             style: { background: 'transparent' }
         },
             h(Controls, { showInteractive: false }),
@@ -2836,10 +2882,25 @@ export function renderTopology(selectedSolutions, containerEl) {
     const root = ReactDOM.createRoot(topoContainer);
     root.render(app);
 
+    // Overlap hint dismiss
+    const hintDismiss = containerEl.querySelector('.topo-overlap-hint-dismiss');
+    if (hintDismiss) {
+        hintDismiss.addEventListener('click', () => {
+            const hint = containerEl.querySelector('.topo-overlap-hint');
+            if (hint) hint.style.display = 'none';
+            try { sessionStorage.setItem('topo-overlap-hint-dismissed', '1'); } catch(e) {}
+        });
+        if (sessionStorage.getItem('topo-overlap-hint-dismissed') === '1') {
+            const hint = containerEl.querySelector('.topo-overlap-hint');
+            if (hint) hint.style.display = 'none';
+        }
+    }
+
     // Toolbar: Reset Layout
     const resetBtn = document.getElementById('topoResetLayout');
     if (resetBtn) {
         resetBtn.addEventListener('click', () => {
+            try { sessionStorage.removeItem(TOPO_POS_KEY); } catch(e) {}
             renderTopology(topologySolutions.concat(hasStandaloneCriblSelection ? [{ id: CRIBL_SOLUTION_ID }] : []), containerEl);
         });
     }

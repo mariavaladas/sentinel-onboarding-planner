@@ -6,6 +6,7 @@ export const DEFAULT_WINDOWS_SERVERS = 100;
 export const DEFAULT_WINDOWS_ONPREM_PERCENT = 50;
 export const DEFAULT_LINUX_SERVERS = 50;
 export const DEFAULT_LINUX_ONPREM_PERCENT = 50;
+export const DEFAULT_LINUX_EPS = 5000;
 export const RECOMMENDED_FORWARDER_VM_SIZE = 'Standard_D4s_v3';
 export const FIREWALL_SIZING_DOC_URL = 'https://learn.microsoft.com/azure/sentinel/connect-common-event-format';
 export const WINDOWS_SIZING_DOC_URL = 'https://learn.microsoft.com/azure/azure-monitor/vm/data-collection-windows-events';
@@ -586,6 +587,7 @@ export function createDefaultSizingDraft(type = 'none', options = {}) {
 
     if (type === 'linux') {
         return {
+            eps: DEFAULT_LINUX_EPS,
             servers: DEFAULT_LINUX_SERVERS,
             onPremPercent: DEFAULT_LINUX_ONPREM_PERCENT,
             criblIngestion: false,
@@ -631,6 +633,7 @@ export function normalizeSizingValues(type = 'none', values = {}) {
 
     if (type === 'linux') {
         return {
+            eps: sanitizeCount(values?.eps),
             servers: sanitizeCount(values?.servers ?? values?.serverCount),
             onPremPercent: clampPercent(values?.onPremPercent ?? DEFAULT_LINUX_ONPREM_PERCENT),
             criblIngestion: Boolean(values?.criblIngestion),
@@ -687,9 +690,18 @@ export function validateSizingDraft(type = 'none', values = {}) {
     }
 
     if (type === 'linux') {
-        if (values?.criblIngestion) {
-            // Cribl handles collection — server count / split are not required
-        } else {
+        // EPS always required — drives DCR throughput regardless of collection method
+        const epsRaw = String(values?.eps ?? '').trim();
+        const epsValue = Number(epsRaw);
+        if (!epsRaw || !Number.isFinite(epsValue) || epsValue < 0) {
+            fieldErrors.eps = 'Enter a valid EPS value.';
+        }
+        if (!fieldErrors.eps && sanitizeCount(epsValue) === 0) {
+            warnings.push('0 EPS will produce no DCR throughput — intentional?');
+        }
+
+        if (!values?.criblIngestion) {
+            // Server count and split required when Cribl is not handling collection
             const serversRaw = String(values?.servers ?? values?.serverCount ?? '').trim();
             const onPremRaw = String(values?.onPremPercent ?? '').trim();
             const serversValue = Number(serversRaw);
@@ -784,27 +796,39 @@ export function computeSizingResult(type = 'none', values = {}, options = {}) {
     }
 
     if (type === 'linux') {
+        const eps = normalized.eps;
         const servers = normalized.servers;
         const onPremPercent = normalized.onPremPercent;
         const onPremServers = Math.round((servers * onPremPercent) / 100);
         const azureServers = Math.max(0, servers - onPremServers);
         const requestsPerMinute = servers * 3;
         const serverSummaryLabel = `${formatNumber(servers)} Linux server${servers === 1 ? '' : 's'}`;
-        const summary = `${serverSummaryLabel} · ${onPremPercent}% on-prem`;
+        const criblIngestion = normalized.criblIngestion;
+
+        const summary = criblIngestion
+            ? `${formatNumber(eps)} EPS · Cribl ingestion`
+            : `${serverSummaryLabel} · ${formatNumber(eps)} EPS · ${onPremPercent}% on-prem`;
+
+        const reasoning = criblIngestion
+            ? `${formatNumber(eps)} EPS via Cribl — no AMA collector VMs required`
+            : `${serverSummaryLabel} · ${formatNumber(eps)} EPS · ${formatNumber(onPremServers)} on-prem · ${formatNumber(azureServers)} Azure for shared Linux DCR sizing`;
 
         return {
             type,
+            eps,
             servers,
             onPremPercent,
             onPremServers,
             azureServers,
             requestsPerMinute,
-            reasoning: `${serverSummaryLabel} · ${formatNumber(onPremServers)} on-prem · ${formatNumber(azureServers)} Azure for shared Linux DCR sizing`,
+            reasoning,
             summary,
             serverSummaryLabel,
             serverDisplayLabel: serverSummaryLabel,
-            badge: normalized.isDefault ? `${serverSummaryLabel} (est.)` : serverSummaryLabel,
-            label: serverSummaryLabel,
+            badge: normalized.isDefault
+                ? (criblIngestion ? `${formatNumber(eps)} EPS (est.)` : `${serverSummaryLabel} (est.)`)
+                : (criblIngestion ? `${formatNumber(eps)} EPS` : serverSummaryLabel),
+            label: criblIngestion ? `${formatNumber(eps)} EPS via Cribl` : serverSummaryLabel,
             docUrl: '',
             docLabel: '',
             isDefault: normalized.isDefault
@@ -1079,8 +1103,15 @@ export function getSizingDetailLines(profile = {}) {
     }
 
     if (profile.type === 'linux') {
+        if (profile.criblIngestion) {
+            return [
+                `EPS: ${formatNumber(profile.result.eps)} — Cribl handles log collection`,
+                'No AMA collector VMs needed'
+            ];
+        }
         return [
             `Scope: ${profile.result.serverDisplayLabel}`,
+            `EPS: ${formatNumber(profile.result.eps)}`,
             `Mix: ${formatNumber(profile.result.onPremServers)} on-prem · ${formatNumber(profile.result.azureServers)} Azure`,
             `Estimated DCR load: ${formatNumber(profile.result.requestsPerMinute)} req/min`
         ];

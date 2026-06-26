@@ -2456,6 +2456,109 @@ document.addEventListener('DOMContentLoaded', async () => {
         window.location.reload();
     });
 
+    document.getElementById('saveConfig')?.addEventListener('click', () => {
+        const config = { version: '1.0', exportedAt: new Date().toISOString(), appVersion: '2.0', data: {} };
+        const EXCLUDED_KEYS = new Set([`${STORAGE_PREFIX}sessionToken`, `${STORAGE_PREFIX}theme`]);
+
+        if (canUseLocalStorage()) {
+            for (let i = 0; i < window.localStorage.length; i++) {
+                const key = window.localStorage.key(i);
+                if (key && key.startsWith(STORAGE_PREFIX) && !EXCLUDED_KEYS.has(key)) {
+                    config.data[key] = { value: window.localStorage.getItem(key), storage: 'local' };
+                }
+            }
+        }
+
+        try {
+            if (typeof window !== 'undefined' && window.sessionStorage) {
+                for (let i = 0; i < window.sessionStorage.length; i++) {
+                    const key = window.sessionStorage.key(i);
+                    if (key && key.startsWith(STORAGE_PREFIX) && !EXCLUDED_KEYS.has(key)) {
+                        config.data[key] = { value: window.sessionStorage.getItem(key), storage: 'session' };
+                    }
+                }
+            }
+        } catch { /* sessionStorage access denied — skip */ }
+
+        const blob = new Blob([JSON.stringify(config, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        const anchor = document.createElement('a');
+        anchor.href = url;
+        const dateStamp = new Date().toISOString().slice(0, 10);
+        anchor.download = `sentinel-planner-config-${dateStamp}.json`;
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+        URL.revokeObjectURL(url);
+    });
+
+    document.getElementById('loadConfig')?.addEventListener('click', () => {
+        document.getElementById('loadConfigInput')?.click();
+    });
+
+    document.getElementById('loadConfigInput')?.addEventListener('change', (event) => {
+        const file = event.target.files?.[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = (readEvent) => {
+            let config;
+            try {
+                config = JSON.parse(readEvent.target.result);
+            } catch {
+                window.alert('Invalid file: could not parse JSON.');
+                return;
+            }
+
+            if (!config.version || !config.data || !Object.keys(config.data).some((k) => k.startsWith(STORAGE_PREFIX))) {
+                window.alert('Invalid config file: missing version or planner data.');
+                return;
+            }
+
+            if (!window.confirm('Loading this config will replace your current progress. Continue?')) {
+                return;
+            }
+
+            const EXCLUDED_KEYS = new Set([`${STORAGE_PREFIX}sessionToken`, `${STORAGE_PREFIX}theme`]);
+            const entries = Object.entries(config.data);
+
+            if (canUseLocalStorage()) {
+                for (let i = 0; i < window.localStorage.length; i++) {
+                    const key = window.localStorage.key(i);
+                    if (key && key.startsWith(STORAGE_PREFIX) && !EXCLUDED_KEYS.has(key)) {
+                        window.localStorage.removeItem(key);
+                    }
+                }
+            }
+
+            try {
+                if (typeof window !== 'undefined' && window.sessionStorage) {
+                    for (let i = 0; i < window.sessionStorage.length; i++) {
+                        const key = window.sessionStorage.key(i);
+                        if (key && key.startsWith(STORAGE_PREFIX) && !EXCLUDED_KEYS.has(key)) {
+                            window.sessionStorage.removeItem(key);
+                        }
+                    }
+                }
+            } catch { /* skip */ }
+
+            for (const [key, entry] of entries) {
+                if (EXCLUDED_KEYS.has(key)) continue;
+                try {
+                    if (entry.storage === 'session' && typeof window !== 'undefined' && window.sessionStorage) {
+                        window.sessionStorage.setItem(key, entry.value);
+                    } else if (canUseLocalStorage()) {
+                        window.localStorage.setItem(key, entry.value);
+                    }
+                } catch { /* quota exceeded or access denied — skip entry */ }
+            }
+
+            window.location.reload();
+        };
+        reader.readAsText(file);
+        event.target.value = '';
+    });
+
     window.addEventListener('sentinelPlanner:capacity-changed', () => {
         if (getCurrentStep() === 4) {
             renderTopologyStep();

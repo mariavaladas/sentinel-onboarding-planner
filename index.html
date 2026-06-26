@@ -59,6 +59,9 @@
                     <span class="theme-toggle__icon" id="themeToggleIcon" aria-hidden="true">☀️</span>
                     <span class="theme-toggle__label" id="themeToggleLabel">Light mode</span>
                 </button>
+                <button type="button" class="app-button app-button--subtle" id="saveConfig">💾 Save Config</button>
+                <button type="button" class="app-button app-button--subtle" id="loadConfig">📂 Load Config</button>
+                <input type="file" id="loadConfigInput" accept=".json" style="display:none">
                 <button type="button" class="app-button app-button--subtle" id="resetPlannerState">Reset saved progress</button>
             </div>
         </header>
@@ -395,7 +398,7 @@
                         </div>
                     </div>
 
-                    <p class="helper-text">You can still search for additional third-party solutions in the next step.</p>
+                    <p class="helper-text">You can still search for additional solutions from other environments in the next step.</p>
 
                     <div class="nav-buttons">
                         <button type="button" class="app-button" data-prev>← Back</button>
@@ -407,7 +410,7 @@
             <section class="wizard-step" id="step3">
                 <div class="step-content">
                     <h2>Select solution packages</h2>
-                    <p class="step-description">Review recommended packages, add any additional third-party solutions, and build the shortlist for the planner view.</p>
+                    <p class="step-description">Review recommended packages, add any additional solutions from other environments, and build the shortlist for the planner view.</p>
 
                     <div class="preselected-notice" id="preselectionBanner" hidden>
                         <span class="notice-icon">ℹ️</span>

@@ -461,3 +461,67 @@
    - Duration distribution: 0.5d (98), 1.0d (683), 1.5d (629), 2.0d (265), 3.0d (141) tasks
 
 **Decisions recorded:** `decisions.md` (2026-06-16 Featured Solution Task Rewrite, High-Value Non-Featured Batch A, Tier 1/2/3 Durations)
+
+---
+
+## Learnings
+
+### 2026-06-23T08:31:02+02:00 — QA Blocker Fixes B2 (Cribl Stream) and B3 (17 GCP connectors)
+
+**What was populated:**
+
+**B2 — cribl-stream:**
+- Added `category: "cloud"` (closest existing category for infrastructure/integration platform tools)
+- Added `isFeatured: true` (confirmed first-class vendor card in Step 2)
+- Added `export_metadata`: group=`Integration Platforms`, priority_score=68, phased_deployment=2 (complex infrastructure, deployed after core Sentinel workspace is running), integrates_with=[common-event-format, windows-forwarded-events, aws, azure-activity], estimated_monthly_cost=medium
+- Added `planner` with full bespoke content: 6 hand-crafted tasks totalling 6.5d, plus validation_steps (3), documentation_url, owner_recommended=`Cribl Admin`, and common_issues (3)
+- Cribl task arc: cs-prereqs (DCE/DCR + Entra app reg, 1.0d) → cs-infra (Worker Group deploy + network, 1.5d) → cs-sources (Source config per log type, 1.5d) → cs-destination (HTTP dest + pipelines + routes, 1.5d) → cs-verify (end-to-end test + Sentinel table check, 0.5d) → cs-operationalise (monitoring/alerting/runbook, 0.5d)
+- Owner role `Cribl Admin` used for all infrastructure tasks (cs-infra, cs-sources, cs-destination); Azure Platform Admin for prereqs; SOC Engineer for verification and operationalisation
+
+**B3 — 17 GCP connectors (Pub/Sub pattern):**
+All connectors use the same 4-task base pattern (prereqs → Pub/Sub infra → connector config → data verify). Connectors with analytics/workbooks/playbooks get a 5th Operationalization task; connectors with high content (analytics ≥ 10 or total content ≥ 14) get a 6th tuning/Validation task.
+
+| Connector | Tasks | Duration | Notable |
+|-----------|-------|----------|---------|
+| google-cloud-platform-audit-logs | 5 | 3.5d | 7 analytics → Operationalization task |
+| google-cloud-platform-big-query | 5 | 3.5d | 4 playbooks → Operationalization task |
+| google-cloud-platform-cdn | 4 | 3.0d | base pattern |
+| google-cloud-platform-cloud-monitoring | 4 | 3.0d | base pattern |
+| google-cloud-platform-cloud-run | 4 | 3.0d | base pattern |
+| google-cloud-platform-compute-engine | 4 | 3.0d | base pattern |
+| google-cloud-platform-dns | 6 | 4.5d | 11 analytics → Operationalization + tuning |
+| google-cloud-platform-firewall-logs | 4 | 3.0d | base pattern |
+| google-cloud-platform-iam | 6 | 4.5d | 10 analytics + 1 wb + 4 pb → full 6-task arc |
+| google-cloud-platform-ids | 4 | 3.0d | base pattern |
+| google-cloud-platform-load-balancer-logs | 4 | 3.0d | base pattern |
+| google-cloud-platform-nat | 4 | 3.0d | base pattern |
+| google-cloud-platform-resource-manager | 4 | 3.0d | base pattern |
+| google-cloud-platform-security-command-center | 5 | 3.5d | 5 analytics → Operationalization task |
+| google-cloud-platform-sql | 4 | 3.0d | base pattern |
+| google-cloud-platform-vpc-flow-logs | 4 | 3.0d | base pattern |
+| google-kubernetes-engine | 4 | 3.0d | base pattern |
+
+**Pattern used (GCP):**
+- Task 1 — Prerequisites (1.0d, GCP Cloud Admin): service account creation, IAM role grants (roles/pubsub.subscriber + roles/logging.admin), Sentinel workspace RBAC confirmation
+- Task 2 — GCP Pub/Sub Infrastructure (1.0d, GCP Cloud Admin): Pub/Sub topic + subscription creation, Cloud Logging sink with product-specific log filter, sink activation verification
+- Task 3 — Sentinel Connector Configuration (0.5d, Azure Platform Admin): connector config (project ID, subscription name, service account JSON credentials), enable connector, verify Connected status
+- Task 4 — Data Verification (0.5d, SOC Analyst): KQL query against product-specific Sentinel table, generate representative GCP test event, confirm latency
+- Task 5 — Operationalization (0.5d–1.0d, SOC Engineer): deploy analytics/workbooks/playbooks from Content Hub, configure Logic App connections, review entity mappings
+- Task 6 — Validation/Tuning (0.5d, SOC Analyst): allow-list GCP service accounts + automation principals, adjust scheduled query thresholds, confirm at least one rule triggers
+
+**ID abbreviation scheme used:**
+gcpal (audit-logs), gcpbq (big-query), gcpcdn (cdn), gcpcm (cloud-monitoring), gcpcr (cloud-run), gcpce (compute-engine), gcpdns (dns), gcpfw (firewall-logs), gcpiam (iam), gcpids (ids), gcplb (load-balancer-logs), gcpnat (nat), gcprm (resource-manager), gcpscc (security-command-center), gcpsql (sql), gcpvpc (vpc-flow-logs), gke (kubernetes-engine), cs (cribl-stream)
+
+**Root cause of B3 gap:**
+All 17 GCP connectors had a partial `planner` key (validation_steps, common_issues, documentation_url) but no `setup_tasks` — they were skipped by the Batch B highvalue patch script because the script's is_generic guard returned False when a `planner` key was present, regardless of whether `setup_tasks` existed. The fix required a targeted patch script that adds `setup_tasks` when `planner` exists but `setup_tasks` is absent.
+
+**Files affected:**
+- `data/solutions.json` — 18 solutions patched (17 GCP + cribl-stream)
+- `scripts/patch_gcp_cribl_tasks.py` — new patch script (idempotent, skips if setup_tasks already present)
+
+**Validation results:**
+- JSON valid, 489 total solutions unchanged
+- All 489 solutions now have non-empty setup_tasks
+- All new task durations in [0.5, 3.0]d range
+- All new task descriptions ≥ 80 chars (actual range: 398–807 chars)
+- Pre-existing duration violations in defender-xdr (0.25d tasks) are unchanged — pre-existing issue, not caused by this patch

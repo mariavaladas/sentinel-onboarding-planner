@@ -1034,7 +1034,7 @@ function getOwnerModel(solution = {}) {
 }
 
 function getSolutionGroup(solution = {}) {
-    return solution?.export_metadata?.group || (solution?.is1P ? 'Microsoft' : 'Third Party');
+    return solution?.export_metadata?.group || (solution?.is1P ? 'Microsoft' : 'Other Environments');
 }
 
 function getSolutionPermissionRoles(solution = {}) {

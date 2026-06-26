@@ -1,4 +1,4 @@
-{
+﻿{
   "categories": {
     "azure": {
       "label": "Azure",
@@ -6344,8 +6344,8 @@
       ]
     },
     "third_party": {
-      "label": "Third Party",
-      "description": "Third-party endpoint, network, cloud, identity, email, SIEM, threat intelligence, and infrastructure solutions.",
+      "label": "Other Environments",
+      "description": "Non-Microsoft endpoint, network, cloud, identity, email, SIEM, threat intelligence, and infrastructure solutions.",
       "icon": "🔌",
       "solutions": [
         {
@@ -30091,6 +30091,81 @@
               "Google Cloud Platform Audit Logs account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform Audit Logs need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform Audit Logs can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpal-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP Audit Logs data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for Admin Activity, Data Access, System Event, and Policy Denied audit logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpal-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP Audit Logs.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpal-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-audit-logs and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: protoPayload.@type=\"type.googleapis.com/google.cloud.audit.AuditLog\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP Audit Logs events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpal-connector",
+                "order": 3,
+                "task": "Configure the GCP Audit Logs data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpal-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP Audit Logs connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-audit-logs-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpal-verify",
+                "order": 4,
+                "task": "Validate GCP Audit Logs ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpal-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the GCPAuditLogs and Logging tables to confirm recent GCP Audit Logs records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP Audit Logs event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              },
+              {
+                "id": "gcpal-content",
+                "order": 5,
+                "task": "Deploy and configure the GCP Audit Logs solution content (7 analytic rules).",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "gcpal-verify"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "From the Microsoft Sentinel Content Hub, install the GCP Audit Logs solution to deploy the packaged 7 analytics rules covering suspicious admin activity, policy changes, and data-access anomalies. Enable each rule in Active status, review the default entity mappings for GCP resource IDs and IP addresses, and assign rules to the appropriate analytic rule template. "
+              }
             ]
           },
           "export_metadata": {
@@ -30139,7 +30214,8 @@
           },
           "is_connector": true,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-big-query",
@@ -30185,6 +30261,81 @@
               "Google Cloud Platform Big Query account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform Big Query need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform Big Query can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpbq-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP BigQuery data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for BigQuery job, dataset, table, and data-access audit logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpbq-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP BigQuery.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpbq-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-bigquery and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=(\"bigquery_project\" OR \"bigquery_dataset\" OR \"bigquery_table\"). Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP BigQuery events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpbq-connector",
+                "order": 3,
+                "task": "Configure the GCP BigQuery data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpbq-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP BigQuery connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-bigquery-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpbq-verify",
+                "order": 4,
+                "task": "Validate GCP BigQuery ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpbq-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the GCPBigQueryDataAccess and Logging tables to confirm recent GCP BigQuery records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP BigQuery event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              },
+              {
+                "id": "gcpbq-content",
+                "order": 5,
+                "task": "Deploy and configure the GCP BigQuery solution content (4 automation playbooks).",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "gcpbq-verify"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "From the Microsoft Sentinel Content Hub, install the GCP BigQuery solution to deploy the packaged , and the 4 automation playbooks. Enable each rule in Active status, review the default entity mappings for GCP resource IDs and IP addresses, and assign rules to the appropriate analytic rule template. Configure playbook Logic App connections and grant them API permissions as required."
+              }
             ]
           },
           "export_metadata": {
@@ -30233,7 +30384,8 @@
           },
           "is_connector": false,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-cdn",
@@ -30278,6 +30430,66 @@
               "Google Cloud Platform CDN account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform CDN need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform CDN can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpcdn-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP CDN data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for Cloud CDN request and cache-hit/miss logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpcdn-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP CDN.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpcdn-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-cdn and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=\"http_load_balancer\" AND httpRequest.cacheHit!=\"\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP CDN events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpcdn-connector",
+                "order": 3,
+                "task": "Configure the GCP CDN data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpcdn-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP CDN connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-cdn-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpcdn-verify",
+                "order": 4,
+                "task": "Validate GCP CDN ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpcdn-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the Audit, Logging, and Technologies tables to confirm recent GCP CDN records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP CDN event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              }
             ]
           },
           "export_metadata": {
@@ -30326,7 +30538,8 @@
           },
           "is_connector": true,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-cloud-monitoring",
@@ -30372,6 +30585,66 @@
               "Google Cloud Platform Cloud Monitoring account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform Cloud Monitoring need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform Cloud Monitoring can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpcm-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP Cloud Monitoring data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for Monitoring alert policy evaluation and incident logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpcm-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP Cloud Monitoring.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpcm-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-monitoring and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=\"monitoring_alert_policy\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP Cloud Monitoring events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpcm-connector",
+                "order": 3,
+                "task": "Configure the GCP Cloud Monitoring data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpcm-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP Cloud Monitoring connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-monitoring-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpcm-verify",
+                "order": 4,
+                "task": "Validate GCP Cloud Monitoring ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpcm-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the Technologies table to confirm recent GCP Cloud Monitoring records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP Cloud Monitoring event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              }
             ]
           },
           "export_metadata": {
@@ -30420,7 +30693,8 @@
           },
           "is_connector": true,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-cloud-run",
@@ -30465,6 +30739,66 @@
               "Google Cloud Platform Cloud Run account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform Cloud Run need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform Cloud Run can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpcr-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP Cloud Run data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for Cloud Run service request, container, and system logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpcr-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP Cloud Run.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpcr-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-cloudrun and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=\"cloud_run_revision\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP Cloud Run events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpcr-connector",
+                "order": 3,
+                "task": "Configure the GCP Cloud Run data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpcr-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP Cloud Run connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-cloudrun-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpcr-verify",
+                "order": 4,
+                "task": "Validate GCP Cloud Run ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpcr-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the Logging and Technologies tables to confirm recent GCP Cloud Run records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP Cloud Run event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              }
             ]
           },
           "export_metadata": {
@@ -30513,7 +30847,8 @@
           },
           "is_connector": true,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-compute-engine",
@@ -30559,6 +30894,66 @@
               "Google Cloud Platform Compute Engine account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform Compute Engine need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform Compute Engine can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpce-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP Compute Engine data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for VM instance activity, OS-level system, and serial console logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpce-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP Compute Engine.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpce-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-compute and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=\"gce_instance\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP Compute Engine events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpce-connector",
+                "order": 3,
+                "task": "Configure the GCP Compute Engine data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpce-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP Compute Engine connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-compute-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpce-verify",
+                "order": 4,
+                "task": "Validate GCP Compute Engine ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpce-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the Audit and Technologies tables to confirm recent GCP Compute Engine records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP Compute Engine event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              }
             ]
           },
           "export_metadata": {
@@ -30607,7 +31002,8 @@
           },
           "is_connector": true,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-dns",
@@ -30656,6 +31052,96 @@
               "Google Cloud Platform DNS account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform DNS need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform DNS can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpdns-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP DNS data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for Cloud DNS query and response logs for all managed zones. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpdns-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP DNS.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpdns-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-dns and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=\"dns_query\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP DNS events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpdns-connector",
+                "order": 3,
+                "task": "Configure the GCP DNS data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpdns-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP DNS connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-dns-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpdns-verify",
+                "order": 4,
+                "task": "Validate GCP DNS ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpdns-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the GCPDNSLogs and Logging tables to confirm recent GCP DNS records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP DNS event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              },
+              {
+                "id": "gcpdns-content",
+                "order": 5,
+                "task": "Deploy and configure the GCP DNS solution content (11 analytic rules).",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "gcpdns-verify"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "From the Microsoft Sentinel Content Hub, install the GCP DNS solution to deploy the packaged 11 analytics rules covering DNS-based exfiltration, tunnelling, C2 beaconing, and domain generation algorithms. Enable each rule in Active status, review the default entity mappings for GCP resource IDs and IP addresses, and assign rules to the appropriate analytic rule template. "
+              },
+              {
+                "id": "gcpdns-validate",
+                "order": 6,
+                "task": "Tune GCP DNS analytics rules to reduce false positives for your GCP environment.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpdns-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Review the first 48 hours of GCP DNS-driven incidents and alerts. Add allow-list exclusions for known-good service accounts, GCP automation principals, and CI/CD pipeline identities that produce expected high-volume activity. Adjust rule thresholds for scheduled-query rules where GCP audit log volume is significantly higher than expected. Confirm at least one analytic rule has triggered or can be manually triggered with a synthetic GCP event before signing off the onboarding."
+              }
             ]
           },
           "export_metadata": {
@@ -30704,7 +31190,8 @@
           },
           "is_connector": true,
           "category": "servers",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-firewall-logs",
@@ -30753,6 +31240,66 @@
               "Google Cloud Platform Firewall Logs account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform Firewall Logs need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform Firewall Logs can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpfw-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP Firewall Logs data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for VPC firewall rule allow and deny decision logs for all subnets. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpfw-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP Firewall Logs.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpfw-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-firewall and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=\"gce_subnetwork\" AND jsonPayload.reporter=\"FIREWALL\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP Firewall Logs events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpfw-connector",
+                "order": 3,
+                "task": "Configure the GCP Firewall Logs data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpfw-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP Firewall Logs connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-firewall-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpfw-verify",
+                "order": 4,
+                "task": "Validate GCP Firewall Logs ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpfw-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the Logs table to confirm recent GCP Firewall Logs records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP Firewall Logs event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              }
             ]
           },
           "export_metadata": {
@@ -30802,7 +31349,8 @@
           "is_connector": true,
           "category": "firewalls",
           "isFeatured": false,
-          "cribl_eligible": true
+          "cribl_eligible": true,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-iam",
@@ -30851,6 +31399,96 @@
               "Google Cloud Platform IAM account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform IAM need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform IAM can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpiam-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP IAM data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for IAM policy change, role grant/revoke, service account creation, and key management audit logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpiam-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP IAM.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpiam-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-iam and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: protoPayload.serviceName=(\"iam.googleapis.com\" OR \"cloudresourcemanager.googleapis.com\"). Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP IAM events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpiam-connector",
+                "order": 3,
+                "task": "Configure the GCP IAM data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpiam-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP IAM connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-iam-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpiam-verify",
+                "order": 4,
+                "task": "Validate GCP IAM ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpiam-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the Logging, Technologies, and GCPAuditLogs tables to confirm recent GCP IAM records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP IAM event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              },
+              {
+                "id": "gcpiam-content",
+                "order": 5,
+                "task": "Deploy and configure the GCP IAM solution content (10 analytic rules and 1 workbook and 4 automation playbooks).",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "gcpiam-verify"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "From the Microsoft Sentinel Content Hub, install the GCP IAM solution to deploy the packaged 10 analytics rules covering privilege escalation, service account abuse, cross-project role grants, and key misuse, the 1 workbook, and the 4 automation playbooks. Enable each rule in Active status, review the default entity mappings for GCP resource IDs and IP addresses, and assign rules to the appropriate analytic rule template. Configure playbook Logic App connections and grant them API permissions as required.Deploy the workbook and validate it renders correctly against the ingested data."
+              },
+              {
+                "id": "gcpiam-validate",
+                "order": 6,
+                "task": "Tune GCP IAM analytics rules to reduce false positives for your GCP environment.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
+                "category": "phase-2",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpiam-content"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Review the first 48 hours of GCP IAM-driven incidents and alerts. Add allow-list exclusions for known-good service accounts, GCP automation principals, and CI/CD pipeline identities that produce expected high-volume activity. Adjust rule thresholds for scheduled-query rules where GCP audit log volume is significantly higher than expected. Confirm at least one analytic rule has triggered or can be manually triggered with a synthetic GCP event before signing off the onboarding."
+              }
             ]
           },
           "export_metadata": {
@@ -30899,7 +31537,8 @@
           },
           "is_connector": true,
           "category": "identity-access",
-          "isFeatured": true
+          "isFeatured": true,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-ids",
@@ -30944,6 +31583,66 @@
               "Google Cloud Platform IDS account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform IDS need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform IDS can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpids-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP IDS data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for Cloud IDS threat detection and network traffic inspection logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpids-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP IDS.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpids-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-ids and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=\"ids_endpoint\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP IDS events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpids-connector",
+                "order": 3,
+                "task": "Configure the GCP IDS data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpids-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP IDS connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-ids-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpids-verify",
+                "order": 4,
+                "task": "Validate GCP IDS ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpids-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the Audit, Threat, and Technologies tables to confirm recent GCP IDS records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP IDS event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              }
             ]
           },
           "export_metadata": {
@@ -30992,7 +31691,8 @@
           },
           "is_connector": true,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-load-balancer-logs",
@@ -31042,6 +31742,66 @@
               "Google Cloud Platform Load Balancer Logs account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform Load Balancer Logs need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform Load Balancer Logs can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcplb-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP Load Balancer data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for HTTP(S) and TCP/UDP load balancer request and health-check logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcplb-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP Load Balancer.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcplb-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-loadbalancer and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=\"http_load_balancer\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP Load Balancer events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcplb-connector",
+                "order": 3,
+                "task": "Configure the GCP Load Balancer data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcplb-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP Load Balancer connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-loadbalancer-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcplb-verify",
+                "order": 4,
+                "task": "Validate GCP Load Balancer ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcplb-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the Logs table to confirm recent GCP Load Balancer records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP Load Balancer event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              }
             ]
           },
           "export_metadata": {
@@ -31090,7 +31850,8 @@
           },
           "is_connector": true,
           "category": "firewalls",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-nat",
@@ -31135,6 +31896,66 @@
               "Google Cloud Platform NAT account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform NAT need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform NAT can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpnat-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP NAT data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for Cloud NAT translation and error logs for all NAT gateway instances. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpnat-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP NAT.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpnat-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-nat and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=\"nat_gateway\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP NAT events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpnat-connector",
+                "order": 3,
+                "task": "Configure the GCP NAT data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpnat-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP NAT connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-nat-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpnat-verify",
+                "order": 4,
+                "task": "Validate GCP NAT ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpnat-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the Audit, Logging, and Technologies tables to confirm recent GCP NAT records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP NAT event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              }
             ]
           },
           "export_metadata": {
@@ -31183,7 +32004,8 @@
           },
           "is_connector": true,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-resource-manager",
@@ -31233,6 +32055,66 @@
               "Google Cloud Platform Resource Manager account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform Resource Manager need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform Resource Manager can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcprm-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP Resource Manager data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for Project, folder, and organisation resource creation, deletion, and policy change audit logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcprm-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP Resource Manager.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcprm-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-resourcemanager and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: protoPayload.serviceName=\"cloudresourcemanager.googleapis.com\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP Resource Manager events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcprm-connector",
+                "order": 3,
+                "task": "Configure the GCP Resource Manager data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcprm-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP Resource Manager connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-resourcemanager-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcprm-verify",
+                "order": 4,
+                "task": "Validate GCP Resource Manager ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcprm-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the Audit, Logging, and Technologies tables to confirm recent GCP Resource Manager records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP Resource Manager event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              }
             ]
           },
           "export_metadata": {
@@ -31281,7 +32163,8 @@
           },
           "is_connector": true,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-security-command-center",
@@ -31329,6 +32212,81 @@
               "Google Cloud Platform Security Command Center account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform Security Command Center need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform Security Command Center can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpscc-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP Security Command Center data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for Security Command Center finding, asset discovery, and threat signal logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpscc-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP Security Command Center.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpscc-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-scc and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: protoPayload.serviceName=\"securitycenter.googleapis.com\" OR resource.type=\"audited_resource\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP Security Command Center events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpscc-connector",
+                "order": 3,
+                "task": "Configure the GCP Security Command Center data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpscc-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP Security Command Center connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-scc-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpscc-verify",
+                "order": 4,
+                "task": "Validate GCP Security Command Center ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpscc-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the SecurityCommandCenterFindings and Logging tables to confirm recent GCP Security Command Center records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP Security Command Center event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              },
+              {
+                "id": "gcpscc-content",
+                "order": 5,
+                "task": "Deploy and configure the GCP Security Command Center solution content (5 analytic rules).",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "gcpscc-verify"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "From the Microsoft Sentinel Content Hub, install the GCP Security Command Center solution to deploy the packaged 5 analytics rules covering GCP Security Command Center findings and threat signals. Enable each rule in Active status, review the default entity mappings for GCP resource IDs and IP addresses, and assign rules to the appropriate analytic rule template. "
+              }
             ]
           },
           "export_metadata": {
@@ -31377,7 +32335,8 @@
           },
           "is_connector": true,
           "category": "threat-intelligence",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-sql",
@@ -31424,6 +32383,66 @@
               "Google Cloud Platform SQL account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform SQL need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform SQL can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpsql-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP SQL data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for Cloud SQL instance activity, slow-query, general-query, and error logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpsql-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP SQL.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpsql-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-sql and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=\"cloudsql_database\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP SQL events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpsql-connector",
+                "order": 3,
+                "task": "Configure the GCP SQL data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpsql-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP SQL connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-sql-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpsql-verify",
+                "order": 4,
+                "task": "Validate GCP SQL ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpsql-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the Logging and Technologies tables to confirm recent GCP SQL records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP SQL event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              }
             ]
           },
           "export_metadata": {
@@ -31472,7 +32491,8 @@
           },
           "is_connector": true,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-cloud-platform-vpc-flow-logs",
@@ -31522,6 +32542,66 @@
               "Google Cloud Platform VPC Flow Logs account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Cloud Platform VPC Flow Logs need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Cloud Platform VPC Flow Logs can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gcpvpc-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export GCP VPC Flow Logs data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for VPC subnet network flow records including source/destination IP, port, protocol, and bytes transferred. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gcpvpc-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for GCP VPC Flow Logs.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpvpc-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gcp-vpcflow and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=\"gce_subnetwork\" AND logName=~\"vpc_flows\". Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for GCP VPC Flow Logs events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gcpvpc-connector",
+                "order": 3,
+                "task": "Configure the GCP VPC Flow Logs data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gcpvpc-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the GCP VPC Flow Logs connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gcp-vpcflow-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gcpvpc-verify",
+                "order": 4,
+                "task": "Validate GCP VPC Flow Logs ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gcpvpc-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the Logs table to confirm recent GCP VPC Flow Logs records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative GCP VPC Flow Logs event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              }
             ]
           },
           "export_metadata": {
@@ -31570,7 +32650,8 @@
           },
           "is_connector": true,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-directory",
@@ -31788,6 +32869,66 @@
               "Google Kubernetes Engine account scoping or IAM role trust is incomplete, leaving some subscriptions, projects, or services uncovered.",
               "Default detections for Google Kubernetes Engine need tuning after initial onboarding to avoid duplicate or noisy incidents.",
               "Validation for Google Kubernetes Engine can fail if no recent test event exists in the source platform during onboarding."
+            ],
+            "setup_tasks": [
+              {
+                "id": "gke-prereqs",
+                "order": 1,
+                "task": "Confirm GCP project prerequisites and IAM permissions required to export Google Kubernetes Engine data to Microsoft Sentinel.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "GCP Cloud Admin",
+                "description": "Identify the GCP project(s) in scope and confirm that Cloud Logging is enabled for GKE cluster admin activity, control-plane audit, and node system logs. Create a GCP service account (or validate an existing one) and grant it the roles/pubsub.subscriber and roles/logging.admin IAM roles on the target project. Download the service account JSON key for use in the Sentinel connector. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target Sentinel workspace."
+              },
+              {
+                "id": "gke-pubsub",
+                "order": 2,
+                "task": "Create GCP Pub/Sub topic, subscription, and Cloud Logging sink for Google Kubernetes Engine.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gke-prereqs"
+                ],
+                "owner_role": "GCP Cloud Admin",
+                "description": "In the GCP Console (or via gcloud CLI), create a Pub/Sub topic named sentinel-gke-logs and a corresponding pull subscription with a 7-day message retention window. Create a Cloud Logging sink at the project (or organisation) level with the inclusion filter: resource.type=(\"k8s_cluster\" OR \"gke_cluster\" OR \"gke_nodepool\"). Set the sink destination to the Pub/Sub topic. Verify the sink is active by checking Cloud Logging for Google Kubernetes Engine events and confirming they land in the Pub/Sub subscription before proceeding to connector configuration."
+              },
+              {
+                "id": "gke-connector",
+                "order": 3,
+                "task": "Configure the Google Kubernetes Engine data connector in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "gke-pubsub"
+                ],
+                "owner_role": "Azure Platform Admin",
+                "description": "Open the Google Kubernetes Engine connector page in the Microsoft Sentinel Content Hub (or Data Connectors blade). Enter the GCP Project ID, the Pub/Sub subscription name (sentinel-gke-logs-sub), and paste the service account JSON credentials. Save and enable the connector. Confirm the connector status changes to Connected and that the last data received timestamp is updating within the expected polling interval."
+              },
+              {
+                "id": "gke-verify",
+                "order": 4,
+                "task": "Validate Google Kubernetes Engine ingestion in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "beginner",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "gke-connector"
+                ],
+                "owner_role": "SOC Analyst",
+                "description": "Run KQL queries against the AKSAudit and Logging tables to confirm recent Google Kubernetes Engine records are arriving with correct timestamps, resource identifiers, and log payloads. Verify that the GCP project ID, resource type, and severity fields are populated. Generate a representative Google Kubernetes Engine event in GCP (for example, modify an IAM policy, trigger a DNS query, or create a resource) and confirm it appears in Sentinel within the connector's expected polling latency (typically 5–15 minutes)."
+              }
             ]
           },
           "export_metadata": {
@@ -31836,7 +32977,8 @@
           },
           "is_connector": true,
           "category": "cloud",
-          "isFeatured": false
+          "isFeatured": false,
+          "capacity_type": "eps"
         },
         {
           "id": "google-workspace-reports",
@@ -77709,7 +78851,125 @@
             "detection_areas": [],
             "dependencies": []
           },
-          "fieldPack": "cribl-intermediary"
+          "fieldPack": "cribl-intermediary",
+          "category": "cloud",
+          "isFeatured": true,
+          "export_metadata": {
+            "group": "Integration Platforms",
+            "priority_score": 68,
+            "phased_deployment": 2,
+            "integrates_with": [
+              "common-event-format",
+              "windows-forwarded-events",
+              "aws",
+              "azure-activity"
+            ],
+            "estimated_monthly_cost": "medium"
+          },
+          "planner": {
+            "validation_steps": [
+              "Verify events from each configured source arrive in the expected Sentinel tables (CommonSecurityLog, custom tables, or built-in tables) within Cribl's pipeline flush interval.",
+              "Run KQL queries to confirm timestamp accuracy, field completeness, and non-null values for resource identifiers, source IPs, and severity fields across all mapped log streams.",
+              "Confirm Cribl Worker throughput metrics in the Monitoring dashboard align with expected EPS from upstream sources and that no destination HTTP errors or queue-depth alerts are firing."
+            ],
+            "documentation_url": "https://docs.cribl.io/stream/destinations-sentinel/",
+            "owner_recommended": "Cribl Admin",
+            "common_issues": [
+              "DCR Immutable ID or DCE endpoint URL misconfigured in the Cribl HTTP destination, causing 400 or 403 errors on the Logs Ingestion API.",
+              "Entra ID app registration missing the Monitoring Metrics Publisher role on the DCR, resulting in authentication failures after initial connector setup.",
+              "Pipeline field mappings do not match the target table schema, producing null or unmapped columns in Sentinel custom tables."
+            ],
+            "setup_tasks": [
+              {
+                "id": "cs-prereqs",
+                "order": 1,
+                "task": "Plan Cribl Stream deployment architecture and prepare Azure Sentinel Logs Ingestion API prerequisites.",
+                "duration": 1.0,
+                "effort_hours": 4,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Prerequisites",
+                "depends_on": [],
+                "owner_role": "Azure Platform Admin",
+                "description": "Define the Cribl Stream deployment topology: identify all log sources that will route through Cribl (syslog, HTTP, S3, cloud-native), estimate total throughput in EPS, and decide on a single-instance vs Worker Group deployment. In Azure, create a Data Collection Endpoint (DCE) and one or more Data Collection Rules (DCRs) for each log type to be ingested into Sentinel — note the DCE Logs Ingestion API URL and the DCR Immutable ID for each stream. Register an Entra ID application (client ID + secret) with the Monitoring Metrics Publisher role on each DCR. Confirm the operator holds Microsoft Sentinel Contributor and Log Analytics Contributor on the target workspace."
+              },
+              {
+                "id": "cs-infra",
+                "order": 2,
+                "task": "Deploy or validate Cribl Stream Leader and Worker Group, and configure network connectivity to Sentinel.",
+                "duration": 1.5,
+                "effort_hours": 6,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "cs-prereqs"
+                ],
+                "owner_role": "Cribl Admin",
+                "description": "Deploy the Cribl Stream Leader node (on-premises VM, Docker container, or Cribl Cloud) and provision at least one Worker Group sized for the expected EPS throughput (1 Worker per 10k EPS as a starting point). Open outbound HTTPS (port 443) from Worker nodes to the DCE endpoint URL. If on-premises, also open inbound ports for Syslog (TCP 514 / UDP 514), HTTP Event Collector (TCP 8088), or whichever source protocols are in scope. Validate Cribl licence activation, install any required Cribl Packs (e.g., the Microsoft Sentinel Pack from Cribl.io/packs if available), and confirm Worker nodes are connected to the Leader in the Cribl UI."
+              },
+              {
+                "id": "cs-sources",
+                "order": 3,
+                "task": "Configure Cribl Stream Sources for all incoming log types.",
+                "duration": 1.5,
+                "effort_hours": 6,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "cs-infra"
+                ],
+                "owner_role": "Cribl Admin",
+                "description": "For each log type in scope, create and enable the corresponding Cribl Stream Source: Syslog (TCP/UDP on port 514 or 601) for network devices and Linux endpoints; HTTP Event Collector (port 8088) for applications and security tools sending JSON; S3 / Azure Blob / GCS inputs for batch-uploaded logs; or Splunk Forwarder (port 9997) if migrating from an existing Splunk deployment. Assign each source to the correct Worker Group and verify events are arriving in the Cribl Live Capture view. Tag each source with a custom _sourcetype field to simplify downstream pipeline routing."
+              },
+              {
+                "id": "cs-destination",
+                "order": 4,
+                "task": "Configure Cribl Stream Sentinel HTTP destination, build normalisation pipelines, and create Routes.",
+                "duration": 1.5,
+                "effort_hours": 6,
+                "skill_level": "advanced",
+                "category": "setup",
+                "phase": "Configuration",
+                "depends_on": [
+                  "cs-sources"
+                ],
+                "owner_role": "Cribl Admin",
+                "description": "Create a Cribl Stream HTTP destination of type Microsoft Sentinel (Logs Ingestion API): set the endpoint to the DCE URL, configure OAuth2 client-credentials authentication using the Entra ID app client ID and secret, and map each stream name to the corresponding DCR Immutable ID. For each log type, build a Cribl Pipeline to normalise field names to the target Sentinel table schema (e.g., rename fields to match CommonSecurityLog for CEF data, or map to a custom table column list for proprietary formats). Create Routes that match each source's _sourcetype and direct events through the appropriate pipeline to the Sentinel destination. Use Cribl's Live Capture to validate that sample events transit the route, transform correctly through the pipeline, and arrive at the destination without HTTP errors."
+              },
+              {
+                "id": "cs-verify",
+                "order": 5,
+                "task": "End-to-end test and validate data arrival in Microsoft Sentinel.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
+                "category": "setup",
+                "phase": "Validation",
+                "depends_on": [
+                  "cs-destination"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Send representative test events through each configured Cribl Source (e.g., send a syslog message via netcat, post a JSON event to the HEC endpoint, or replay a sample log file via S3 input). In Cribl, confirm events flow through the Route without drops or serialisation errors in the Worker Metrics dashboard. In Microsoft Sentinel, run KQL queries against the target tables (CommonSecurityLog, custom tables, or built-in tables per DCR stream mapping) to confirm records arrive with correct timestamps, expected field names, and non-null values for key fields. Verify ingestion volume in the Sentinel Ingestion health workbook matches expected EPS from Cribl."
+              },
+              {
+                "id": "cs-operationalise",
+                "order": 6,
+                "task": "Operationalise Cribl Stream: monitoring, alerting, and runbook documentation.",
+                "duration": 0.5,
+                "effort_hours": 2,
+                "skill_level": "intermediate",
+                "category": "phase-1",
+                "phase": "Operationalization",
+                "depends_on": [
+                  "cs-verify"
+                ],
+                "owner_role": "SOC Engineer",
+                "description": "Enable Cribl's built-in monitoring: configure Worker throughput and queue-depth alerts to fire when EPS drops below 80% of baseline or the destination queue exceeds 5 minutes of backlog. Create a Cribl health-check scheduled job or external probe to detect Worker-to-Leader disconnects. Document the route and pipeline map (source → pipeline → Sentinel table) in the SOC runbook so analysts can trace data lineage during investigations. Review Sentinel's Data Connector health blade after 24 hours of operation to confirm no ingestion gaps or Logs Ingestion API throttling events have occurred."
+              }
+            ]
+          }
         }
       ]
     }

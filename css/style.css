@@ -1540,6 +1540,13 @@ body {
     grid-column: 1 / -1;
 }
 
+.solution-sizing-server-fields {
+    grid-column: 1 / -1;
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 12px;
+}
+
 .solution-sizing-relation {
     display: grid;
     gap: 10px;
@@ -1858,6 +1865,10 @@ body {
 .topo-toolbar-btn:hover { background: var(--bg-card-hover); color: var(--text-primary); }
 .topo-toolbar-filters { display: flex; gap: 6px; }
 .topo-filter-btn.active { background: rgba(0, 120, 212, 0.15); color: var(--sentinel-blue); border-color: rgba(0, 120, 212, 0.4); }
+.topo-overlap-hint { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding: 8px 14px; border-radius: 8px; background: rgba(0, 120, 212, 0.08); border: 1px solid rgba(0, 120, 212, 0.25); font-size: 0.8rem; color: var(--text-secondary); }
+.topo-overlap-hint-icon { font-size: 1rem; flex-shrink: 0; }
+.topo-overlap-hint-dismiss { background: none; border: none; color: var(--text-secondary); font-size: 1.1rem; cursor: pointer; margin-left: auto; padding: 2px 6px; border-radius: 4px; line-height: 1; }
+.topo-overlap-hint-dismiss:hover { background: rgba(255,255,255,0.1); color: var(--text-primary); }
 .rf-edge--dimmed { opacity: 0.12; transition: opacity 0.2s ease; }
 .topo-flow-wrapper { width: 100%; height: 680px; border-radius: 12px; border: 1px solid var(--border-color); background: var(--bg-primary); overflow: hidden; }
 .topo-flow-wrapper .react-flow__background { background: var(--bg-primary) !important; }
@@ -5479,16 +5490,27 @@ body.is-resizing-gantt {
     box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
 }
 
-/* Light mode: Gantt summary header strip */
+/* Light mode: Gantt summary header strip — overridden by #step5 dark force */
 [data-theme="light"] .gantt-summary-header,
 [data-theme="light"] .gantt-mobile-item {
     background: #ffffff;
     border-color: #e2e8f0;
 }
 
+[data-theme="light"] #step5 .gantt-summary-header,
+[data-theme="light"] #step5 .gantt-mobile-item {
+    background: var(--bg-card);
+    border-color: var(--border-color);
+}
+
 [data-theme="light"] .gantt-summary-stat {
     background: #f8fafc;
     border-color: #e2e8f0;
+}
+
+[data-theme="light"] #step5 .gantt-summary-stat {
+    background: var(--bg-secondary);
+    border-color: var(--border-color);
 }
 
 /* Light mode: version badge */
@@ -5547,4 +5569,26 @@ body.is-resizing-gantt {
 [data-theme="light"] .gantt-phase-chip.phase-closeout {
     background: rgba(99, 102, 241, 0.1);
     border-color: rgba(99, 102, 241, 0.3);
+}
+
+/* Force dark theme on Gantt/Planner (Step 5) — light mode has contrast issues */
+[data-theme="light"] #step5 {
+    --bg-primary: #0F0F0F;
+    --bg-secondary: #1A1A2E;
+    --bg-card: #16213E;
+    --bg-card-hover: #1E2D4D;
+    --text-primary: #FFFFFF;
+    --text-secondary: #B0B0C0;
+    --text-muted: #6B7280;
+    --border-color: #2D3748;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.3), 0 2px 4px -1px rgba(0, 0, 0, 0.2);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.4), 0 4px 6px -2px rgba(0, 0, 0, 0.3);
+    --planner-task-label-color: rgba(226, 232, 240, 0.96);
+    --planner-task-label-color-strong: rgba(248, 250, 252, 0.98);
+    background: var(--bg-primary);
+    border-radius: 12px;
+    color: var(--text-primary);
+    color-scheme: dark;
 }
