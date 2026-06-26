@@ -1,4 +1,4 @@
-import { clearConnectorCriblIngestion, getConnectorCapacitySnapshot, saveConnectorCapacityValues } from '../gantt-planner.js?v=17';
+import { clearConnectorCriblIngestion, getConnectorCapacitySnapshot, saveConnectorCapacityValues } from '../gantt-planner.js?v=29';
 import {
     createDefaultSizingDraft,
     estimateWecServersForSourceComputers,
@@ -2174,7 +2174,7 @@ function createSizingEditor(solution, profile, snapshot = {}) {
             ? Boolean(nextDraft.criblIngestion)
             : hasSavedCriblIngestionPreference
                 ? Boolean(profile.values?.criblIngestion)
-                : false;
+                : criblEligible;
 
         nextDraft.criblIngestion = criblEligible ? resolvedCriblIngestion : false;
         nextDraft.criblIngestionExplicit = criblEligible && (hasExplicitCriblIngestionPreference || hasSavedCriblIngestionPreference);

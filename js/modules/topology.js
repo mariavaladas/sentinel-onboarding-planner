@@ -1,6 +1,6 @@
-import { getConnectorCapacitySnapshot } from '../gantt-planner.js?v=18';
+import { getConnectorCapacitySnapshot } from '../gantt-planner.js?v=29';
 import { getSolutionCapacityProfile, DEFAULT_COLLECTOR_VM_ZONE, DEFAULT_WINDOWS_ONPREM_PERCENT, DEFAULT_LINUX_ONPREM_PERCENT, FIREWALL_VM_EPS_CAPACITY, DEFAULT_FIREWALL_EPS, normalizeCollectorVmZone } from './capacity.js?v=18';
-import { connectedSolutionIds, getSolutionLastLog, hasLastLogData } from './solutions.js?v=19';
+import { connectedSolutionIds, getSolutionLastLog, hasLastLogData } from './solutions.js?v=21';
 
 // topology.js — SIEM ingestion topology visualization using React Flow
 
@@ -2581,7 +2581,8 @@ export function renderTopology(selectedSolutions, containerEl) {
         const showArcAgent = isWindows && zone === 'onprem';
         const pools = isWindows && Array.isArray(windowsPools) ? windowsPools : [];
         const standardContent = [
-            ...items
+            ...items,
+            isCriblRoute ? h('div', { key: 'route-label', className: 'rf-server-agent rf-server-agent--cribl' }, '🔀 via Cribl Stream') : null
         ];
         const sourceContent = isWindows && pools.length > 0
             ? [
@@ -2610,8 +2611,8 @@ export function renderTopology(selectedSolutions, containerEl) {
                         h('div', { className: 'rf-pool-header' },
                             h('span', { className: 'server-chip__icon', style: { color: nodeColor } }, renderServerOsIcon(indicator.os || 'windows', 'rf-inline-os-icon')),
                             h('span', { className: 'rf-source-name' }, indicator.role || 'Windows Servers'),
-                            count > 0 ? h('span', { className: 'server-chip__count' }, `×${formatTopologyCount(count)}`) : null,
-                            indicator.isDefault ? h('span', { className: 'server-chip__est' }, 'est.') : null
+                            !isCriblRoute && count > 0 ? h('span', { className: 'server-chip__count' }, `×${formatTopologyCount(count)}`) : null,
+                            !isCriblRoute && indicator.isDefault ? h('span', { className: 'server-chip__est' }, 'est.') : null
                         ),
                         showArcAgent && !isCriblRoute ? h('div', { className: 'rf-server-agent rf-server-agent--arc' }, '📡 Arc Agent (Azure Connected)') : null,
                         !isCriblRoute ? h('div', { className: 'rf-server-agent rf-server-agent--ama' }, '📡 AMA Agent')
