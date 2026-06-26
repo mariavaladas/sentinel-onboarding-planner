@@ -111,7 +111,11 @@ function isCriblRoutedSolution(solution = {}, capacitySnapshot = {}, criblActive
         return false;
     }
 
-    return Boolean(profile?.values?.criblIngestionExplicit) && Boolean(profile?.criblIngestion);
+    // If user hasn't explicitly set a Cribl preference, default to routed through Cribl
+    if (!profile?.values?.criblIngestionExplicit) {
+        return true;
+    }
+    return Boolean(profile?.criblIngestion);
 }
 
 function buildWindowsSharedDcrPlan(zoneLayouts = []) {

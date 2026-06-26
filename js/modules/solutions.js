@@ -2174,7 +2174,7 @@ function createSizingEditor(solution, profile, snapshot = {}) {
             ? Boolean(nextDraft.criblIngestion)
             : hasSavedCriblIngestionPreference
                 ? Boolean(profile.values?.criblIngestion)
-                : false;
+                : criblEligible;
 
         nextDraft.criblIngestion = criblEligible ? resolvedCriblIngestion : false;
         nextDraft.criblIngestionExplicit = criblEligible && (hasExplicitCriblIngestionPreference || hasSavedCriblIngestionPreference);
