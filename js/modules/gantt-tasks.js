@@ -1531,9 +1531,21 @@ function buildPerConnectorTasks(connector, abbrev, dependencyTaskId, permissionT
         ];
     }
 
-    // Cribl-routed syslog/CEF connectors: Cribl handles log collection,
+    // Cribl-routed connectors: Cribl handles log collection,
     // so tasks focus on source config pointing to Cribl and pipeline validation.
     if (criblRouted) {
+        const isWindowsSource = fieldPack === FIELD_PACK.WINDOWS_AMA;
+        const sourceConfigSubtasks = overrides.sourceCfgSubtasks || (isWindowsSource
+            ? [
+                `Configure ${name} Windows hosts to forward events to the Cribl Stream agent`,
+                'Verify Cribl agent deployment on target hosts or configure WEF forwarding to Cribl',
+                'Verify network connectivity from source hosts to Cribl listener'
+            ]
+            : [
+                `Configure ${name} to send Syslog/CEF logs to the Cribl Stream listener`,
+                'Set log format (CEF / Syslog), facility, and severity level on the source',
+                'Verify network connectivity from source to Cribl listener port'
+            ]);
         return [
             {
                 ...base,
@@ -1545,11 +1557,7 @@ function buildPerConnectorTasks(connector, abbrev, dependencyTaskId, permissionT
                 durationHours: overrides.sourceCfgHours || 1,
                 ownerRole: 'Operations Team',
                 dependsOn: entryDependsOn,
-                subtasks: overrides.sourceCfgSubtasks || [
-                    `Configure ${name} to send Syslog/CEF logs to the Cribl Stream listener`,
-                    'Set log format (CEF / Syslog), facility, and severity level on the source',
-                    'Verify network connectivity from source to Cribl listener port'
-                ]
+                subtasks: sourceConfigSubtasks
             },
             {
                 ...base,
@@ -1564,7 +1572,9 @@ function buildPerConnectorTasks(connector, abbrev, dependencyTaskId, permissionT
                 subtasks: [
                     `Confirm ${name} events appear in Cribl Stream monitoring`,
                     `Run KQL query against the target Sentinel table to verify ${name} events`,
-                    'Check event count, timestamp recency, and DeviceVendor/DeviceProduct fields'
+                    isWindowsSource
+                        ? 'Check event count, timestamp recency, and EventID fields'
+                        : 'Check event count, timestamp recency, and DeviceVendor/DeviceProduct fields'
                 ]
             },
             {
@@ -1746,7 +1756,7 @@ export function buildGanttPlan(selectedConnectors, capacitySnapshot = {}) {
     for (const connector of taskableConnectors) {
         const pack = inferFieldPack(connector);
         if (pack) {
-            const effectivePack = (criblActive && pack === FIELD_PACK.SYSLOG_CEF && isConnectorCriblRouted(connector, capacitySnapshot))
+            const effectivePack = (criblActive && (pack === FIELD_PACK.SYSLOG_CEF || pack === FIELD_PACK.WINDOWS_AMA) && isConnectorCriblRouted(connector, capacitySnapshot))
                 ? FIELD_PACK.CRIBL
                 : pack;
             packsNeeded.add(effectivePack);
@@ -1835,7 +1845,7 @@ export function buildGanttPlan(selectedConnectors, capacitySnapshot = {}) {
 
         const criblRouted = Boolean(
             criblActive
-            && packInfo.sourcePack === FIELD_PACK.SYSLOG_CEF
+            && (packInfo.sourcePack === FIELD_PACK.SYSLOG_CEF || packInfo.sourcePack === FIELD_PACK.WINDOWS_AMA)
             && isConnectorCriblRouted(connector, capacitySnapshot)
         );
         const joinTaskId = packInfo.minimalPack
@@ -2142,7 +2152,7 @@ export function getPackInfraTaskIds(fieldPack) {
  * @returns {string|null}
  */
 export function getPackJoinTaskId(fieldPack, criblActive = false) {
-    if (criblActive && fieldPack === FIELD_PACK.SYSLOG_CEF) {
+    if (criblActive && (fieldPack === FIELD_PACK.SYSLOG_CEF || fieldPack === FIELD_PACK.WINDOWS_AMA)) {
         return PACK_JOIN_TASK[FIELD_PACK.CRIBL];
     }
     return PACK_JOIN_TASK[fieldPack] || null;

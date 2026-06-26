@@ -3714,6 +3714,19 @@ function createSolutionPlanRows({
     const ownerModel = getOwnerModel(solution);
     const category = getSolutionGroup(solution);
     const capacityProfile = getSolutionCapacityProfile(solution, capacitySnapshot || getCapacitySnapshot([solution]));
+
+    // Filter out AMA/Arc infrastructure tasks when Cribl handles ingestion
+    const isCriblRouted = Boolean(capacityProfile?.values?.criblIngestionExplicit && capacityProfile?.criblIngestion);
+    const filteredTasks = isCriblRouted
+        ? orderedTasks.filter((task) => {
+            const taskText = String(task?.task || task?.name || '').toLowerCase();
+            const taskId = String(task?.id || '').toLowerCase();
+            // Remove tasks primarily about AMA deployment, Arc onboarding, or host readiness for AMA
+            const isAmaInfra = /(deploy|install|validate.*readiness.*for)\s.*\bama\b|onboard.*azure\s+arc|\barc[\s-]onboard/i.test(taskText)
+                || /arc-onboard|deploy-dcr|install-ama|host-readiness/i.test(taskId);
+            return !isAmaInfra;
+        })
+        : orderedTasks;
     const solutionGoal = getGoal(solution);
     const solutionMilestone = getMilestone(solution);
     const difficulty = getDifficultyLabel(solution);
@@ -3731,7 +3744,7 @@ function createSolutionPlanRows({
     const baseSolutionNumber = String(solutionNumber || getNextNumber(counters));
 
     const idMap = new Map();
-    const normalizedTasks = orderedTasks.map((task, index) => {
+    const normalizedTasks = filteredTasks.map((task, index) => {
         const originalId = String(task?.id || `setup-task-${index + 1}`);
         const rowId = `task-${solution.id}-${originalId}`;
         idMap.set(originalId, rowId);
