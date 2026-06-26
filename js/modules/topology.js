@@ -111,11 +111,7 @@ function isCriblRoutedSolution(solution = {}, capacitySnapshot = {}, criblActive
         return false;
     }
 
-    // If user hasn't explicitly set a Cribl preference, default to routed through Cribl
-    if (!profile?.values?.criblIngestionExplicit) {
-        return true;
-    }
-    return Boolean(profile?.criblIngestion);
+    return Boolean(profile?.values?.criblIngestionExplicit) && Boolean(profile?.criblIngestion);
 }
 
 function buildWindowsSharedDcrPlan(zoneLayouts = []) {
@@ -2021,6 +2017,7 @@ export function renderTopology(selectedSolutions, containerEl) {
                   type: entry.type,
                   zone: entry.zone,
                   band: sourceBand,
+                  route: entry.route,
                   windowsPools: entry.windowsPools,
                   color: pc.color,
                   useRightHandle: Boolean(entry.collectorVm),
@@ -2558,8 +2555,9 @@ export function renderTopology(selectedSolutions, containerEl) {
     };
 
     function SourceNode({ data }) {
-        const { solutions, pc, type, zone, band = 'top', windowsPools, color, useRightHandle = false, usePoolGrid = false, status } = data;
+        const { solutions, pc, type, zone, band = 'top', route, windowsPools, color, useRightHandle = false, usePoolGrid = false, status } = data;
         const isWindows = type === 'windows_events';
+        const isCriblRoute = route === ROUTE_CRIBL;
         const nodeColor = color || pc.color;
         const items = solutions.map((s, i) => {
             // Per-solution badge respects the verified source-level status.
@@ -2615,8 +2613,9 @@ export function renderTopology(selectedSolutions, containerEl) {
                             count > 0 ? h('span', { className: 'server-chip__count' }, `×${formatTopologyCount(count)}`) : null,
                             indicator.isDefault ? h('span', { className: 'server-chip__est' }, 'est.') : null
                         ),
-                        showArcAgent ? h('div', { className: 'rf-server-agent rf-server-agent--arc' }, '📡 Arc Agent (Azure Connected)') : null,
-                        h('div', { className: 'rf-server-agent rf-server-agent--ama' }, '📡 AMA Agent'),
+                        showArcAgent && !isCriblRoute ? h('div', { className: 'rf-server-agent rf-server-agent--arc' }, '📡 Arc Agent (Azure Connected)') : null,
+                        !isCriblRoute ? h('div', { className: 'rf-server-agent rf-server-agent--ama' }, '📡 AMA Agent')
+                            : h('div', { className: 'rf-server-agent rf-server-agent--cribl' }, '🔀 Cribl Stream'),
                         h('div', { className: 'rf-pool-solutions' },
                             ...(Array.isArray(pool.solutions) ? pool.solutions : []).map((solution, solutionIndex) => h('div', {
                                 key: solution?.id || `${pool.id || index}-${solutionIndex}`,

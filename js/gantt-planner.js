@@ -735,11 +735,7 @@ function isGeneratedPlanCriblRoutedSolution(solution = {}, capacitySnapshot = {}
     }
 
     const profile = getSolutionCapacityProfile(solution, capacitySnapshot);
-    // If user hasn't explicitly set a Cribl preference, default to routed through Cribl
-    if (!profile?.values?.criblIngestionExplicit) {
-        return true;
-    }
-    return Boolean(profile?.criblIngestion);
+    return Boolean(profile?.values?.criblIngestionExplicit) && Boolean(profile?.criblIngestion);
 }
 
 function buildSyntheticInfrastructureSolution(fieldPack = '') {
