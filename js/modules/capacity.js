@@ -213,7 +213,22 @@ function getConnectorCapacityMetadata(solution = {}) {
         };
     }
 
-    const hasCefOrSyslogPath = /(cef|syslog|forwarder|linux forwarder|common event format)/.test(lookupText);
+    // Hard signal: explicit syslog-cef field pack always means a genuine CEF/Syslog forwarder pipeline.
+    // This catches connectors whose text doesn't carry the keyword (e.g. zscaler, fortinet-forti-web-cloud-waf)
+    // and is also the primary signal for imperva-waf-gateway after its data was enriched.
+    if (solution?.fieldPack === 'syslog-cef') {
+        return {
+            type: 'firewall',
+            populationKind: '',
+            sharedPopulationGroup: '',
+            serverCountLabel: ''
+        };
+    }
+
+    // Text heuristic: only match genuine CEF/Syslog keywords — NOT "forwarder", which appears as
+    // boilerplate in API/Codeless connector notes and causes false-positive firewall classification
+    // for connectors like Cortex XDR CCP, Xpanse CCF, and Imperva Cloud WAF.
+    const hasCefOrSyslogPath = /(cef|syslog|common event format)/.test(lookupText);
     const isFirewallFamily = /(check\s*point|checkpoint|fortinet|forti gate|fortigate|palo\s*alto|ngfw|firewall|cdl)/.test(lookupText);
     if (hasCefOrSyslogPath && isFirewallFamily) {
         return {

@@ -16006,6 +16006,8 @@
           "workbooks": 0,
           "playbooks": 0,
           "is1P": false,
+          "fieldPack": "syslog-cef",
+          "cribl_eligible": true,
           "tags": [
             "imperva",
             "waf",
