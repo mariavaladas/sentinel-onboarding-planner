@@ -9085,6 +9085,30 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
         }
     };
 
+    let plannerToastEl = null;
+    let plannerToastHandle = 0;
+
+    const showPlannerToast = (message) => {
+        if (!plannerToastEl) {
+            plannerToastEl = document.createElement('div');
+            plannerToastEl.className = 'gantt-planner-toast';
+            plannerToastEl.setAttribute('role', 'status');
+            plannerToastEl.setAttribute('aria-live', 'polite');
+            plannerToastEl.hidden = true;
+            document.body.appendChild(plannerToastEl);
+        }
+        window.clearTimeout(plannerToastHandle);
+        plannerToastEl.textContent = message;
+        plannerToastEl.hidden = false;
+        plannerToastEl.classList.remove('is-visible');
+        void plannerToastEl.offsetWidth; // force reflow so transition fires
+        plannerToastEl.classList.add('is-visible');
+        plannerToastHandle = window.setTimeout(() => {
+            plannerToastEl.classList.remove('is-visible');
+            plannerToastEl.hidden = true;
+        }, 2500);
+    };
+
     const handleAddTopLevelTask = (taskId = lastAnchoredTaskId || activeTaskId) => {
         const row = resolveAddTaskTarget(taskId);
         if (!row?.solutionId) return;
@@ -9101,6 +9125,7 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
         }
 
         const newTaskId = addCustomTask(row, { kind: 'top-level' });
+        if (newTaskId) showPlannerToast(`Added a task under ${row.solutionName || row.step}`);
         closeDetail();
         clearHoveredTasks();
         rebuildPlanData();
@@ -9115,6 +9140,7 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
         if (!row?.solutionId || !row.isSummary) return;
         collapsedSummaryIds.delete(row.id);
         const newTaskId = addCustomTask(row, { kind: 'subtask' });
+        if (newTaskId) showPlannerToast(`Added a subtask under ${row.step || row.solutionName}`);
         closeDetail();
         clearHoveredTasks();
         rebuildPlanData();

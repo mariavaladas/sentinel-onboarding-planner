@@ -2352,6 +2352,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     await loadSolutionData();
 
+    const persistedVendorsRaw = readJsonFromStorage(SELECTED_VENDORS_STORAGE_KEY, null);
+    const hadPersistedVendors = Array.isArray(persistedVendorsRaw) && persistedVendorsRaw.length > 0;
     restoreSelectedVendors();
     window.connectedWorkspace = null;
     window.connectedSolutions = [];
@@ -2598,6 +2600,19 @@ document.addEventListener('DOMContentLoaded', async () => {
     });
 
     let restoredStep = getPersistedCurrentStep();
+
+    // Only treat a saved step as "progress" when there is genuinely restorable content.
+    // Step 2 (Environment) needs selected vendors; step 3+ needs selected solutions.
+    const hasSavedSolutions = getSelectedSolutionsData().length > 0;
+    const hasSavedVendors = hadPersistedVendors;
+    const hasRestorableProgress = hasSavedSolutions || hasSavedVendors;
+
+    if (restoredStep > 1 && !hasRestorableProgress) {
+        restoredStep = 1;
+        if (canUseLocalStorage()) {
+            window.localStorage.removeItem(CURRENT_STEP_STORAGE_KEY);
+        }
+    }
 
     // If the saved step requires planned solutions but the saved shortlist is gone, start clean.
     if (restoredStep >= 4 && getSelectedSolutionsData().length === 0) {
