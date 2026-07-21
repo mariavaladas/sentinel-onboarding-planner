@@ -43,10 +43,10 @@ Then open `http://localhost:8080` in your browser.
 
 The application structure is documented in the Project Structure section of the README. Key files you may work with:
 
-- `js/app.js` — Wizard flow orchestration and save/load configuration
-- `js/gantt-planner.js` — Gantt chart rendering and plan data builder
-- `js/modules/` — Modular logic for capacity sizing, Excel export, topology visualization, solution catalog management, and more
-- `data/solutions.json` — 489 Sentinel solutions catalog with metadata and task mappings
+- `js/app.js`: Wizard flow orchestration and save/load configuration
+- `js/gantt-planner.js`: Gantt chart rendering and plan data builder
+- `js/modules/`: Modular logic for capacity sizing, Excel export, topology visualization, solution catalog management, and more
+- `data/solutions.json`: 489 Sentinel solutions catalog with metadata and task mappings
 
 ## Making Changes
 
@@ -61,19 +61,19 @@ The application structure is documented in the Project Structure section of the 
 
 ### Coding Conventions
 
-- **Vanilla JavaScript** — No framework build or transpilation. Code runs directly in the browser.
-- **Match existing style** — Follow the patterns you see in existing files (naming, indentation, structure).
-- **Dependencies are CDN-loaded** — All libraries are loaded via CDN with Subresource Integrity (SRI) hashes (see `index.html`). If you add a new dependency, it must be loaded the same way with an integrity hash. Prefer built-in browser APIs where possible to keep dependencies light.
+- **Vanilla JavaScript**: No framework build or transpilation. Code runs directly in the browser.
+- **Match existing style**: Follow the patterns you see in existing files (naming, indentation, structure).
+- **Dependencies are CDN-loaded**: All libraries are loaded via CDN with Subresource Integrity (SRI) hashes (see `index.html`). If you add a new dependency, it must be loaded the same way with an integrity hash. Prefer built-in browser APIs where possible to keep dependencies light.
 
 ## Reporting Bugs
 
 When you report a bug, please include:
 
-- **Steps to reproduce** — Exactly what actions led to the problem
-- **Browser and version** — For example, Chrome 120, Edge 119, Firefox 121, Safari 17
-- **Expected vs actual behavior** — What should have happened vs what actually happened
-- **Console errors** — Any JavaScript errors visible in the browser developer console
-- **Screenshot** — If applicable, attach a screenshot showing the issue
+- **Steps to reproduce**: Exactly what actions led to the problem
+- **Browser and version**: For example, Chrome 120, Edge 119, Firefox 121, Safari 17
+- **Expected vs actual behavior**: What should have happened vs what actually happened
+- **Console errors**: Any JavaScript errors visible in the browser developer console
+- **Screenshot**: If applicable, attach a screenshot showing the issue
 
 ## License
 
