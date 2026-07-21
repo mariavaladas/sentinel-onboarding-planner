@@ -970,11 +970,9 @@ body {
     opacity: 1;
 }
 
-.third-party-solution-list {
-    max-height: none;
-    overflow: visible;
-    padding-right: 0;
-}
+/* .third-party-solution-list intentionally has no overrides here —
+   it inherits max-height: 500px + overflow-y: auto from .solution-list
+   so each expanded sub-section scrolls internally, matching Azure/M365 panels. */
 
 .third-party-solution-sections::-webkit-scrollbar,
 .solution-list::-webkit-scrollbar {

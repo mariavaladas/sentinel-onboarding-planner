@@ -8656,7 +8656,16 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
         if (preferredRow?.solutionId) {
             return preferredRow;
         }
-        return [...taskMap.values()].reverse().find((row) => row.isSolutionGroup && row.solutionId) || null;
+        // Walk backward through planData.rows from the active row's position to find the
+        // nearest solution group above. This prevents always routing to the global-last group
+        // when the active row is a shared row (no solutionId) or nothing is selected.
+        const allRows = planData.rows;
+        const prefIdx = preferredTaskId ? allRows.findIndex((r) => r.id === preferredTaskId) : -1;
+        for (let i = Math.max(prefIdx, 0); i >= 0; i--) {
+            if (allRows[i]?.isSolutionGroup && allRows[i]?.solutionId) return allRows[i];
+        }
+        // No solution group found above — fall forward to the first solution group (not the last).
+        return allRows.find((r) => r.isSolutionGroup && r.solutionId) || null;
     };
 
     const syncToolbarState = () => {

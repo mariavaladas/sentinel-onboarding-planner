@@ -3437,6 +3437,17 @@ function applyStep3Filters() {
     });
 
     updateVisibleSolutionCounts();
+
+    if (searchTerms.length > 0) {
+        document.querySelectorAll('.solution-category-section.collapsed:not([hidden])').forEach((section) => {
+            section.classList.remove('collapsed');
+            const heading = section.querySelector('.solution-category-heading');
+            if (heading) {
+                heading.setAttribute('aria-expanded', 'true');
+            }
+        });
+    }
+
     updateSolutionFilterEmptyState(visibleCount);
 }
 
@@ -3469,6 +3480,7 @@ function createThirdPartySolutionPanel(category, recommendedIds) {
         categoryBuckets.get(categoryId).push(solution);
     });
 
+    let sectionIndex = 0;
     categoryBuckets.forEach((solutions, categoryId) => {
         if (solutions.length === 0) {
             return;
@@ -3481,6 +3493,8 @@ function createThirdPartySolutionPanel(category, recommendedIds) {
 
         const heading = document.createElement('h3');
         heading.className = 'solution-category-heading';
+        heading.setAttribute('role', 'button');
+        heading.setAttribute('tabindex', '0');
 
         const headingLabel = document.createElement('span');
         headingLabel.textContent = `${categoryMeta.icon} ${categoryMeta.label}`;
@@ -3490,7 +3504,32 @@ function createThirdPartySolutionPanel(category, recommendedIds) {
         headingCount.dataset.total = String(solutions.length);
         headingCount.textContent = formatSolutionCountText(solutions.length, solutions.length);
 
-        heading.append(headingLabel, ' ', headingCount);
+        const chevron = document.createElement('span');
+        chevron.className = 'chevron';
+        chevron.setAttribute('aria-hidden', 'true');
+        chevron.textContent = '▼';
+
+        heading.append(headingLabel, ' ', headingCount, chevron);
+
+        const isFirstSection = sectionIndex === 0;
+        if (!isFirstSection) {
+            section.classList.add('collapsed');
+        }
+        heading.setAttribute('aria-expanded', String(isFirstSection));
+        sectionIndex += 1;
+
+        const toggleSection = () => {
+            const isCollapsed = section.classList.toggle('collapsed');
+            heading.setAttribute('aria-expanded', String(!isCollapsed));
+        };
+
+        heading.addEventListener('click', toggleSection);
+        heading.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' || event.key === ' ') {
+                event.preventDefault();
+                toggleSection();
+            }
+        });
 
         const list = document.createElement('div');
         list.className = 'solution-list third-party-solution-list';
