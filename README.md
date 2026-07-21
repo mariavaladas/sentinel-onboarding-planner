@@ -15,6 +15,38 @@ The Sentinel Onboarding Planner walks customers through a guided 5-step wizard:
 4. **Topology** — Interactive diagram showing how data flows from sources through collection infrastructure into Microsoft Sentinel
 5. **Planner** — Full Gantt chart with task cards, dependencies, milestones, and Excel export
 
+## Screenshots
+
+### Welcome
+A guided five-step wizard, with an optional connection to an existing workspace.
+
+![Welcome screen](assets/screenshots/01-welcome.png)
+
+### Environment
+Pick the platforms and vendors you expect to bring into Sentinel (Azure and Microsoft 365 are selected by default).
+
+![Environment selection](assets/screenshots/02-environment.png)
+
+### Solutions
+Browse and shortlist Sentinel Content Hub solutions, highlighted to match your environment.
+
+![Solution packages](assets/screenshots/03-solutions.png)
+
+### Connector sizing
+Size each connector, with Cribl Stream handling collection when it is selected (no collector VMs required).
+
+![Connector sizing drawer](assets/screenshots/04-connector-sizing.png)
+
+### Topology
+An interactive view of how data flows from your sources, through the ingestion pipeline, into Microsoft Sentinel.
+
+![Ingestion topology](assets/screenshots/05-topology.png)
+
+### Planner
+A dependency-aware Gantt with phases, milestones, and one-click Excel export.
+
+![Planner Gantt view](assets/screenshots/06-planner-gantt.png)
+
 ## Key Features
 
 - **489 Sentinel solutions** with analytics, workbooks, and playbook counts from the [Azure Sentinel GitHub](https://github.com/Azure/Azure-Sentinel/tree/master/Solutions)

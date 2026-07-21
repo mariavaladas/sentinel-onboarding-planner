@@ -10,6 +10,7 @@ _cleanup-backup/
 test-results/
 *.tmp
 session-tmp/
+/Screenshots/
 
 # Scripts (local dev helpers)
 apply_k_patch.py
