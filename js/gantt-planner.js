@@ -8533,6 +8533,7 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
     );
     const ganttInstanceRef = { current: null, viewMode: GANTT_VIEW_MODES[0].name };
     let activeTaskId = '';
+    let lastAnchoredTaskId = '';
     let activeTab = getStoredPlannerActiveTab();
     const viewsReady = { table: false, gantt: false };
     const viewDirty = { table: true, gantt: true };
@@ -8651,7 +8652,7 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
             .forEach((row) => collapsedSolutionGroupIds.add(row.id));
     };
 
-    const resolveAddTaskTarget = (preferredTaskId = activeTaskId) => {
+    const resolveAddTaskTarget = (preferredTaskId = lastAnchoredTaskId || activeTaskId) => {
         const preferredRow = taskMap.get(preferredTaskId);
         if (preferredRow?.solutionId) {
             return preferredRow;
@@ -8743,6 +8744,7 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
         const row = taskMap.get(taskId);
         if (!row) return;
         activeTaskId = taskId;
+        lastAnchoredTaskId = taskId;
         syncActiveTaskState();
         renderDetailPanel(detailHost, row, {
             allRowsById: taskMap,
@@ -8946,6 +8948,9 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
             activeTaskId = '';
             setDetailOverlayState(detailOverlay, false);
         }
+        if (lastAnchoredTaskId && !visiblePlan.rows.some((row) => row.id === lastAnchoredTaskId)) {
+            lastAnchoredTaskId = '';
+        }
 
         if (activeTab === 'table') {
             renderTableView({ focusInlineField });
@@ -9080,7 +9085,7 @@ function renderPlannerWorkspace(container, solutions = [], toolbarRefs = {}) {
         }
     };
 
-    const handleAddTopLevelTask = (taskId = activeTaskId) => {
+    const handleAddTopLevelTask = (taskId = lastAnchoredTaskId || activeTaskId) => {
         const row = resolveAddTaskTarget(taskId);
         if (!row?.solutionId) return;
 
