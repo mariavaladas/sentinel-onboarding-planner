@@ -9,6 +9,7 @@ Thumbs.db
 _cleanup-backup/
 test-results/
 *.tmp
+session-tmp/
 
 # Scripts (local dev helpers)
 apply_k_patch.py
